@@ -35,6 +35,9 @@ class Product(Base):
     image_url = Column(String(500))
     in_stock = Column(Boolean, default=True)
     rating = Column(Float, default=0.0)
+    material = Column(String(255))
+    season = Column(String(255))
+    care_instructions = Column(Text)
 
 class PurchaseHistory(Base):
     __tablename__ = "purchase_history"
