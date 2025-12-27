@@ -6,16 +6,16 @@ class WeatherService:
     def __init__(self):
         self.base_url = "https://api.open-meteo.com/v1/forecast"
     
-    async def get_weather(self, latitude: float = 40.7128, longitude: float = -74.0060) -> Dict[str, Any]:
+    def get_weather(self, latitude: float = 40.7128, longitude: float = -74.0060) -> Dict[str, Any]:
         try:
-            async with httpx.AsyncClient() as client:
+            with httpx.Client(timeout=10.0) as client:
                 params = {
                     "latitude": latitude,
                     "longitude": longitude,
                     "current": "temperature_2m,precipitation,weather_code",
                     "timezone": "auto"
                 }
-                response = await client.get(self.base_url, params=params, timeout=10.0)
+                response = client.get(self.base_url, params=params)
                 data = response.json()
                 
                 current = data.get("current", {})
@@ -41,7 +41,7 @@ class WeatherService:
         return weather_codes.get(code, "Unknown")
 
 class EventsService:
-    async def get_local_events(self, location: str = "New York") -> List[Dict[str, Any]]:
+    def get_local_events(self, location: str = "New York") -> List[Dict[str, Any]]:
         return [
             {"name": "Summer Fashion Week", "type": "fashion", "date": "2025-01-15"},
             {"name": "Tech Conference 2025", "type": "business", "date": "2025-01-20"},
@@ -49,7 +49,7 @@ class EventsService:
         ]
 
 class TrendsService:
-    async def get_fashion_trends(self) -> List[str]:
+    def get_fashion_trends(self) -> List[str]:
         return [
             "Sustainable fashion",
             "Oversized blazers",
@@ -65,10 +65,10 @@ class ExternalContextService:
         self.events_service = EventsService()
         self.trends_service = TrendsService()
     
-    async def get_environmental_context(self, location: Optional[str] = None) -> Dict[str, Any]:
-        weather = await self.weather_service.get_weather()
-        events = await self.events_service.get_local_events(location or "New York")
-        trends = await self.trends_service.get_fashion_trends()
+    def get_environmental_context(self, location: Optional[str] = None) -> Dict[str, Any]:
+        weather = self.weather_service.get_weather()
+        events = self.events_service.get_local_events(location or "New York")
+        trends = self.trends_service.get_fashion_trends()
         
         return {
             "weather": weather,

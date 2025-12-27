@@ -10,12 +10,12 @@ class ContextAggregator:
     def __init__(self):
         self.external_service = ExternalContextService()
     
-    async def aggregate(
+    def aggregate(
         self, 
         intent: NormalizedIntent, 
         customer: CustomerContext
     ) -> EnrichedContext:
-        env_data = await self.external_service.get_environmental_context(
+        env_data = self.external_service.get_environmental_context(
             customer.location
         )
         

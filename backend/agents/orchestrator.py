@@ -1,4 +1,4 @@
-from typing import TypedDict, Annotated, Literal
+from typing import TypedDict, Literal
 from langgraph.graph import StateGraph, END
 from sqlalchemy.orm import Session
 
@@ -92,11 +92,11 @@ class ShoppingOrchestrator:
         state["customer_context"] = context.model_dump()
         return state
     
-    async def _aggregate_context_node(self, state: GraphState) -> GraphState:
+    def _aggregate_context_node(self, state: GraphState) -> GraphState:
         intent = NormalizedIntent(**state["normalized_intent"])
         customer = CustomerContext(**state["customer_context"])
         
-        enriched = await self.context_aggregator.aggregate(intent, customer)
+        enriched = self.context_aggregator.aggregate(intent, customer)
         state["enriched_context"] = enriched.model_dump()
         state["environmental_context"] = enriched.environmental.model_dump()
         
@@ -112,7 +112,7 @@ class ShoppingOrchestrator:
         
         return state
     
-    async def process_message(self, user_id: int, message: str, conversation_history: list = None) -> dict:
+    def process_message(self, user_id: int, message: str, conversation_history: list = None) -> dict:
         initial_state: GraphState = {
             "messages": [],
             "user_id": user_id,
@@ -128,7 +128,7 @@ class ShoppingOrchestrator:
             "conversation_history": conversation_history or []
         }
         
-        final_state = await self.graph.ainvoke(initial_state)
+        final_state = self.graph.invoke(initial_state)
         
         return {
             "response": final_state["final_response"],

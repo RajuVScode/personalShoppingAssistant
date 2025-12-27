@@ -42,8 +42,11 @@ async def lifespan(app: FastAPI):
             } for p in products]
             
             if os.getenv("AZURE_OPENAI_API_KEY"):
-                vector_store = ProductVectorStore()
-                vector_store.create_index(product_data)
+                try:
+                    vector_store = ProductVectorStore()
+                    vector_store.create_index(product_data)
+                except Exception as e:
+                    print(f"Warning: Could not create vector index: {e}")
     finally:
         db.close()
     
@@ -65,11 +68,11 @@ app.add_middleware(
 )
 
 @app.get("/api/health")
-async def health_check():
+def health_check():
     return {"status": "healthy", "service": "AI Shopping Experience"}
 
 @app.post("/api/chat", response_model=ChatResponse)
-async def chat(request: ChatRequest, db: Session = Depends(get_db)):
+def chat(request: ChatRequest, db: Session = Depends(get_db)):
     orchestrator = ShoppingOrchestrator(db)
     
     conversation = None
@@ -82,11 +85,21 @@ async def chat(request: ChatRequest, db: Session = Depends(get_db)):
     if conversation and conversation.messages:
         conversation_history = conversation.messages
     
-    result = await orchestrator.process_message(
-        user_id=request.user_id,
-        message=request.message,
-        conversation_history=conversation_history
-    )
+    try:
+        result = orchestrator.process_message(
+            user_id=request.user_id,
+            message=request.message,
+            conversation_history=conversation_history
+        )
+    except Exception as e:
+        print(f"Error in orchestrator: {e}")
+        result = {
+            "response": "I apologize, but I encountered an issue processing your request. Please try again.",
+            "products": [],
+            "clarification_needed": False,
+            "clarification_question": None,
+            "context": {}
+        }
     
     if conversation:
         messages = conversation.messages or []
@@ -129,7 +142,7 @@ async def chat(request: ChatRequest, db: Session = Depends(get_db)):
     )
 
 @app.post("/api/customers", response_model=CustomerResponse)
-async def create_customer(customer: CustomerCreate, db: Session = Depends(get_db)):
+def create_customer(customer: CustomerCreate, db: Session = Depends(get_db)):
     db_customer = Customer(**customer.model_dump())
     db.add(db_customer)
     db.commit()
@@ -137,14 +150,14 @@ async def create_customer(customer: CustomerCreate, db: Session = Depends(get_db
     return db_customer
 
 @app.get("/api/customers/{customer_id}", response_model=CustomerResponse)
-async def get_customer(customer_id: int, db: Session = Depends(get_db)):
+def get_customer(customer_id: int, db: Session = Depends(get_db)):
     customer = db.query(Customer).filter(Customer.id == customer_id).first()
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
     return customer
 
 @app.get("/api/products", response_model=list[ProductResponse])
-async def get_products(
+def get_products(
     category: str = None,
     limit: int = 20,
     db: Session = Depends(get_db)
@@ -156,7 +169,7 @@ async def get_products(
     return products
 
 @app.post("/api/reset")
-async def reset_conversation(user_id: int, db: Session = Depends(get_db)):
+def reset_conversation(user_id: int, db: Session = Depends(get_db)):
     db.query(Conversation).filter(Conversation.customer_id == user_id).delete()
     db.commit()
     return {"status": "conversation reset"}
