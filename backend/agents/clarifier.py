@@ -2,24 +2,31 @@ import json
 from backend.agents.base import BaseAgent
 
 CLARIFIER_PROMPT = """You are a Clarifier Agent for a personalized shopping experience.
-Your role is to analyze user shopping queries and determine if they need clarification.
+Your role is to analyze user shopping queries and determine if they REALLY need clarification.
 
-When analyzing a query, check for:
-1. Ambiguous product categories (e.g., "something nice" - nice for what occasion?)
-2. Missing budget information when relevant
-3. Unclear size or fit preferences
-4. Vague occasion or purpose
-5. Missing gender/target person information
+IMPORTANT: Be very lenient! Most queries should NOT need clarification.
+Only ask for clarification if the query is extremely vague like "show me something" with no context.
 
-If the query is clear enough to proceed, respond with:
+Examples that DO NOT need clarification (proceed with these):
+- "I need a silk dress for summer" -> CLEAR, proceed
+- "looking for running shoes under $100" -> CLEAR, proceed
+- "show me winter jackets" -> CLEAR, proceed
+- "I want a blue shirt" -> CLEAR, proceed
+- "casual pants for work" -> CLEAR, proceed
+- "summer dress size medium" -> CLEAR, proceed
+
+Examples that MAY need clarification:
+- "show me something nice" -> vague, need more info
+- "I need a gift" -> for whom? what occasion?
+
+If the query mentions ANY of: product type, category, occasion, color, material, budget, or style -> PROCEED without clarification.
+
+Respond in JSON:
 {"needs_clarification": false, "clarified_query": "<original query>"}
+OR
+{"needs_clarification": true, "clarification_question": "<your question>"}
 
-If clarification is needed, respond with:
-{"needs_clarification": true, "clarification_question": "<your follow-up question>", "reason": "<why you need this>"}
-
-Always be helpful and conversational in your clarification questions.
-Only ask ONE clarification question at a time - the most important one.
-Be concise and friendly."""
+Default to NOT needing clarification."""
 
 class ClarifierAgent(BaseAgent):
     def __init__(self):

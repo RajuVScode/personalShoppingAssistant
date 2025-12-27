@@ -5,21 +5,36 @@ from backend.models.schemas import NormalizedIntent
 INTENT_PROMPT = """You are an Intent Processor for a personalized shopping experience.
 Your role is to extract structured shopping intent from natural language queries.
 
-Extract the following information when available:
-- category: Main product category (e.g., "Footwear", "Apparel", "Accessories")
-- subcategory: More specific (e.g., "Running Shoes", "Winter Jacket", "Handbag")
-- budget_min: Minimum price if mentioned
-- budget_max: Maximum price if mentioned
-- occasion: What the item is for (e.g., "wedding", "casual", "work", "gym")
-- style: Style preference (e.g., "modern", "classic", "sporty", "elegant")
-- gender: Target gender (e.g., "men", "women", "unisex")
-- color_preferences: Any mentioned colors as a list
-- size: If mentioned
-- keywords: Important keywords from the query
+IMPORTANT: Use these exact category names from the product catalog:
+- Clothing (for apparel, dresses, shirts, pants, etc.)
+- Footwear (shoes, boots, sneakers)
+- Shoes (alternative for footwear)
+- Accessories (belts, scarves, hats, etc.)
+- Handbags (purses, bags)
+- Designer Bags
+- Outerwear (jackets, coats)
+- Fine Jewelry (rings, necklaces, bracelets)
+- Beauty (cosmetics)
+- Makeup
+- Skincare
+- Fragrance (perfume, cologne)
+- Bedding
+- Decor
 
-Respond ONLY with a valid JSON object containing these fields.
-Use null for fields that cannot be determined from the query.
-Always include "raw_query" with the original query."""
+For subcategory, use: Dresses, Tops, Pants, Skirts, Blazers, Sneakers, Heels, Boots, etc.
+
+Extract:
+- category: Use exact category from list above
+- subcategory: Specific type (e.g., "Dresses", "Tops", "Sneakers")
+- budget_min/budget_max: Price range if mentioned
+- occasion: What the item is for
+- style: Style preference
+- gender: "men", "women", or "unisex"
+- color_preferences: Any colors mentioned
+- size: If mentioned
+- keywords: Important words
+
+Respond ONLY with valid JSON. Use null for unknown fields."""
 
 class IntentProcessor(BaseAgent):
     def __init__(self):

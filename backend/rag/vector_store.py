@@ -1,41 +1,49 @@
 import os
 import numpy as np
 from typing import List, Dict, Any
-from langchain_openai import AzureOpenAIEmbeddings
-from langchain_community.vectorstores import FAISS
-from langchain_core.documents import Document
+import hashlib
+import json
 
-def get_azure_config():
-    endpoint = os.getenv('AZURE_OPENAI_ENDPOINT', '')
-    deployment = os.getenv('AZURE_OPENAI_DEPLOYMENT', 'gpt-4o-mini')
-    api_key = os.getenv('AZURE_OPENAI_API_KEY', '')
+class SimpleEmbeddings:
+    def __init__(self, dimension: int = 384):
+        self.dimension = dimension
+        self._word_vectors = {}
     
-    if endpoint.startswith('http') and api_key.startswith('http'):
-        pass
-    elif api_key.startswith('http') and not endpoint.startswith('http'):
-        endpoint, api_key = api_key, endpoint
+    def _get_word_embedding(self, word: str) -> np.ndarray:
+        if word not in self._word_vectors:
+            hash_bytes = hashlib.sha256(word.lower().encode()).digest()
+            np.random.seed(int.from_bytes(hash_bytes[:4], 'big'))
+            self._word_vectors[word] = np.random.randn(self.dimension).astype(np.float32)
+            self._word_vectors[word] /= np.linalg.norm(self._word_vectors[word])
+        return self._word_vectors[word]
     
-    if deployment.startswith('http'):
-        endpoint, deployment = deployment, endpoint
+    def embed_text(self, text: str) -> np.ndarray:
+        words = text.lower().replace(',', ' ').replace('.', ' ').split()
+        if not words:
+            return np.zeros(self.dimension, dtype=np.float32)
+        
+        embeddings = [self._get_word_embedding(w) for w in words]
+        result = np.mean(embeddings, axis=0)
+        norm = np.linalg.norm(result)
+        if norm > 0:
+            result = result / norm
+        return result
     
-    return endpoint, deployment, api_key
+    def embed_documents(self, texts: List[str]) -> List[np.ndarray]:
+        return [self.embed_text(text) for text in texts]
+
 
 class ProductVectorStore:
     def __init__(self):
-        endpoint, _, api_key = get_azure_config()
-        embedding_deployment = os.getenv('AZURE_OPENAI_EMBEDDING_DEPLOYMENT', 'text-embedding-3-small')
-        
-        self.embeddings = AzureOpenAIEmbeddings(
-            azure_endpoint=endpoint,
-            azure_deployment=embedding_deployment,
-            api_key=api_key,
-            api_version='2024-12-01-preview'
-        )
-        self.vector_store = None
-        self.index_path = "backend/rag/product_index"
+        self.embeddings = SimpleEmbeddings(dimension=384)
+        self.documents: List[Dict[str, Any]] = []
+        self.vectors: np.ndarray = None
+        self.index_path = "backend/rag/product_index.json"
     
     def create_index(self, products: List[Dict[str, Any]]):
-        documents = []
+        self.documents = []
+        vectors = []
+        
         for product in products:
             content = f"""
             Product: {product.get('name', '')}
@@ -43,13 +51,15 @@ class ProductVectorStore:
             Description: {product.get('description', '')}
             Brand: {product.get('brand', '')}
             Price: ${product.get('price', 0)}
-            Colors: {', '.join(product.get('colors', []))}
-            Tags: {', '.join(product.get('tags', []))}
+            Colors: {', '.join(product.get('colors', []) if isinstance(product.get('colors'), list) else [])}
+            Tags: {', '.join(product.get('tags', []) if isinstance(product.get('tags'), list) else [])}
+            Material: {product.get('material', '')}
+            Season: {product.get('season', '')}
             """
             
-            doc = Document(
-                page_content=content.strip(),
-                metadata={
+            doc = {
+                "content": content.strip(),
+                "metadata": {
                     "id": product.get("id"),
                     "name": product.get("name"),
                     "category": product.get("category"),
@@ -59,35 +69,58 @@ class ProductVectorStore:
                     "gender": product.get("gender"),
                     "image_url": product.get("image_url"),
                     "in_stock": product.get("in_stock", True),
-                    "rating": product.get("rating", 0)
+                    "rating": product.get("rating", 0),
+                    "colors": product.get("colors", []),
+                    "material": product.get("material", ""),
+                    "season": product.get("season", "")
                 }
-            )
-            documents.append(doc)
+            }
+            self.documents.append(doc)
+            vectors.append(self.embeddings.embed_text(content))
         
-        self.vector_store = FAISS.from_documents(documents, self.embeddings)
-        self.vector_store.save_local(self.index_path)
+        self.vectors = np.array(vectors, dtype=np.float32)
+        self._save_index()
+        print(f"Created vector index with {len(self.documents)} products")
     
-    def load_index(self):
+    def _save_index(self):
+        os.makedirs(os.path.dirname(self.index_path), exist_ok=True)
+        data = {
+            "documents": self.documents,
+            "vectors": self.vectors.tolist()
+        }
+        with open(self.index_path, 'w') as f:
+            json.dump(data, f)
+    
+    def load_index(self) -> bool:
         try:
-            self.vector_store = FAISS.load_local(
-                self.index_path, 
-                self.embeddings,
-                allow_dangerous_deserialization=True
-            )
-            return True
+            if os.path.exists(self.index_path):
+                with open(self.index_path, 'r') as f:
+                    data = json.load(f)
+                self.documents = data["documents"]
+                self.vectors = np.array(data["vectors"], dtype=np.float32)
+                return True
+            return False
         except Exception:
             return False
     
     def search(self, query: str, k: int = 5, filters: Dict = None) -> List[Dict[str, Any]]:
-        if not self.vector_store:
+        if self.vectors is None or len(self.documents) == 0:
             if not self.load_index():
                 return []
         
-        results = self.vector_store.similarity_search_with_score(query, k=k*2)
+        query_vector = self.embeddings.embed_text(query)
+        
+        similarities = np.dot(self.vectors, query_vector)
+        
+        indices = np.argsort(similarities)[::-1]
         
         products = []
-        for doc, score in results:
-            metadata = doc.metadata
+        for idx in indices:
+            if len(products) >= k:
+                break
+                
+            doc = self.documents[idx]
+            metadata = doc["metadata"]
             
             if filters:
                 if filters.get("budget_max") and metadata.get("price"):
@@ -105,11 +138,8 @@ class ProductVectorStore:
             
             products.append({
                 **metadata,
-                "relevance_score": float(score),
-                "description": doc.page_content
+                "relevance_score": float(similarities[idx]),
+                "description": doc["content"]
             })
-            
-            if len(products) >= k:
-                break
         
         return products

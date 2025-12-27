@@ -30,8 +30,14 @@ class ProductRecommenderAgent(BaseAgent):
         super().__init__("ProductRecommender", RECOMMENDER_PROMPT)
         try:
             self.vector_store = ProductVectorStore()
-            self.use_vector_store = True
-        except Exception:
+            if self.vector_store.load_index():
+                self.use_vector_store = True
+                print(f"Loaded vector index with {len(self.vector_store.documents)} products")
+            else:
+                self.use_vector_store = False
+                print("No vector index found, will use database fallback")
+        except Exception as e:
+            print(f"Vector store init error: {e}")
             self.vector_store = None
             self.use_vector_store = False
     
@@ -72,15 +78,14 @@ class ProductRecommenderAgent(BaseAgent):
     def _db_fallback_search(self, context: EnrichedContext, num_results: int = 5) -> List[Dict[str, Any]]:
         db = SessionLocal()
         try:
-            query = db.query(Product)
+            query = db.query(Product).filter(Product.in_stock == True)
             
             conditions = []
             
-            if context.intent.category:
-                conditions.append(Product.category.ilike(f"%{context.intent.category}%"))
-            
             if context.intent.subcategory:
                 conditions.append(Product.subcategory.ilike(f"%{context.intent.subcategory}%"))
+            elif context.intent.category:
+                conditions.append(Product.category.ilike(f"%{context.intent.category}%"))
             
             if context.intent.budget_max:
                 conditions.append(Product.price <= context.intent.budget_max)
@@ -97,7 +102,23 @@ class ProductRecommenderAgent(BaseAgent):
             if conditions:
                 query = query.filter(and_(*conditions))
             
-            products = query.limit(num_results).all()
+            products = query.order_by(Product.rating.desc()).limit(num_results).all()
+            
+            if not products and context.intent.keywords:
+                keyword_conditions = []
+                for kw in context.intent.keywords[:3]:
+                    keyword_conditions.append(or_(
+                        Product.name.ilike(f"%{kw}%"),
+                        Product.description.ilike(f"%{kw}%"),
+                        Product.subcategory.ilike(f"%{kw}%"),
+                        Product.material.ilike(f"%{kw}%")
+                    ))
+                if keyword_conditions:
+                    query = db.query(Product).filter(Product.in_stock == True)
+                    query = query.filter(or_(*keyword_conditions))
+                    if context.intent.budget_max:
+                        query = query.filter(Product.price <= context.intent.budget_max)
+                    products = query.order_by(Product.rating.desc()).limit(num_results).all()
             
             return [{
                 "id": p.id,
