@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { Send, Sparkles, User, ShoppingBag, Cloud, TrendingUp, Calendar, RefreshCw } from "lucide-react";
+import { Send, Sparkles, User, ShoppingBag, Cloud, TrendingUp, Calendar, RefreshCw, LogOut } from "lucide-react";
+import { useLocation } from "wouter";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
@@ -51,6 +52,12 @@ export default function ChatPage() {
   const [currentContext, setCurrentContext] = useState<ContextInfo | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [customerId, setCustomerId] = useState<string | null>(null);
+  const [, setLocation] = useLocation();
+
+  const handleLogout = () => {
+    localStorage.removeItem("customer_id");
+    setLocation("/");
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -149,15 +156,26 @@ export default function ChatPage() {
               <p className="text-sm text-muted-foreground">Personalized recommendations just for you</p>
             </div>
           </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={resetConversation}
-            data-testid="button-reset"
-          >
-            <RefreshCw className="h-4 w-4 mr-2" />
-            New Chat
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={resetConversation}
+              data-testid="button-reset"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              New Chat
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleLogout}
+              data-testid="button-logout"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Logout
+            </Button>
+          </div>
         </header>
 
         <div className="flex-1 flex overflow-hidden">
