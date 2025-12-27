@@ -73,6 +73,14 @@ class ProductRecommenderAgent(BaseAgent):
             filters["category"] = context.intent.category
         if context.intent.gender:
             filters["gender"] = context.intent.gender
+        
+        if context.customer.preferences:
+            prefs = context.customer.preferences
+            if prefs.get("preferred_brands"):
+                filters["preferred_brands"] = prefs["preferred_brands"]
+            if prefs.get("categories_interested"):
+                filters["categories_interested"] = prefs["categories_interested"]
+        
         return filters
     
     def _db_fallback_search(self, context: EnrichedContext, num_results: int = 5) -> List[Dict[str, Any]]:
@@ -99,10 +107,35 @@ class ProductRecommenderAgent(BaseAgent):
                     Product.gender.ilike("%unisex%")
                 ))
             
+            preferred_brands = []
+            categories_interested = []
+            if context.customer.preferences:
+                prefs = context.customer.preferences
+                preferred_brands = prefs.get("preferred_brands", []) or []
+                categories_interested = prefs.get("categories_interested", []) or []
+            
+            if preferred_brands:
+                brand_conditions = [Product.brand.ilike(f"%{brand}%") for brand in preferred_brands[:5]]
+                conditions.append(or_(*brand_conditions))
+            
             if conditions:
                 query = query.filter(and_(*conditions))
             
             products = query.order_by(Product.rating.desc()).limit(num_results).all()
+            
+            if not products and categories_interested:
+                cat_conditions = []
+                for cat in categories_interested[:3]:
+                    cat_conditions.append(or_(
+                        Product.category.ilike(f"%{cat}%"),
+                        Product.subcategory.ilike(f"%{cat}%")
+                    ))
+                if cat_conditions:
+                    query = db.query(Product).filter(Product.in_stock == True)
+                    query = query.filter(or_(*cat_conditions))
+                    if context.intent.budget_max:
+                        query = query.filter(Product.price <= context.intent.budget_max)
+                    products = query.order_by(Product.rating.desc()).limit(num_results).all()
             
             if not products and context.intent.keywords:
                 keyword_conditions = []
@@ -168,6 +201,13 @@ class ProductRecommenderAgent(BaseAgent):
             profile = context.customer.style_profile
             if profile.get("preferred_styles"):
                 parts.extend(profile["preferred_styles"])
+        
+        if context.customer.preferences:
+            prefs = context.customer.preferences
+            if prefs.get("preferred_brands"):
+                parts.extend(prefs["preferred_brands"][:3])
+            if prefs.get("categories_interested"):
+                parts.extend(prefs["categories_interested"][:3])
         
         return " ".join(parts)
     
@@ -244,6 +284,11 @@ class ProductRecommenderAgent(BaseAgent):
             segments_section = ""
             destination_info = getattr(context.intent, 'location', None) or 'Not specified'
         
+        customer_prefs = context.customer.preferences or {}
+        preferred_brands = customer_prefs.get("preferred_brands", [])
+        categories_interested = customer_prefs.get("categories_interested", [])
+        price_sensitivity = customer_prefs.get("price_sensitivity", "Not specified")
+        
         prompt = f"""
 **User Query:** {context.intent.raw_query}
 
@@ -253,6 +298,14 @@ class ProductRecommenderAgent(BaseAgent):
 - Travel Destination(s): {destination_info}
 - Style Preferences: {context.customer.style_profile}
 - Recent Purchases: {context.customer.recent_purchases[:3] if context.customer.recent_purchases else 'None'}
+
+**CUSTOMER SHOPPING PREFERENCES (CRITICAL - Personalize recommendations based on these):**
+- Preferred Brands: {', '.join(preferred_brands) if preferred_brands else 'No specific brand preference'}
+- Categories of Interest: {', '.join(categories_interested) if categories_interested else 'All categories'}
+- Price Sensitivity: {price_sensitivity}
+- VIP Customer: {context.customer.style_profile.get('vip_customer', False)}
+
+IMPORTANT: When recommending products, PRIORITIZE items from the customer's preferred brands and categories. Mention in the recommendations why each product aligns with the customer's preferences.
 
 **Parsed Intent:**
 - Category: {context.intent.category or 'Not specified'}
