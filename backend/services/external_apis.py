@@ -5,8 +5,52 @@ from typing import Optional, Dict, List, Any
 class WeatherService:
     def __init__(self):
         self.base_url = "https://api.open-meteo.com/v1/forecast"
+        self.geocode_url = "https://geocoding-api.open-meteo.com/v1/search"
+        self.location_coords = {
+            "paris": (48.8566, 2.3522),
+            "london": (51.5074, -0.1278),
+            "new york": (40.7128, -74.0060),
+            "los angeles": (34.0522, -118.2437),
+            "tokyo": (35.6762, 139.6503),
+            "sydney": (-33.8688, 151.2093),
+            "dubai": (25.2048, 55.2708),
+            "miami": (25.7617, -80.1918),
+            "seattle": (47.6062, -122.3321),
+            "chicago": (41.8781, -87.6298),
+            "san francisco": (37.7749, -122.4194),
+            "boston": (42.3601, -71.0589),
+            "rome": (41.9028, 12.4964),
+            "barcelona": (41.3851, 2.1734),
+            "berlin": (52.5200, 13.4050),
+            "amsterdam": (52.3676, 4.9041),
+            "singapore": (1.3521, 103.8198),
+            "hong kong": (22.3193, 114.1694),
+            "bangkok": (13.7563, 100.5018),
+            "mumbai": (19.0760, 72.8777),
+        }
     
-    def get_weather(self, latitude: float = 40.7128, longitude: float = -74.0060) -> Dict[str, Any]:
+    def _get_coordinates(self, location: str) -> tuple:
+        if not location:
+            return (40.7128, -74.0060)
+        
+        location_lower = location.lower().strip()
+        if location_lower in self.location_coords:
+            return self.location_coords[location_lower]
+        
+        try:
+            with httpx.Client(timeout=5.0) as client:
+                response = client.get(self.geocode_url, params={"name": location, "count": 1})
+                data = response.json()
+                if data.get("results"):
+                    result = data["results"][0]
+                    return (result["latitude"], result["longitude"])
+        except:
+            pass
+        
+        return (40.7128, -74.0060)
+    
+    def get_weather(self, location: str = None) -> Dict[str, Any]:
+        latitude, longitude = self._get_coordinates(location)
         try:
             with httpx.Client(timeout=10.0) as client:
                 params = {
@@ -23,7 +67,8 @@ class WeatherService:
                     "temperature": current.get("temperature_2m"),
                     "precipitation": current.get("precipitation"),
                     "weather_code": current.get("weather_code"),
-                    "description": self._get_weather_description(current.get("weather_code", 0))
+                    "description": self._get_weather_description(current.get("weather_code", 0)),
+                    "location": location or "Default"
                 }
         except Exception as e:
             return {"error": str(e), "description": "Unable to fetch weather data"}
@@ -182,7 +227,7 @@ class ExternalContextService:
         self.trends_service = TrendsService()
     
     def get_environmental_context(self, location: Optional[str] = None, start_date: str = None, end_date: str = None) -> Dict[str, Any]:
-        weather = self.weather_service.get_weather()
+        weather = self.weather_service.get_weather(location)
         events = self.events_service.get_local_events(location or "New York", start_date, end_date)
         trends = self.trends_service.get_fashion_trends()
         
