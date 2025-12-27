@@ -43,13 +43,12 @@ interface ContextInfo {
   };
 }
 
-const DEMO_USER_ID = 1;
-
 export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [currentContext, setCurrentContext] = useState<ContextInfo | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [customerId, setCustomerId] = useState<string | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -59,14 +58,32 @@ export default function ChatPage() {
     scrollToBottom();
   }, [messages]);
 
+  useEffect(() => {
+    const storedCustomerId = localStorage.getItem("customer_id");
+    setCustomerId(storedCustomerId);
+    
+    if (storedCustomerId && messages.length === 0) {
+      fetch(`/api/greeting/${storedCustomerId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.greeting) {
+            setMessages([{ role: "assistant", content: data.greeting }]);
+          }
+        })
+        .catch(console.error);
+    }
+  }, []);
+
   const chatMutation = useMutation({
     mutationFn: async (message: string) => {
+      const storedId = localStorage.getItem("customer_id");
+      const userId = storedId ? parseInt(storedId.replace("CUST-", "")) : 1;
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message,
-          user_id: DEMO_USER_ID,
+          user_id: userId,
         }),
       });
       if (!response.ok) throw new Error("Failed to send message");
@@ -103,9 +120,18 @@ export default function ChatPage() {
   };
 
   const resetConversation = async () => {
-    await fetch(`/api/reset?user_id=${DEMO_USER_ID}`, { method: "POST" });
-    setMessages([]);
+    const storedId = localStorage.getItem("customer_id");
+    const userId = storedId ? parseInt(storedId.replace("CUST-", "")) : 1;
+    await fetch(`/api/reset?user_id=${userId}`, { method: "POST" });
     setCurrentContext(null);
+    
+    if (storedId) {
+      const res = await fetch(`/api/greeting/${storedId}`);
+      const data = await res.json();
+      setMessages(data.greeting ? [{ role: "assistant", content: data.greeting }] : []);
+    } else {
+      setMessages([]);
+    }
   };
 
   return (

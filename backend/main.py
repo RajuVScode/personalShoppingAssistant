@@ -100,6 +100,20 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
         }
     }
 
+@app.get("/api/greeting/{customer_id}")
+def get_greeting(customer_id: str, db: Session = Depends(get_db)):
+    from sqlalchemy import text
+    result = db.execute(
+        text("SELECT first_name, last_name FROM customers WHERE customer_id = :cid"),
+        {"cid": customer_id}
+    ).fetchone()
+    
+    if not result:
+        return {"greeting": "Good day! How may I assist you with your travel shopping?"}
+    
+    full_name = f"{result.first_name} {result.last_name}"
+    return {"greeting": f"Good day! {full_name}, How may I assist you with your travel shopping?"}
+
 @app.post("/api/chat", response_model=ChatResponse)
 def chat(request: ChatRequest, db: Session = Depends(get_db)):
     orchestrator = ShoppingOrchestrator(db)
