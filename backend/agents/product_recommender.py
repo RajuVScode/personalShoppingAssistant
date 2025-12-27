@@ -7,22 +7,41 @@ from backend.database.models import Product
 from typing import List, Dict, Any
 from sqlalchemy import or_, and_
 
-RECOMMENDER_PROMPT = """You are a formal travel and lifestyle recommender.
+RECOMMENDER_PROMPT = """You are a warm, knowledgeable personal shopping assistant who acts like a trusted stylist.
 
-Given the user's travel prompt, destination, dates, weather context, and top 5 product recommendations, produce a structured, formal response that MUST include:
+Your communication style:
+- Warm and confident, like a personal stylist who knows the customer well
+- Reference customer's known preferences naturally ("I know you love [brand]", "Given your preference for [style]")
+- Structure trips into clear phases/missions with weather context
+- Create complete OUTFIT BUNDLES with reasoning for each item
+- Explain WHY each product suits this customer specifically
 
-1) **Weather Overview** – temperatures (high/low), precipitation likelihood, wind, daylight, and seasonal notes
-2) **Recommended Activities** – indoor/outdoor options justified by the weather and destination
-3) **Itinerary** (Weekly or Daily) – when travel-related, a day-by-day or week-by-week plan with suggested activities and attire
-4) **Local Events Summary** – Provide a concise summary of relevant local events (title, dates, venue, URL), indicate whether each event is likely outdoor or indoor, and mark events as `weather-sensitive` when appropriate. For each event, comment on how the event's conditions (outdoor/indoor and likely weather) should influence activities, itinerary choices, and product recommendations from the RAG results. If no events are available, state 'No events found for the requested dates.'
-5) **Clothing, Shoes & Accessories Recommendations** – Weather-aware and practical product recommendations grounded in the forecast. Include specific items from the product catalog that align with the weather and activities. For each recommended product, include: product name, brand, price, material, available colors/sizes, and a brief explanation of why it suits the trip. Use only the product data provided in the RAG results.
-6) **Product Catalog Details** – For each recommended product, provide complete catalog information: long_description, family_name, material, available_colors, available_sizes, brand, price, and availability. If a field is missing, state "Information not available." Maintain a professional and formal tone.
+Response Structure for Travel Recommendations:
 
-Incorporate the 5 recommended products from the RAG to support the plan.
+1) **Personal Greeting** - Welcome the customer by name, acknowledge their trip, mention you already know their style/preferences
 
-If data is missing, state your assumptions clearly and proceed with best-practice recommendations.
+2) **Trip Structure** - Break the trip into phases (Week 1, Week 2 OR by destination):
+   - Destination name and dates
+   - Expected weather (temperature range, conditions)
+   - Key activities planned
+   - Style direction (e.g., "elevated smart-casual", "functional outdoor")
+   - Required outfit sets
 
-Ensure the tone is formal, professional, and complete. All sections must be present."""
+3) **Outfit Bundles** - For each phase, create named outfit bundles like:
+   - "City Explorer" - smart-casual daywear
+   - "Museum Day" - comfortable but polished
+   - "Dinner Night" - elevated evening wear
+   - "Adventure Ready" - functional outdoor gear
+   
+   For each bundle, list items with WHY reasoning:
+   - Item name, brand, price
+   - Why it suits THIS customer ("matches your preferred [style]", "aligns with your love of [brand]")
+   - Why it works for the weather/activity
+
+4) **Consolidated Pack Summary** - Total items, outfit combinations possible, estimated pack weight
+
+Always use the customer's known preferences (brands, styles, categories) to personalize recommendations.
+If customer asks for alternatives or has budget concerns, offer options warmly."""
 
 class ProductRecommenderAgent(BaseAgent):
     def __init__(self):
@@ -181,57 +200,74 @@ class ProductRecommenderAgent(BaseAgent):
         weather_info = context.environmental.weather or {}
         events_info = context.environmental.local_events or []
         
+        prefs = context.customer.preferences or {}
+        style = context.customer.style_profile or {}
+        preferred_brands = style.get("preferred_brands", [])
+        preferred_styles = style.get("preferred_styles", [])
+        categories = prefs.get("categories_interested", [])
+        price_sensitivity = prefs.get("price_sensitivity", "medium")
+        
+        products_json = json.dumps([{
+            "name": p.get("name"),
+            "category": p.get("category"),
+            "subcategory": p.get("subcategory"),
+            "price": p.get("price"),
+            "brand": p.get("brand"),
+            "colors": p.get("colors", []),
+            "description": p.get("description", "")
+        } for p in products[:5]], indent=2)
+        
         prompt = f"""
-**User Query:** {context.intent.raw_query}
-
-**Customer Profile:**
+**Customer Profile (YOU KNOW THIS CUSTOMER):**
 - Name: {context.customer.name}
-- Location/Destination: {context.customer.location or 'Not specified'}
-- Style Preferences: {context.customer.style_profile}
-- Recent Purchases: {context.customer.recent_purchases[:3] if context.customer.recent_purchases else 'None'}
+- VIP Status: {"Yes" if context.customer.vip_flag else "No"}
+- Total Orders: {context.customer.total_orders or 0}
+- Home Location: {context.customer.location or 'Not specified'}
+- Preferred Brands: {', '.join(preferred_brands) if preferred_brands else 'Not specified'}
+- Preferred Styles: {', '.join(preferred_styles) if preferred_styles else 'Not specified'}
+- Categories Interested: {', '.join(categories) if categories else 'Not specified'}
+- Price Sensitivity: {price_sensitivity}
+- Gender: {style.get('gender', 'Not specified')}
 
-**Parsed Intent:**
-- Category: {context.intent.category or 'Not specified'}
-- Subcategory: {context.intent.subcategory or 'Not specified'}
-- Occasion: {context.intent.occasion or 'Not specified'}
-- Style: {context.intent.style or 'Not specified'}
-- Budget: ${context.intent.budget_min or 0} - ${context.intent.budget_max or 'No limit'}
+**Travel Query:** {context.intent.raw_query}
 
-**Weather Context:**
-- Temperature: {weather_info.get('temperature', 'N/A')}°C
-- Conditions: {weather_info.get('description', 'N/A')}
-- Season: {weather_info.get('season', 'Not specified')}
+**Trip Details:**
+- Destination: {context.customer.location or context.intent.occasion or 'Not specified'}
+- Budget Range: ${context.intent.budget_min or 0} - ${context.intent.budget_max or 'flexible'}
+
+**Weather at Destination:**
+- Temperature: {weather_info.get('temperature', 'N/A')}°C (High: {weather_info.get('temp_max', 'N/A')}°C / Low: {weather_info.get('temp_min', 'N/A')}°C)
+- Conditions: {weather_info.get('description', 'Variable')}
+- Season: {weather_info.get('season', 'transitional')}
 
 **Local Events:**
-{json.dumps(events_info[:5], indent=2) if events_info else 'No events found for the requested dates.'}
+{json.dumps(events_info[:3], indent=2) if events_info else 'No specific events found.'}
 
-**Trends:**
-{context.environmental.trends[:5] if context.environmental.trends else 'N/A'}
+**Available Products from Catalog (use these for outfit bundles):**
+{products_json}
 
-**Top 5 Recommended Products from RAG:**
-{json.dumps([{
-    "name": p.get("name"),
-    "family_name": p.get("name", "").split(" — ")[0] if " — " in p.get("name", "") else p.get("name"),
-    "category": p.get("category"),
-    "subcategory": p.get("subcategory"),
-    "price": p.get("price"),
-    "brand": p.get("brand"),
-    "material": p.get("material", "Information not available"),
-    "available_colors": p.get("colors", []),
-    "description": p.get("description", "Information not available"),
-    "in_stock": p.get("in_stock", True),
-    "rating": p.get("rating")
-} for p in products[:5]], indent=2)}
+Generate a warm, personalized response following this structure:
 
-Based on the above context, generate a formal, structured response following all 6 required sections:
-1) Weather Overview
-2) Recommended Activities
-3) Itinerary (if travel-related)
-4) Local Events Summary
-5) Clothing, Shoes & Accessories Recommendations (include specific products from catalog with details)
-6) Product Catalog Details (complete product info for each recommendation)
+1) **Personal Greeting** - Welcome {context.customer.name} by name, acknowledge you know their style preferences and favorite brands
 
-Use only the product data provided above. Maintain a professional and formal tone throughout.
+2) **Trip Structure** - Break the trip into phases with:
+   - Destination and dates
+   - Weather forecast (temperature range, conditions, what to expect)
+   - Key activities planned
+   - Style direction based on customer's known preferences
+   - Required outfit types for each phase
+
+3) **Outfit Bundles** - Create 2-3 named outfit bundles using the products above:
+   - Give each bundle a descriptive name (e.g., "City Explorer", "Museum Day", "Dinner Night")
+   - For each item include: product name, brand, price
+   - Explain WHY it suits {context.customer.name} specifically (reference their preferred brands/styles)
+   - Note how it works for the weather/activity
+
+4) **Daily Itinerary** (optional) - If relevant, suggest activities for each day with recommended attire
+
+5) **Consolidated Pack Summary** - Total items, possible outfit combinations, travel-ready notes
+
+Be warm and confident like a trusted personal stylist. Reference their preferences naturally. Use ONLY the products listed above.
 """
         
         response = self.invoke(prompt)

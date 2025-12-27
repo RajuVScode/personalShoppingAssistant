@@ -82,6 +82,9 @@ class CustomerContext(BaseModel):
     size_info: Dict[str, Any] = {}
     location: Optional[str] = None
     recent_purchases: List[Dict[str, Any]] = []
+    vip_flag: Optional[bool] = False
+    lifetime_value_cents: Optional[int] = 0
+    total_orders: Optional[int] = 0
 
 class EnvironmentalContext(BaseModel):
     weather: Optional[Dict[str, Any]] = None
