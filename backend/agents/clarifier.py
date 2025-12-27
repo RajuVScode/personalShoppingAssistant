@@ -148,12 +148,20 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             ready_for_recs = result.get("ready_for_recommendations", False)
             has_required = merged_intent.get("destination") and merged_intent.get("travel_date")
             
+            has_optional = (
+                merged_intent.get("activities") or 
+                merged_intent.get("budget_amount") or 
+                merged_intent.get("clothes") or
+                merged_intent.get("preferred_brand")
+            )
+            
             is_skip = self._is_skip_response(query)
-            if has_required and is_skip:
+            
+            if has_required and (is_skip or has_optional):
                 return {
                     "needs_clarification": False,
                     "clarification_question": "",
-                    "assistant_message": "Got it! Let me prepare your personalized recommendations.",
+                    "assistant_message": "Perfect! Let me prepare your personalized recommendations.",
                     "updated_intent": merged_intent,
                     "clarified_query": query,
                     "ready_for_recommendations": True
