@@ -3,11 +3,17 @@ from langchain_openai import AzureChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 
 def get_llm():
+    endpoint = os.getenv('AZURE_OPENAI_ENDPOINT', '')
+    deployment = os.getenv('AZURE_OPENAI_DEPLOYMENT', 'gpt-4o-mini')
+    
+    if endpoint and not endpoint.startswith('http'):
+        endpoint, deployment = deployment, endpoint
+    
     return AzureChatOpenAI(
-        azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT", ""),
-        azure_deployment=os.getenv("AZURE_OPENAI_DEPLOYMENT", "gpt-4o-mini"),
-        api_version=os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-15-preview"),
-        api_key=os.getenv("AZURE_OPENAI_API_KEY", ""),
+        azure_endpoint=endpoint,
+        azure_deployment=deployment,
+        api_version='2024-02-15-preview',
+        api_key=os.getenv('AZURE_OPENAI_API_KEY', ''),
         temperature=0.7
     )
 

@@ -7,11 +7,19 @@ from langchain_core.documents import Document
 
 class ProductVectorStore:
     def __init__(self):
+        endpoint = os.getenv('AZURE_OPENAI_ENDPOINT', '')
+        deployment = os.getenv('AZURE_OPENAI_DEPLOYMENT', 'gpt-4o-mini')
+        
+        if endpoint and not endpoint.startswith('http'):
+            endpoint, deployment = deployment, endpoint
+        
+        embedding_deployment = os.getenv('AZURE_OPENAI_EMBEDDING_DEPLOYMENT', 'text-embedding-3-small')
+        
         self.embeddings = AzureOpenAIEmbeddings(
-            azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT", ""),
-            azure_deployment=os.getenv("AZURE_OPENAI_EMBEDDING_DEPLOYMENT", "text-embedding-3-small"),
-            api_key=os.getenv("AZURE_OPENAI_API_KEY", ""),
-            api_version=os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-15-preview")
+            azure_endpoint=endpoint,
+            azure_deployment=embedding_deployment,
+            api_key=os.getenv('AZURE_OPENAI_API_KEY', ''),
+            api_version='2024-02-15-preview'
         )
         self.vector_store = None
         self.index_path = "backend/rag/product_index"
