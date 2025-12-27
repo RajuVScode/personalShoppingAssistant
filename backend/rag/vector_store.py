@@ -5,21 +5,31 @@ from langchain_openai import AzureOpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
 
+def get_azure_config():
+    endpoint = os.getenv('AZURE_OPENAI_ENDPOINT', '')
+    deployment = os.getenv('AZURE_OPENAI_DEPLOYMENT', 'gpt-4o-mini')
+    api_key = os.getenv('AZURE_OPENAI_API_KEY', '')
+    
+    if endpoint.startswith('http') and api_key.startswith('http'):
+        pass
+    elif api_key.startswith('http') and not endpoint.startswith('http'):
+        endpoint, api_key = api_key, endpoint
+    
+    if deployment.startswith('http'):
+        endpoint, deployment = deployment, endpoint
+    
+    return endpoint, deployment, api_key
+
 class ProductVectorStore:
     def __init__(self):
-        endpoint = os.getenv('AZURE_OPENAI_ENDPOINT', '')
-        deployment = os.getenv('AZURE_OPENAI_DEPLOYMENT', 'gpt-4o-mini')
-        
-        if endpoint and not endpoint.startswith('http'):
-            endpoint, deployment = deployment, endpoint
-        
+        endpoint, _, api_key = get_azure_config()
         embedding_deployment = os.getenv('AZURE_OPENAI_EMBEDDING_DEPLOYMENT', 'text-embedding-3-small')
         
         self.embeddings = AzureOpenAIEmbeddings(
             azure_endpoint=endpoint,
             azure_deployment=embedding_deployment,
-            api_key=os.getenv('AZURE_OPENAI_API_KEY', ''),
-            api_version='2024-02-15-preview'
+            api_key=api_key,
+            api_version='2024-12-01-preview'
         )
         self.vector_store = None
         self.index_path = "backend/rag/product_index"
