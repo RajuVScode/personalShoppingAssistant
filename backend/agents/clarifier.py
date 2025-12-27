@@ -84,9 +84,22 @@ OUTPUT STRICTLY AS A JSON OBJECT with this shape:
 Set "ready_for_recommendations": true when destination and travel_date are collected."""
 
 
+SKIP_PHRASES = [
+    "no preference", "no preferences", "no specific preference", "no specific preferences",
+    "none", "nothing", "skip", "proceed", "that's it", "thats it", "that is it",
+    "no budget", "no clothing", "no activities", "no constraints", "no specific",
+    "just proceed", "go ahead", "continue", "no thanks", "no thank you",
+    "i'm good", "im good", "all good", "nothing specific", "nothing else",
+    "no particular", "don't have any", "dont have any", "no additional",
+]
+
 class ClarifierAgent(BaseAgent):
     def __init__(self):
         super().__init__("Clarifier", CLARIFIER_PROMPT)
+    
+    def _is_skip_response(self, query: str) -> bool:
+        query_lower = query.lower().strip()
+        return any(phrase in query_lower for phrase in SKIP_PHRASES)
     
     def analyze(self, query: str, conversation_history: list = None, existing_intent: dict = None) -> dict:
         current_date = get_current_date()
@@ -132,6 +145,17 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             
             ready_for_recs = result.get("ready_for_recommendations", False)
             has_required = merged_intent.get("destination") and merged_intent.get("travel_date")
+            
+            is_skip = self._is_skip_response(query)
+            if has_required and is_skip:
+                return {
+                    "needs_clarification": False,
+                    "clarification_question": "",
+                    "assistant_message": "Got it! Let me prepare your personalized recommendations.",
+                    "updated_intent": merged_intent,
+                    "clarified_query": query,
+                    "ready_for_recommendations": True
+                }
             
             if has_required and not result.get("next_question"):
                 needs_clarification = False
