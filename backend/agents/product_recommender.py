@@ -13,9 +13,9 @@ Given the user's travel prompt, destination, dates, weather context, and top 5 p
 
 1) **Weather Overview** – temperatures (high/low), precipitation likelihood, wind, daylight, and seasonal notes
 2) **Recommended Activities** – indoor/outdoor options justified by the weather and destination
-3) **Clothing, Shoes & Accessories Recommendations** – Weather-aware and practical product recommendations grounded in the forecast. Include specific items from the product catalog that align with the weather and activities. For each recommended product, include: product name, brand, price, material, available colors/sizes, and a brief explanation of why it suits the trip. Use only the product data provided in the RAG results.
-4) **Itinerary** (Weekly or Daily) – when travel-related, a day-by-day or week-by-week plan with suggested activities and attire
-5) **Local Events Summary** – Provide a concise summary of relevant local events (title, dates, venue, URL), indicate whether each event is likely outdoor or indoor, and mark events as `weather-sensitive` when appropriate. For each event, comment on how the event's conditions (outdoor/indoor and likely weather) should influence activities, itinerary choices, and product recommendations from the RAG results. If no events are available, state 'No events found for the requested dates.'
+3) **Itinerary** (Weekly or Daily) – when travel-related, a day-by-day or week-by-week plan with suggested activities and attire
+4) **Local Events Summary** – Provide a concise summary of relevant local events (title, dates, venue, URL), indicate whether each event is likely outdoor or indoor, and mark events as `weather-sensitive` when appropriate. For each event, comment on how the event's conditions (outdoor/indoor and likely weather) should influence activities, itinerary choices, and product recommendations from the RAG results. If no events are available, state 'No events found for the requested dates.'
+5) **Clothing, Shoes & Accessories Recommendations** – Weather-aware and practical product recommendations grounded in the forecast. Include specific items from the product catalog that align with the weather and activities. For each recommended product, include: product name, brand, price, material, available colors/sizes, and a brief explanation of why it suits the trip. Use only the product data provided in the RAG results.
 6) **Product Catalog Details** – For each recommended product, provide complete catalog information: long_description, family_name, material, available_colors, available_sizes, brand, price, and availability. If a field is missing, state "Information not available." Maintain a professional and formal tone.
 
 Incorporate the 5 recommended products from the RAG to support the plan.
@@ -226,9 +226,9 @@ class ProductRecommenderAgent(BaseAgent):
 Based on the above context, generate a formal, structured response following all 6 required sections:
 1) Weather Overview
 2) Recommended Activities
-3) Clothing, Shoes & Accessories Recommendations (include specific products from catalog with details)
-4) Itinerary (if travel-related)
-5) Local Events Summary
+3) Itinerary (if travel-related)
+4) Local Events Summary
+5) Clothing, Shoes & Accessories Recommendations (include specific products from catalog with details)
 6) Product Catalog Details (complete product info for each recommendation)
 
 Use only the product data provided above. Maintain a professional and formal tone throughout.
