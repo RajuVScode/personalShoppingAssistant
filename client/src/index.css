@@ -95,9 +95,9 @@
   --chart-4: 43 74% 66%;
   --chart-5: 27 87% 67%;
 
-  --font-sans: 'Inter', sans-serif;
-  --font-serif: 'Playfair Display', Georgia, serif;
-  --font-mono: 'JetBrains Mono', Menlo, monospace;
+  --font-sans: 'Calibri', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  --font-serif: 'Calibri', Georgia, serif;
+  --font-mono: 'Consolas', 'Courier New', monospace;
   --radius: 0.75rem;
   --shadow-2xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-xs: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
@@ -338,4 +338,12 @@
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
     background: hsl(var(--muted-foreground) / 0.5);
   }
+}
+
+body {
+  font-family: 'Calibri', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+* {
+  font-family: inherit;
 }
