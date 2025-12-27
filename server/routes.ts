@@ -1,6 +1,6 @@
 import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
-import { createProxyMiddleware } from "http-proxy-middleware";
+import { createProxyMiddleware, fixRequestBody } from "http-proxy-middleware";
 import { storage } from "./storage";
 
 export async function registerRoutes(
@@ -14,19 +14,9 @@ export async function registerRoutes(
     createProxyMiddleware({
       target: pythonBackendUrl,
       changeOrigin: true,
-      pathRewrite: {
-        "^/api": "/api",
-      },
+      pathRewrite: (path) => `/api${path}`,
       on: {
-        proxyReq: (proxyReq, req) => {
-          const expressReq = req as Request;
-          if (expressReq.body && Object.keys(expressReq.body).length > 0) {
-            const bodyData = JSON.stringify(expressReq.body);
-            proxyReq.setHeader("Content-Type", "application/json");
-            proxyReq.setHeader("Content-Length", Buffer.byteLength(bodyData));
-            proxyReq.write(bodyData);
-          }
-        },
+        proxyReq: fixRequestBody,
         error: (err, _req, res) => {
           console.error("Proxy error:", err.message);
           if (res && typeof (res as any).status === "function") {

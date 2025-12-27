@@ -2,7 +2,10 @@ import json
 from backend.agents.base import BaseAgent
 from backend.rag.vector_store import ProductVectorStore
 from backend.models.schemas import EnrichedContext, ProductResponse
+from backend.database.connection import SessionLocal
+from backend.database.models import Product
 from typing import List, Dict, Any
+from sqlalchemy import or_, and_
 
 RECOMMENDER_PROMPT = """You are a Product Recommendation Agent for a personalized shopping experience.
 Your role is to explain product recommendations based on the customer's context and preferences.
@@ -25,15 +28,36 @@ Be concise but informative. Make connections between their preferences and the p
 class ProductRecommenderAgent(BaseAgent):
     def __init__(self):
         super().__init__("ProductRecommender", RECOMMENDER_PROMPT)
-        self.vector_store = ProductVectorStore()
+        try:
+            self.vector_store = ProductVectorStore()
+            self.use_vector_store = True
+        except Exception:
+            self.vector_store = None
+            self.use_vector_store = False
     
     def get_recommendations(
         self, 
         context: EnrichedContext,
         num_results: int = 5
     ) -> tuple[List[Dict[str, Any]], str]:
-        search_query = self._build_search_query(context)
+        products = []
         
+        if self.use_vector_store and self.vector_store:
+            try:
+                search_query = self._build_search_query(context)
+                filters = self._build_filters(context)
+                products = self.vector_store.search(search_query, k=num_results, filters=filters)
+            except Exception:
+                pass
+        
+        if not products:
+            products = self._db_fallback_search(context, num_results)
+        
+        explanation = self._generate_explanation(context, products)
+        
+        return products, explanation
+    
+    def _build_filters(self, context: EnrichedContext) -> dict:
         filters = {}
         if context.intent.budget_max:
             filters["budget_max"] = context.intent.budget_max
@@ -43,12 +67,55 @@ class ProductRecommenderAgent(BaseAgent):
             filters["category"] = context.intent.category
         if context.intent.gender:
             filters["gender"] = context.intent.gender
-        
-        products = self.vector_store.search(search_query, k=num_results, filters=filters)
-        
-        explanation = self._generate_explanation(context, products)
-        
-        return products, explanation
+        return filters
+    
+    def _db_fallback_search(self, context: EnrichedContext, num_results: int = 5) -> List[Dict[str, Any]]:
+        db = SessionLocal()
+        try:
+            query = db.query(Product)
+            
+            conditions = []
+            
+            if context.intent.category:
+                conditions.append(Product.category.ilike(f"%{context.intent.category}%"))
+            
+            if context.intent.subcategory:
+                conditions.append(Product.subcategory.ilike(f"%{context.intent.subcategory}%"))
+            
+            if context.intent.budget_max:
+                conditions.append(Product.price <= context.intent.budget_max)
+            
+            if context.intent.budget_min:
+                conditions.append(Product.price >= context.intent.budget_min)
+            
+            if context.intent.gender:
+                conditions.append(or_(
+                    Product.gender.ilike(f"%{context.intent.gender}%"),
+                    Product.gender.ilike("%unisex%")
+                ))
+            
+            if conditions:
+                query = query.filter(and_(*conditions))
+            
+            products = query.limit(num_results).all()
+            
+            return [{
+                "id": p.id,
+                "name": p.name,
+                "description": p.description,
+                "category": p.category,
+                "subcategory": p.subcategory,
+                "price": p.price,
+                "brand": p.brand,
+                "gender": p.gender,
+                "image_url": p.image_url,
+                "in_stock": p.in_stock,
+                "rating": p.rating,
+                "colors": p.colors,
+                "tags": p.tags
+            } for p in products]
+        finally:
+            db.close()
     
     def _build_search_query(self, context: EnrichedContext) -> str:
         parts = []
