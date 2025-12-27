@@ -59,6 +59,7 @@ class ChatResponse(BaseModel):
     clarification_needed: bool = False
     clarification_question: Optional[str] = None
     context: Optional[Dict[str, Any]] = {}
+    updated_intent: Optional[Dict[str, Any]] = {}
 
 class NormalizedIntent(BaseModel):
     category: Optional[str] = None

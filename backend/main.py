@@ -81,15 +81,25 @@ def chat(request: ChatRequest, db: Session = Depends(get_db)):
             Conversation.id == request.conversation_id
         ).first()
     
+    if not conversation:
+        conversation = db.query(Conversation).filter(
+            Conversation.customer_id == request.user_id
+        ).order_by(Conversation.id.desc()).first()
+    
     conversation_history = []
-    if conversation and conversation.messages:
-        conversation_history = conversation.messages
+    existing_intent = {}
+    if conversation:
+        if conversation.messages:
+            conversation_history = conversation.messages
+        if conversation.context and isinstance(conversation.context, dict):
+            existing_intent = conversation.context.get("accumulated_intent", {})
     
     try:
         result = orchestrator.process_message(
             user_id=request.user_id,
             message=request.message,
-            conversation_history=conversation_history
+            conversation_history=conversation_history,
+            existing_intent=existing_intent
         )
     except Exception as e:
         print(f"Error in orchestrator: {e}")
@@ -101,11 +111,15 @@ def chat(request: ChatRequest, db: Session = Depends(get_db)):
             "context": {}
         }
     
+    updated_context = result.get("context", {})
+    updated_context["accumulated_intent"] = result.get("updated_intent", {})
+    
     if conversation:
         messages = conversation.messages or []
         messages.append({"role": "user", "content": request.message})
         messages.append({"role": "assistant", "content": result["response"]})
         conversation.messages = messages
+        conversation.context = updated_context
         db.commit()
     else:
         new_conversation = Conversation(
@@ -114,7 +128,7 @@ def chat(request: ChatRequest, db: Session = Depends(get_db)):
                 {"role": "user", "content": request.message},
                 {"role": "assistant", "content": result["response"]}
             ],
-            context=result.get("context", {})
+            context=updated_context
         )
         db.add(new_conversation)
         db.commit()
@@ -138,7 +152,8 @@ def chat(request: ChatRequest, db: Session = Depends(get_db)):
         products=products,
         clarification_needed=result.get("clarification_needed", False),
         clarification_question=result.get("clarification_question"),
-        context=result.get("context", {})
+        context=result.get("context", {}),
+        updated_intent=result.get("updated_intent", {})
     )
 
 @app.post("/api/customers", response_model=CustomerResponse)

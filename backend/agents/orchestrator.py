@@ -66,9 +66,12 @@ class ShoppingOrchestrator:
         return workflow.compile()
     
     def _clarify_node(self, state: GraphState) -> GraphState:
+        existing_intent = state.get("clarifier_intent", {})
+        
         result = self.clarifier.analyze(
             state["raw_query"],
-            state.get("conversation_history", [])
+            state.get("conversation_history", []),
+            existing_intent=existing_intent
         )
         
         state["is_ambiguous"] = result.get("needs_clarification", False)
@@ -133,7 +136,7 @@ class ShoppingOrchestrator:
         
         return state
     
-    def process_message(self, user_id: int, message: str, conversation_history: list = None) -> dict:
+    def process_message(self, user_id: int, message: str, conversation_history: list = None, existing_intent: dict = None) -> dict:
         initial_state: GraphState = {
             "messages": [],
             "user_id": user_id,
@@ -141,7 +144,7 @@ class ShoppingOrchestrator:
             "is_ambiguous": False,
             "clarification_question": "",
             "assistant_message": "",
-            "clarifier_intent": {},
+            "clarifier_intent": existing_intent or {},
             "normalized_intent": {},
             "customer_context": {},
             "environmental_context": {},

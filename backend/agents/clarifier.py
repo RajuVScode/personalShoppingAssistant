@@ -69,16 +69,25 @@ class ClarifierAgent(BaseAgent):
     def __init__(self):
         super().__init__("Clarifier", CLARIFIER_PROMPT)
     
-    def analyze(self, query: str, conversation_history: list = None) -> dict:
+    def analyze(self, query: str, conversation_history: list = None, existing_intent: dict = None) -> dict:
         current_date = get_current_date()
         
         context = ""
         if conversation_history:
             context = f"\nConversation history: {json.dumps(conversation_history[-5:])}"
         
+        existing_intent_str = ""
+        if existing_intent:
+            filled_fields = {k: v for k, v in existing_intent.items() if v is not None}
+            if filled_fields:
+                existing_intent_str = f"\n\nALREADY COLLECTED INFORMATION (DO NOT ask for these again):\n{json.dumps(filled_fields, indent=2)}"
+        
         prompt = f"""Today's date: {current_date}
 
-User query: {query}{context}
+User query: {query}{context}{existing_intent_str}
+
+IMPORTANT: If information was already collected (shown above), preserve it in updated_intent and DO NOT ask for it again.
+Only ask for MISSING information that hasn't been collected yet.
 
 Extract travel intent and respond with the JSON structure. If key details are missing (destination, travel_date), ask ONE clarifying question."""
         
@@ -101,11 +110,14 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             
             needs_clarification = result.get("next_question") is not None
             
+            new_intent = result.get("updated_intent", {})
+            merged_intent = self._merge_intent(existing_intent or {}, new_intent)
+            
             return {
                 "needs_clarification": needs_clarification,
                 "clarification_question": result.get("next_question") or result.get("assistant_message", ""),
                 "assistant_message": result.get("assistant_message", ""),
-                "updated_intent": result.get("updated_intent", {}),
+                "updated_intent": merged_intent,
                 "clarified_query": query
             }
         except json.JSONDecodeError:
@@ -113,5 +125,12 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                 "needs_clarification": False,
                 "clarified_query": query,
                 "assistant_message": "",
-                "updated_intent": {}
+                "updated_intent": existing_intent or {}
             }
+    
+    def _merge_intent(self, existing: dict, new: dict) -> dict:
+        merged = existing.copy()
+        for key, value in new.items():
+            if value is not None:
+                merged[key] = value
+        return merged
