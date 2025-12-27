@@ -18,15 +18,21 @@ def get_weekend_dates(current_date: datetime, next_week: bool = False):
 CLARIFIER_PROMPT = """You are a Clarifier Agent for travel planning. Your task:
 - Extract or confirm the user's intent across these fields:
   destination, travel_date, activities, preferred_brand, clothes, budget_amount, budget_currency, notes.
-- Ask ONLY ONE targeted clarifying question per turn if information is missing or ambiguous.
-- If everything is collected and clear, provide a friendly, concise confirmation.
+
+CRITICAL RULES:
+1. ONLY ask for destination and travel_date if they are truly missing.
+2. Once you have destination AND travel_date, ask ONE COMBINED question for any remaining optional details:
+   "What activities are you planning, any budget constraints, and clothing preferences? (Feel free to share any or skip!)"
+3. If user provides some optional details, ACCEPT them and proceed - do NOT ask for more.
+4. If user says "that's it" or provides destination+dates without extras, PROCEED without asking more questions.
+5. Activities, budget, and clothes are OPTIONAL - do not require them to proceed.
+
 - Use US English tone, be helpful and polite.
 - Infer budget currency from context; default to USD.
 - If budget is provided without currency, set currency to USD by default.
-- Activities should be either an array or strings. If the user gives a single activity (e.g., "hiking"), accept it as a valid array with one item and do not ask for more unless the user seems unsure.
-- Clothes can be a simple descriptive string (e.g., "casual summer wear").
-- Do NOT ask multiple questions at once; keep it single-question per turn.
-- Respond concisely and avoid over-prompting.
+- Activities should be either an array or strings. Accept single activities.
+- Clothes can be a simple descriptive string.
+- Be concise and avoid over-prompting.
 
 Context:
 - Today's date (ISO): {CURRENT_DATE}
@@ -39,14 +45,24 @@ Rules:
 - If only one date is mentioned, set start_date = end_date.
 - Parse various date formats:
 - Parse ranges like "from 5 March to 8 March", "10-12 Jan 2025", "2025-01-10 to 2025-01-12".
-- Support relative: "today", "tomorrow", "this weekend", "next weekend".
+- Support relative dates and ACCEPT THEM as valid travel dates:
 - "today" => {CURRENT_DATE}
 - "tomorrow" => {CURRENT_DATE} + 1 day
-- "this weekend" => Saturday-Sunday of the current week (based on {CURRENT_DATE})
-- "next weekend" => Saturday-Sunday of the following week (based on {CURRENT_DATE})
+- "this week" => current week dates
+- "next week" => the following week dates (Monday-Sunday)
+- "this weekend" => Saturday-Sunday of the current week
+- "next weekend" => Saturday-Sunday of the following week
+- IMPORTANT: "next week", "this weekend", etc. are VALID date inputs - do NOT ask for more specific dates!
 - If month/day is given without year, infer the year with a future bias relative to {CURRENT_DATE}.
 - If multiple destinations are mentioned, choose the primary after prepositions (to/in/at/for) or the final city in "heading to …".
 - Date format: "YYYY-MM-DD" (single date) or "YYYY-MM-DD to YYYY-MM-DD" (range).
+
+DECISION LOGIC:
+- If destination is missing → next_question asks for destination
+- If travel_date is missing (and no relative date like "next week" given) → next_question asks for travel dates  
+- If destination AND travel_date are present → Set next_question to null AND ready_for_recommendations to true
+- Once you have destination + any date reference → PROCEED to recommendations (set next_question: null, ready_for_recommendations: true)
+- DO NOT ask for activities/budget/clothes individually - these are optional extras
 
 OUTPUT STRICTLY AS A JSON OBJECT with this shape:
 {{
@@ -61,8 +77,11 @@ OUTPUT STRICTLY AS A JSON OBJECT with this shape:
       "budget_currency": "string|null",
       "notes": "string|null"
   }},
-  "next_question": "string|null"
-}}"""
+  "next_question": "string|null",
+  "ready_for_recommendations": true|false
+}}
+
+Set "ready_for_recommendations": true when destination and travel_date are collected."""
 
 
 class ClarifierAgent(BaseAgent):
@@ -108,17 +127,26 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             
             result = json.loads(clean_response.strip())
             
-            needs_clarification = result.get("next_question") is not None
-            
             new_intent = result.get("updated_intent", {})
             merged_intent = self._merge_intent(existing_intent or {}, new_intent)
+            
+            ready_for_recs = result.get("ready_for_recommendations", False)
+            has_required = merged_intent.get("destination") and merged_intent.get("travel_date")
+            
+            if has_required and not result.get("next_question"):
+                needs_clarification = False
+            elif has_required and ready_for_recs:
+                needs_clarification = False
+            else:
+                needs_clarification = result.get("next_question") is not None
             
             return {
                 "needs_clarification": needs_clarification,
                 "clarification_question": result.get("next_question") or result.get("assistant_message", ""),
                 "assistant_message": result.get("assistant_message", ""),
                 "updated_intent": merged_intent,
-                "clarified_query": query
+                "clarified_query": query,
+                "ready_for_recommendations": ready_for_recs or has_required
             }
         except json.JSONDecodeError:
             return {
