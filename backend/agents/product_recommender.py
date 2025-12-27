@@ -7,23 +7,23 @@ from backend.database.models import Product
 from typing import List, Dict, Any
 from sqlalchemy import or_, and_
 
-RECOMMENDER_PROMPT = """You are a Product Recommendation Agent for a personalized shopping experience.
-Your role is to explain product recommendations based on the customer's context and preferences.
+RECOMMENDER_PROMPT = """You are a formal travel and lifestyle recommender.
 
-Given:
-1. Customer profile (preferences, purchase history, style)
-2. Current intent (what they're looking for)
-3. Environmental context (weather, events, trends)
-4. Retrieved products from the catalog
+Given the user's travel prompt, destination, dates, weather context, and top 5 product recommendations, produce a structured, formal response that MUST include:
 
-Generate a personalized, conversational response that:
-- Acknowledges their specific request
-- Explains WHY each product matches their needs
-- References relevant context (weather, upcoming events, their style)
-- Is warm, helpful, and not pushy
-- Highlights 3-5 top recommendations
+1) **Weather Overview** – temperatures (high/low), precipitation likelihood, wind, daylight, and seasonal notes
+2) **Recommended Activities** – indoor/outdoor options justified by the weather and destination
+3) **Clothing/Shoes/Accessories Preferences** – weather-aware and practical recommendations grounded in the forecast
+4) **Itinerary** (Weekly or Daily) – when travel-related, a day-by-day or week-by-week plan with suggested activities and attire
+5) **Local Events Summary** – Provide a concise summary of relevant local events (title, dates, venue, URL), indicate whether each event is likely outdoor or indoor, and mark events as `weather-sensitive` when appropriate. For each event, comment on how the event's conditions (outdoor/indoor and likely weather) should influence activities, itinerary choices, and product recommendations from the RAG results. If no events are available, state 'No events found for the requested dates.'
+6) **Outfit/Product Recommendations** – specific items from the product catalog that align with the weather and activities
+7) **Recommended Products from Catalog** – Include specific product information like long_description, family_name, material, available_colors, available_sizes, names, brands, prices, and availability. Generate a formal response that answers the user query using only the product catalog data from RAG results above. Do not add any generic product details or assumptions. If a field is missing, explicitly mention "Information not available." Maintain a professional and formal tone.
 
-Be concise but informative. Make connections between their preferences and the products."""
+Incorporate the 5 recommended products from the RAG to support the plan.
+
+If data is missing, state your assumptions clearly and proceed with best-practice recommendations.
+
+Ensure the tone is formal, professional, and complete. All sections must be present."""
 
 class ProductRecommenderAgent(BaseAgent):
     def __init__(self):
@@ -179,27 +179,61 @@ class ProductRecommenderAgent(BaseAgent):
         if not products:
             return "I couldn't find products matching your criteria. Could you try a different search?"
         
+        weather_info = context.environmental.weather or {}
+        events_info = context.environmental.local_events or []
+        
         prompt = f"""
-Customer: {context.customer.name}
-Location: {context.customer.location or 'Not specified'}
-Style preferences: {context.customer.style_profile}
-Recent purchases: {context.customer.recent_purchases[:3] if context.customer.recent_purchases else 'None'}
+**User Query:** {context.intent.raw_query}
 
-Current request: {context.intent.raw_query}
-Parsed intent: Category: {context.intent.category}, Style: {context.intent.style}, Occasion: {context.intent.occasion}
+**Customer Profile:**
+- Name: {context.customer.name}
+- Location/Destination: {context.customer.location or 'Not specified'}
+- Style Preferences: {context.customer.style_profile}
+- Recent Purchases: {context.customer.recent_purchases[:3] if context.customer.recent_purchases else 'None'}
 
-Weather: {context.environmental.weather}
-Trending: {context.environmental.trends[:3] if context.environmental.trends else 'N/A'}
+**Parsed Intent:**
+- Category: {context.intent.category or 'Not specified'}
+- Subcategory: {context.intent.subcategory or 'Not specified'}
+- Occasion: {context.intent.occasion or 'Not specified'}
+- Style: {context.intent.style or 'Not specified'}
+- Budget: ${context.intent.budget_min or 0} - ${context.intent.budget_max or 'No limit'}
 
-Products found:
+**Weather Context:**
+- Temperature: {weather_info.get('temperature', 'N/A')}°C
+- Conditions: {weather_info.get('description', 'N/A')}
+- Season: {weather_info.get('season', 'Not specified')}
+
+**Local Events:**
+{json.dumps(events_info[:5], indent=2) if events_info else 'No events found for the requested dates.'}
+
+**Trends:**
+{context.environmental.trends[:5] if context.environmental.trends else 'N/A'}
+
+**Top 5 Recommended Products from RAG:**
 {json.dumps([{
     "name": p.get("name"),
+    "family_name": p.get("name", "").split(" — ")[0] if " — " in p.get("name", "") else p.get("name"),
     "category": p.get("category"),
+    "subcategory": p.get("subcategory"),
     "price": p.get("price"),
-    "brand": p.get("brand")
+    "brand": p.get("brand"),
+    "material": p.get("material", "Information not available"),
+    "available_colors": p.get("colors", []),
+    "description": p.get("description", "Information not available"),
+    "in_stock": p.get("in_stock", True),
+    "rating": p.get("rating")
 } for p in products[:5]], indent=2)}
 
-Generate a personalized, friendly recommendation explanation (2-3 paragraphs max).
+Based on the above context, generate a formal, structured response following all 7 required sections:
+1) Weather Overview
+2) Recommended Activities
+3) Clothing/Shoes/Accessories Preferences
+4) Itinerary (if travel-related)
+5) Local Events Summary
+6) Outfit/Product Recommendations
+7) Recommended Products from Catalog
+
+Use only the product data provided above. Maintain a professional and formal tone throughout.
 """
         
         response = self.invoke(prompt)
