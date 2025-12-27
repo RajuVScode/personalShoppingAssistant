@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 
 from backend.database.connection import engine, get_db, Base
 from backend.database.models import Customer, Product, PurchaseHistory, Conversation
+from pydantic import BaseModel
 from backend.models.schemas import (
     ChatRequest, ChatResponse, CustomerCreate, CustomerResponse,
     ProductCreate, ProductResponse
@@ -67,9 +68,37 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+class LoginRequest(BaseModel):
+    customer_id: str
+    password: str
+
 @app.get("/api/health")
 def health_check():
     return {"status": "healthy", "service": "AI Shopping Experience"}
+
+@app.post("/api/login")
+def login(request: LoginRequest, db: Session = Depends(get_db)):
+    from sqlalchemy import text
+    result = db.execute(
+        text("SELECT customer_id, first_name, last_name, email, password FROM customers WHERE customer_id = :cid"),
+        {"cid": request.customer_id}
+    ).fetchone()
+    
+    if not result:
+        return {"success": False, "message": "Customer ID not found"}
+    
+    if result.password != request.password:
+        return {"success": False, "message": "Invalid password"}
+    
+    return {
+        "success": True,
+        "customer": {
+            "customer_id": result.customer_id,
+            "first_name": result.first_name,
+            "last_name": result.last_name,
+            "email": result.email
+        }
+    }
 
 @app.post("/api/chat", response_model=ChatResponse)
 def chat(request: ChatRequest, db: Session = Depends(get_db)):
