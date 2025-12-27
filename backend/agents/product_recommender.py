@@ -190,6 +190,34 @@ class ProductRecommenderAgent(BaseAgent):
             pass
         return None, None, 1
     
+    def _format_segments_context(self, segments) -> str:
+        if not segments:
+            return ""
+        
+        result = []
+        for i, seg in enumerate(segments):
+            if hasattr(seg, 'destination'):
+                dest = seg.destination
+                start = seg.start_date
+                end = seg.end_date
+                weather = seg.weather or {}
+                events = seg.local_events or []
+            else:
+                dest = seg.get('destination', 'Unknown')
+                start = seg.get('start_date', '')
+                end = seg.get('end_date', '')
+                weather = seg.get('weather', {})
+                events = seg.get('local_events', [])
+            
+            segment_info = f"""
+**Segment {i+1}: {dest} ({start} to {end})**
+- Weather: {weather.get('temperature', 'N/A')}°C, {weather.get('description', 'N/A')}
+- Local Events: {json.dumps(events[:3], indent=2) if events else 'No events found'}
+"""
+            result.append(segment_info)
+        
+        return "\n".join(result)
+    
     def _generate_explanation(
         self, 
         context: EnrichedContext, 
@@ -200,8 +228,21 @@ class ProductRecommenderAgent(BaseAgent):
         
         weather_info = context.environmental.weather or {}
         events_info = context.environmental.local_events or []
+        segments = getattr(context.environmental, 'segments', None) or []
+        
+        is_multi_destination = len(segments) > 1
         
         start_date, end_date, duration_days = self._parse_trip_duration(context.intent.occasion)
+        
+        if is_multi_destination:
+            segments_section = self._format_segments_context(segments)
+            destination_info = ", ".join([
+                s.destination if hasattr(s, 'destination') else s.get('destination', '') 
+                for s in segments
+            ])
+        else:
+            segments_section = ""
+            destination_info = getattr(context.intent, 'location', None) or 'Not specified'
         
         prompt = f"""
 **User Query:** {context.intent.raw_query}
@@ -209,7 +250,7 @@ class ProductRecommenderAgent(BaseAgent):
 **Customer Profile:**
 - Name: {context.customer.name}
 - Home Location: {context.customer.location or 'Not specified'}
-- Travel Destination: {getattr(context.intent, 'location', None) or 'Not specified'}
+- Travel Destination(s): {destination_info}
 - Style Preferences: {context.customer.style_profile}
 - Recent Purchases: {context.customer.recent_purchases[:3] if context.customer.recent_purchases else 'None'}
 
@@ -225,7 +266,8 @@ class ProductRecommenderAgent(BaseAgent):
 - End Date: {end_date or 'Not specified'}
 - Duration: {duration_days} day(s)
 - IMPORTANT: The itinerary MUST be exactly {duration_days} day(s). Do NOT create more days.
-
+{"- MULTI-DESTINATION TRIP: Include weather and events for EACH destination separately." if is_multi_destination else ""}
+{segments_section if is_multi_destination else f'''
 **Weather Context:**
 - Temperature: {weather_info.get('temperature', 'N/A')}°C
 - Conditions: {weather_info.get('description', 'N/A')}
@@ -233,6 +275,7 @@ class ProductRecommenderAgent(BaseAgent):
 
 **Local Events:**
 {json.dumps(events_info[:5], indent=2) if events_info else 'No events found for the requested dates.'}
+'''}
 
 **Trends:**
 {context.environmental.trends[:5] if context.environmental.trends else 'N/A'}
@@ -252,12 +295,12 @@ class ProductRecommenderAgent(BaseAgent):
     "rating": p.get("rating")
 } for p in products[:5]], indent=2)}
 
-Generate a formal response with these 6 sections:
-1) Weather Overview
-2) Recommended Activities
-3) Itinerary - EXACTLY {duration_days} day(s). No more, no less.
-4) Local Events Summary
-5) Clothing & Accessories Recommendations - Brief outfit guidance explaining WHY each product suits the trip. Reference product names with rationale. Do NOT list detailed specs here.
+Generate a formal response with these sections:
+{"1) Weather Overview - Include weather for EACH destination separately" if is_multi_destination else "1) Weather Overview"}
+2) Recommended Activities{" for each destination" if is_multi_destination else ""}
+3) Itinerary - EXACTLY {duration_days} day(s). No more, no less.{" Show which days are in each city." if is_multi_destination else ""}
+4) Local Events Summary{" by destination" if is_multi_destination else ""}
+5) Clothing & Accessories Recommendations - Brief outfit guidance explaining WHY each product suits the trip. Reference product names with rationale.{" Consider varying weather conditions across destinations." if is_multi_destination else ""} Do NOT list detailed specs here.
 6) Product Catalog Details - Full product info (name, brand, price, material, colors, sizes, description) for each recommendation.
 
 Use only the product data provided. Maintain a professional tone.

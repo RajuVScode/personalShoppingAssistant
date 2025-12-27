@@ -61,6 +61,13 @@ class ChatResponse(BaseModel):
     context: Optional[Dict[str, Any]] = {}
     updated_intent: Optional[Dict[str, Any]] = {}
 
+class TripSegment(BaseModel):
+    destination: str
+    start_date: str
+    end_date: str
+    activities: Optional[List[str]] = []
+    notes: Optional[str] = None
+
 class NormalizedIntent(BaseModel):
     category: Optional[str] = None
     subcategory: Optional[str] = None
@@ -74,6 +81,7 @@ class NormalizedIntent(BaseModel):
     keywords: Optional[List[str]] = []
     raw_query: str = ""
     location: Optional[str] = None
+    trip_segments: Optional[List[TripSegment]] = []
 
 class CustomerContext(BaseModel):
     customer_id: Union[int, str]
@@ -84,10 +92,18 @@ class CustomerContext(BaseModel):
     location: Optional[str] = None
     recent_purchases: List[Dict[str, Any]] = []
 
+class SegmentContext(BaseModel):
+    destination: str
+    start_date: str
+    end_date: str
+    weather: Optional[Dict[str, Any]] = None
+    local_events: Optional[List[Dict[str, Any]]] = []
+
 class EnvironmentalContext(BaseModel):
     weather: Optional[Dict[str, Any]] = None
     local_events: Optional[List[Dict[str, Any]]] = []
     trends: Optional[List[str]] = []
+    segments: Optional[List[SegmentContext]] = []
 
 class EnrichedContext(BaseModel):
     intent: NormalizedIntent

@@ -18,6 +18,7 @@ def get_weekend_dates(current_date: datetime, next_week: bool = False):
 CLARIFIER_PROMPT = """You are a Clarifier Agent for travel planning. Your task:
 - Extract or confirm the user's intent across these fields:
   destination, travel_date, activities, preferred_brand, clothes, budget_amount, budget_currency, notes.
+- SUPPORT MULTI-DESTINATION TRIPS: If user mentions multiple destinations with dates (e.g., "Paris Jan 5-8, then Rome Jan 9-12"), extract ALL of them into trip_segments.
 
 CRITICAL RULES:
 1. ONLY ask for destination and travel_date if they are truly missing.
@@ -56,8 +57,14 @@ Rules:
 - IMPORTANT: "next week", "this weekend", etc. are VALID date inputs - do NOT ask for more specific dates!
 - CRITICAL: All dates MUST be in the FUTURE relative to {CURRENT_DATE}. If today is late December 2025, "next week" means early January 2026, NOT January 2025.
 - If month/day is given without year, always use the NEXT occurrence of that date in the future. If "January 5" is mentioned and today is December 27, 2025, it means January 5, 2026.
-- If multiple destinations are mentioned, choose the primary after prepositions (to/in/at/for) or the final city in "heading to …".
 - Date format: "YYYY-MM-DD" (single date) or "YYYY-MM-DD to YYYY-MM-DD" (range).
+
+MULTI-DESTINATION HANDLING:
+- If user mentions multiple destinations with different dates, extract each as a trip_segment.
+- Example: "Paris Jan 5-8, then Rome Jan 9-12" → two segments
+- Each segment has: destination, start_date, end_date, activities (optional)
+- Set "destination" to first destination, "travel_date" to full range (first start to last end)
+- Preserve trip_segments array for detailed per-leg context
 
 DECISION LOGIC:
 - If destination is missing → next_question asks for destination
@@ -70,8 +77,16 @@ OUTPUT STRICTLY AS A JSON OBJECT with this shape:
 {{
   "assistant_message": "string - what the assistant says to the user in this turn",
   "updated_intent": {{
-      "destination": "string|null",
-      "travel_date": "string|null",
+      "destination": "string|null - primary destination (first if multiple)",
+      "travel_date": "string|null - full date range",
+      "trip_segments": [
+          {{
+              "destination": "string",
+              "start_date": "YYYY-MM-DD",
+              "end_date": "YYYY-MM-DD",
+              "activities": ["string", ...]|null
+          }}
+      ]|null,
       "activities": ["string", ...]|null,
       "preferred_brand": "string|null",
       "clothes": "string|null",

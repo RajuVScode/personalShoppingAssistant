@@ -111,6 +111,8 @@ class ShoppingOrchestrator:
                 intent_dict["style"] = clarifier_intent["clothes"]
             if clarifier_intent.get("preferred_brand"):
                 intent_dict["brand"] = clarifier_intent["preferred_brand"]
+            if clarifier_intent.get("trip_segments"):
+                intent_dict["trip_segments"] = clarifier_intent["trip_segments"]
         
         state["normalized_intent"] = intent_dict
         return state
