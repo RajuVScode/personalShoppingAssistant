@@ -1,0 +1,142 @@
+from typing import TypedDict, Annotated, Literal
+from langgraph.graph import StateGraph, END
+from sqlalchemy.orm import Session
+
+from backend.agents.clarifier import ClarifierAgent
+from backend.agents.intent_processor import IntentProcessor
+from backend.agents.customer360 import Customer360Agent
+from backend.agents.context_aggregator import ContextAggregator
+from backend.agents.product_recommender import ProductRecommenderAgent
+from backend.models.schemas import (
+    ChatMessage, NormalizedIntent, CustomerContext, 
+    EnvironmentalContext, EnrichedContext
+)
+
+class GraphState(TypedDict):
+    messages: list
+    user_id: int
+    raw_query: str
+    is_ambiguous: bool
+    clarification_question: str
+    normalized_intent: dict
+    customer_context: dict
+    environmental_context: dict
+    enriched_context: dict
+    products: list
+    final_response: str
+    conversation_history: list
+
+class ShoppingOrchestrator:
+    def __init__(self, db: Session):
+        self.db = db
+        self.clarifier = ClarifierAgent()
+        self.intent_processor = IntentProcessor()
+        self.customer360 = Customer360Agent(db)
+        self.context_aggregator = ContextAggregator()
+        self.recommender = ProductRecommenderAgent()
+        self.graph = self._build_graph()
+    
+    def _build_graph(self) -> StateGraph:
+        workflow = StateGraph(GraphState)
+        
+        workflow.add_node("clarify", self._clarify_node)
+        workflow.add_node("process_intent", self._intent_node)
+        workflow.add_node("get_customer_context", self._customer_context_node)
+        workflow.add_node("aggregate_context", self._aggregate_context_node)
+        workflow.add_node("recommend", self._recommend_node)
+        
+        workflow.set_entry_point("clarify")
+        
+        workflow.add_conditional_edges(
+            "clarify",
+            self._should_clarify,
+            {
+                "clarify": END,
+                "proceed": "process_intent"
+            }
+        )
+        
+        workflow.add_edge("process_intent", "get_customer_context")
+        workflow.add_edge("get_customer_context", "aggregate_context")
+        workflow.add_edge("aggregate_context", "recommend")
+        workflow.add_edge("recommend", END)
+        
+        return workflow.compile()
+    
+    def _clarify_node(self, state: GraphState) -> GraphState:
+        result = self.clarifier.analyze(
+            state["raw_query"],
+            state.get("conversation_history", [])
+        )
+        
+        state["is_ambiguous"] = result.get("needs_clarification", False)
+        state["clarification_question"] = result.get("clarification_question", "")
+        
+        if state["is_ambiguous"]:
+            state["final_response"] = state["clarification_question"]
+        
+        return state
+    
+    def _should_clarify(self, state: GraphState) -> Literal["clarify", "proceed"]:
+        if state.get("is_ambiguous", False):
+            return "clarify"
+        return "proceed"
+    
+    def _intent_node(self, state: GraphState) -> GraphState:
+        intent = self.intent_processor.process(state["raw_query"])
+        state["normalized_intent"] = intent.model_dump()
+        return state
+    
+    def _customer_context_node(self, state: GraphState) -> GraphState:
+        context = self.customer360.get_customer_context(state["user_id"])
+        state["customer_context"] = context.model_dump()
+        return state
+    
+    async def _aggregate_context_node(self, state: GraphState) -> GraphState:
+        intent = NormalizedIntent(**state["normalized_intent"])
+        customer = CustomerContext(**state["customer_context"])
+        
+        enriched = await self.context_aggregator.aggregate(intent, customer)
+        state["enriched_context"] = enriched.model_dump()
+        state["environmental_context"] = enriched.environmental.model_dump()
+        
+        return state
+    
+    def _recommend_node(self, state: GraphState) -> GraphState:
+        enriched = EnrichedContext(**state["enriched_context"])
+        
+        products, explanation = self.recommender.get_recommendations(enriched)
+        
+        state["products"] = products
+        state["final_response"] = explanation
+        
+        return state
+    
+    async def process_message(self, user_id: int, message: str, conversation_history: list = None) -> dict:
+        initial_state: GraphState = {
+            "messages": [],
+            "user_id": user_id,
+            "raw_query": message,
+            "is_ambiguous": False,
+            "clarification_question": "",
+            "normalized_intent": {},
+            "customer_context": {},
+            "environmental_context": {},
+            "enriched_context": {},
+            "products": [],
+            "final_response": "",
+            "conversation_history": conversation_history or []
+        }
+        
+        final_state = await self.graph.ainvoke(initial_state)
+        
+        return {
+            "response": final_state["final_response"],
+            "products": final_state["products"],
+            "clarification_needed": final_state["is_ambiguous"],
+            "clarification_question": final_state["clarification_question"],
+            "context": {
+                "intent": final_state.get("normalized_intent", {}),
+                "environmental": final_state.get("environmental_context", {})
+            }
+        }

@@ -1,0 +1,279 @@
+from sqlalchemy.orm import Session
+from backend.database.models import Customer, Product
+
+def seed_database(db: Session):
+    customers = [
+        Customer(
+            name="Sarah Johnson",
+            email="sarah@example.com",
+            location="New York, NY",
+            preferences={"notifications": True, "newsletter": True},
+            style_profile={
+                "preferred_styles": ["modern", "minimalist", "professional"],
+                "favorite_colors": ["black", "navy", "white"],
+                "avoid_patterns": ["loud prints"]
+            },
+            size_info={"top": "M", "bottom": "8", "shoes": "8"}
+        ),
+        Customer(
+            name="Michael Chen",
+            email="michael@example.com",
+            location="San Francisco, CA",
+            preferences={"notifications": True, "newsletter": False},
+            style_profile={
+                "preferred_styles": ["casual", "tech-wear", "athleisure"],
+                "favorite_colors": ["gray", "blue", "green"],
+                "avoid_patterns": []
+            },
+            size_info={"top": "L", "bottom": "32", "shoes": "10"}
+        ),
+        Customer(
+            name="Emma Williams",
+            email="emma@example.com",
+            location="Los Angeles, CA",
+            preferences={"notifications": False, "newsletter": True},
+            style_profile={
+                "preferred_styles": ["bohemian", "elegant", "sustainable"],
+                "favorite_colors": ["earth tones", "pastels"],
+                "avoid_patterns": []
+            },
+            size_info={"top": "S", "bottom": "4", "shoes": "7"}
+        )
+    ]
+    
+    for customer in customers:
+        db.add(customer)
+    
+    products = [
+        Product(
+            name="Classic Oxford Shoes",
+            description="Premium leather oxford shoes with timeless design. Perfect for business meetings and formal occasions. Features cushioned insole and durable rubber outsole.",
+            category="Footwear",
+            subcategory="Dress Shoes",
+            price=189.99,
+            brand="Clarks",
+            gender="men",
+            sizes_available=["8", "9", "10", "11", "12"],
+            colors=["Black", "Brown", "Burgundy"],
+            tags=["formal", "leather", "classic", "office", "wedding"],
+            image_url="https://images.unsplash.com/photo-1533867617858-e7b97e060509?w=400",
+            in_stock=True,
+            rating=4.7
+        ),
+        Product(
+            name="Ultra Boost Running Shoes",
+            description="High-performance running shoes with responsive cushioning and breathable mesh upper. Ideal for marathon training and daily runs.",
+            category="Footwear",
+            subcategory="Running Shoes",
+            price=149.99,
+            brand="Adidas",
+            gender="unisex",
+            sizes_available=["6", "7", "8", "9", "10", "11", "12"],
+            colors=["White", "Black", "Navy Blue"],
+            tags=["running", "athletic", "comfortable", "sports", "gym"],
+            image_url="https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400",
+            in_stock=True,
+            rating=4.8
+        ),
+        Product(
+            name="Merino Wool Blazer",
+            description="Sophisticated blazer crafted from Italian merino wool. Slim fit design with notched lapels. Perfect for business casual or smart occasions.",
+            category="Apparel",
+            subcategory="Blazers",
+            price=329.99,
+            brand="Hugo Boss",
+            gender="men",
+            sizes_available=["S", "M", "L", "XL"],
+            colors=["Navy", "Charcoal", "Black"],
+            tags=["professional", "wool", "office", "meeting", "elegant"],
+            image_url="https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=400",
+            in_stock=True,
+            rating=4.6
+        ),
+        Product(
+            name="Cashmere Turtleneck Sweater",
+            description="Luxuriously soft 100% cashmere turtleneck. Lightweight yet warm, perfect for layering. Timeless design that elevates any outfit.",
+            category="Apparel",
+            subcategory="Sweaters",
+            price=249.99,
+            brand="Everlane",
+            gender="women",
+            sizes_available=["XS", "S", "M", "L"],
+            colors=["Cream", "Black", "Camel", "Burgundy"],
+            tags=["cashmere", "luxury", "winter", "cozy", "elegant"],
+            image_url="https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=400",
+            in_stock=True,
+            rating=4.9
+        ),
+        Product(
+            name="Leather Crossbody Bag",
+            description="Minimalist crossbody bag in genuine Italian leather. Features adjustable strap and multiple compartments. Perfect for everyday use.",
+            category="Accessories",
+            subcategory="Bags",
+            price=175.00,
+            brand="Coach",
+            gender="women",
+            sizes_available=["One Size"],
+            colors=["Black", "Tan", "Burgundy"],
+            tags=["leather", "everyday", "minimalist", "practical"],
+            image_url="https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=400",
+            in_stock=True,
+            rating=4.5
+        ),
+        Product(
+            name="Waterproof Rain Jacket",
+            description="Lightweight, breathable rain jacket with sealed seams and adjustable hood. Packs into its own pocket for easy travel.",
+            category="Apparel",
+            subcategory="Outerwear",
+            price=129.99,
+            brand="Patagonia",
+            gender="unisex",
+            sizes_available=["XS", "S", "M", "L", "XL"],
+            colors=["Navy", "Forest Green", "Yellow", "Black"],
+            tags=["rain", "waterproof", "outdoor", "travel", "sustainable"],
+            image_url="https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=400",
+            in_stock=True,
+            rating=4.7
+        ),
+        Product(
+            name="Slim Fit Chinos",
+            description="Classic chino pants in stretch cotton twill. Slim fit with flat front and slant pockets. Versatile for work or weekend.",
+            category="Apparel",
+            subcategory="Pants",
+            price=79.99,
+            brand="J.Crew",
+            gender="men",
+            sizes_available=["28", "30", "32", "34", "36"],
+            colors=["Khaki", "Navy", "Olive", "Stone"],
+            tags=["casual", "office", "cotton", "versatile"],
+            image_url="https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=400",
+            in_stock=True,
+            rating=4.4
+        ),
+        Product(
+            name="Silk Midi Dress",
+            description="Elegant silk midi dress with delicate draping and subtle sheen. Features adjustable waist tie and side slit. Perfect for events.",
+            category="Apparel",
+            subcategory="Dresses",
+            price=295.00,
+            brand="Reformation",
+            gender="women",
+            sizes_available=["XS", "S", "M", "L"],
+            colors=["Champagne", "Forest Green", "Navy", "Black"],
+            tags=["silk", "elegant", "event", "wedding", "special occasion"],
+            image_url="https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400",
+            in_stock=True,
+            rating=4.8
+        ),
+        Product(
+            name="Chunky White Sneakers",
+            description="Retro-inspired chunky sneakers with premium leather upper. Platform sole adds height while remaining comfortable all day.",
+            category="Footwear",
+            subcategory="Sneakers",
+            price=119.99,
+            brand="New Balance",
+            gender="unisex",
+            sizes_available=["5", "6", "7", "8", "9", "10", "11"],
+            colors=["White", "White/Navy", "White/Green"],
+            tags=["trendy", "casual", "comfortable", "street style"],
+            image_url="https://images.unsplash.com/photo-1460353581641-37baddab0fa2?w=400",
+            in_stock=True,
+            rating=4.6
+        ),
+        Product(
+            name="Organic Cotton T-Shirt",
+            description="Essential t-shirt made from 100% organic cotton. Relaxed fit with crew neck. Sustainably produced with eco-friendly dyes.",
+            category="Apparel",
+            subcategory="T-Shirts",
+            price=35.00,
+            brand="Patagonia",
+            gender="unisex",
+            sizes_available=["XS", "S", "M", "L", "XL", "XXL"],
+            colors=["White", "Black", "Gray", "Navy", "Sage"],
+            tags=["sustainable", "organic", "casual", "basic", "everyday"],
+            image_url="https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400",
+            in_stock=True,
+            rating=4.5
+        ),
+        Product(
+            name="Leather Belt",
+            description="Classic leather belt with brushed metal buckle. Full-grain leather that develops beautiful patina over time.",
+            category="Accessories",
+            subcategory="Belts",
+            price=65.00,
+            brand="Allen Edmonds",
+            gender="men",
+            sizes_available=["30", "32", "34", "36", "38", "40"],
+            colors=["Black", "Brown", "Tan"],
+            tags=["leather", "classic", "formal", "casual", "essential"],
+            image_url="https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400",
+            in_stock=True,
+            rating=4.7
+        ),
+        Product(
+            name="Down Puffer Jacket",
+            description="Warm down puffer jacket with water-resistant shell. Packable design with elasticized cuffs and adjustable hem.",
+            category="Apparel",
+            subcategory="Outerwear",
+            price=199.99,
+            brand="North Face",
+            gender="unisex",
+            sizes_available=["S", "M", "L", "XL"],
+            colors=["Black", "Navy", "Red", "Olive"],
+            tags=["winter", "warm", "down", "packable", "outdoor"],
+            image_url="https://images.unsplash.com/photo-1544923246-77307dd628b8?w=400",
+            in_stock=True,
+            rating=4.8
+        ),
+        Product(
+            name="Aviator Sunglasses",
+            description="Classic aviator sunglasses with polarized lenses and metal frame. UV400 protection with anti-reflective coating.",
+            category="Accessories",
+            subcategory="Eyewear",
+            price=165.00,
+            brand="Ray-Ban",
+            gender="unisex",
+            sizes_available=["One Size"],
+            colors=["Gold/Green", "Silver/Blue", "Black/Gray"],
+            tags=["classic", "sunglasses", "summer", "travel", "timeless"],
+            image_url="https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=400",
+            in_stock=True,
+            rating=4.9
+        ),
+        Product(
+            name="High-Waist Yoga Pants",
+            description="Performance yoga pants with four-way stretch and moisture-wicking fabric. High waist with hidden pocket for essentials.",
+            category="Apparel",
+            subcategory="Activewear",
+            price=89.99,
+            brand="Lululemon",
+            gender="women",
+            sizes_available=["XS", "S", "M", "L"],
+            colors=["Black", "Navy", "Burgundy", "Forest"],
+            tags=["yoga", "gym", "athletic", "comfortable", "stretchy"],
+            image_url="https://images.unsplash.com/photo-1506629082955-511b1aa562c8?w=400",
+            in_stock=True,
+            rating=4.8
+        ),
+        Product(
+            name="Canvas Weekender Bag",
+            description="Durable canvas weekender with leather trim. Spacious main compartment with interior pockets and detachable shoulder strap.",
+            category="Accessories",
+            subcategory="Bags",
+            price=145.00,
+            brand="Herschel",
+            gender="unisex",
+            sizes_available=["One Size"],
+            colors=["Navy", "Gray", "Olive", "Black"],
+            tags=["travel", "weekend", "canvas", "carry-on", "durable"],
+            image_url="https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400",
+            in_stock=True,
+            rating=4.6
+        )
+    ]
+    
+    for product in products:
+        db.add(product)
+    
+    db.commit()
+    print(f"Seeded {len(customers)} customers and {len(products)} products")
