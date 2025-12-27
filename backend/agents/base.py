@@ -34,14 +34,16 @@ class BaseAgent:
         self.system_prompt = system_prompt
         self.llm = get_llm()
     
-    def invoke(self, user_message: str, context: dict = None) -> str:
+    def invoke(self, user_message: str, context: dict = None, system_override: str = None) -> str:
+        system_content = system_override if system_override else self.system_prompt
+        
         messages = [
-            SystemMessage(content=self.system_prompt),
+            SystemMessage(content=system_content),
             HumanMessage(content=user_message)
         ]
         if context:
             context_str = f"\nContext: {context}"
-            messages[0] = SystemMessage(content=self.system_prompt + context_str)
+            messages[0] = SystemMessage(content=system_content + context_str)
         
         response = self.llm.invoke(messages)
         return response.content

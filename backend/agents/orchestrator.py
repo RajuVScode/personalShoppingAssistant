@@ -18,6 +18,8 @@ class GraphState(TypedDict):
     raw_query: str
     is_ambiguous: bool
     clarification_question: str
+    assistant_message: str
+    clarifier_intent: dict
     normalized_intent: dict
     customer_context: dict
     environmental_context: dict
@@ -71,9 +73,11 @@ class ShoppingOrchestrator:
         
         state["is_ambiguous"] = result.get("needs_clarification", False)
         state["clarification_question"] = result.get("clarification_question", "")
+        state["assistant_message"] = result.get("assistant_message", "")
+        state["clarifier_intent"] = result.get("updated_intent", {})
         
         if state["is_ambiguous"]:
-            state["final_response"] = state["clarification_question"]
+            state["final_response"] = result.get("assistant_message", "") or state["clarification_question"]
         
         return state
     
@@ -84,7 +88,24 @@ class ShoppingOrchestrator:
     
     def _intent_node(self, state: GraphState) -> GraphState:
         intent = self.intent_processor.process(state["raw_query"])
-        state["normalized_intent"] = intent.model_dump()
+        intent_dict = intent.model_dump()
+        
+        clarifier_intent = state.get("clarifier_intent", {})
+        if clarifier_intent:
+            if clarifier_intent.get("destination") and not intent_dict.get("location"):
+                intent_dict["location"] = clarifier_intent["destination"]
+            if clarifier_intent.get("travel_date"):
+                intent_dict["occasion"] = f"travel on {clarifier_intent['travel_date']}"
+            if clarifier_intent.get("activities"):
+                intent_dict["keywords"] = intent_dict.get("keywords", []) + clarifier_intent["activities"]
+            if clarifier_intent.get("budget_amount"):
+                intent_dict["budget_max"] = clarifier_intent["budget_amount"]
+            if clarifier_intent.get("clothes"):
+                intent_dict["style"] = clarifier_intent["clothes"]
+            if clarifier_intent.get("preferred_brand"):
+                intent_dict["brand"] = clarifier_intent["preferred_brand"]
+        
+        state["normalized_intent"] = intent_dict
         return state
     
     def _customer_context_node(self, state: GraphState) -> GraphState:
@@ -119,6 +140,8 @@ class ShoppingOrchestrator:
             "raw_query": message,
             "is_ambiguous": False,
             "clarification_question": "",
+            "assistant_message": "",
+            "clarifier_intent": {},
             "normalized_intent": {},
             "customer_context": {},
             "environmental_context": {},
@@ -135,6 +158,7 @@ class ShoppingOrchestrator:
             "products": final_state["products"],
             "clarification_needed": final_state["is_ambiguous"],
             "clarification_question": final_state["clarification_question"],
+            "updated_intent": final_state.get("clarifier_intent", {}),
             "context": {
                 "intent": final_state.get("normalized_intent", {}),
                 "environmental": final_state.get("environmental_context", {})
