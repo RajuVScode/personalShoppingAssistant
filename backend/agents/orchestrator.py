@@ -100,7 +100,11 @@ class ShoppingOrchestrator:
             if clarifier_intent.get("travel_date"):
                 intent_dict["occasion"] = f"travel on {clarifier_intent['travel_date']}"
             if clarifier_intent.get("activities"):
-                intent_dict["keywords"] = intent_dict.get("keywords", []) + clarifier_intent["activities"]
+                activities = clarifier_intent["activities"]
+                if isinstance(activities, str):
+                    activities = [a.strip() for a in activities.split(",")]
+                existing_keywords = intent_dict.get("keywords") or []
+                intent_dict["keywords"] = existing_keywords + activities
             if clarifier_intent.get("budget_amount"):
                 intent_dict["budget_max"] = clarifier_intent["budget_amount"]
             if clarifier_intent.get("clothes"):

@@ -1,4 +1,4 @@
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Union
 from pydantic import BaseModel
 from datetime import datetime
 
@@ -75,7 +75,7 @@ class NormalizedIntent(BaseModel):
     raw_query: str = ""
 
 class CustomerContext(BaseModel):
-    customer_id: int
+    customer_id: Union[int, str]
     name: str
     preferences: Dict[str, Any] = {}
     style_profile: Dict[str, Any] = {}
