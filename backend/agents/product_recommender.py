@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 from backend.agents.base import BaseAgent
 from backend.rag.vector_store import ProductVectorStore
 from backend.models.schemas import EnrichedContext, ProductResponse
@@ -13,12 +14,12 @@ Given the user's travel prompt, destination, dates, weather context, and top 5 p
 
 1) **Weather Overview** – temperatures (high/low), precipitation likelihood, wind, daylight, and seasonal notes
 2) **Recommended Activities** – indoor/outdoor options justified by the weather and destination
-3) **Itinerary** (Weekly or Daily) – when travel-related, a day-by-day or week-by-week plan with suggested activities and attire
-4) **Local Events Summary** – Provide a concise summary of relevant local events (title, dates, venue, URL), indicate whether each event is likely outdoor or indoor, and mark events as `weather-sensitive` when appropriate. For each event, comment on how the event's conditions (outdoor/indoor and likely weather) should influence activities, itinerary choices, and product recommendations from the RAG results. If no events are available, state 'No events found for the requested dates.'
-5) **Clothing, Shoes & Accessories Recommendations** – Weather-aware and practical product recommendations grounded in the forecast. Include specific items from the product catalog that align with the weather and activities. For each recommended product, include: product name, brand, price, material, available colors/sizes, and a brief explanation of why it suits the trip. Use only the product data provided in the RAG results.
-6) **Product Catalog Details** – For each recommended product, provide complete catalog information: long_description, family_name, material, available_colors, available_sizes, brand, price, and availability. If a field is missing, state "Information not available." Maintain a professional and formal tone.
+3) **Itinerary** – CRITICAL: Match the itinerary length EXACTLY to the trip duration provided. If the trip is 1 day, provide a single-day itinerary. If 3 days, provide 3 days. Do NOT default to 3 days or create days beyond the actual trip duration. Include suggested activities and attire for each day.
+4) **Local Events Summary** – Concise summary of relevant local events (title, dates, venue), indicate outdoor/indoor, and note weather-sensitivity. If no events, state 'No events found.'
+5) **Clothing, Shoes & Accessories Recommendations** – Provide outfit guidance and recommendations narrative. Explain WHY each product suits the trip based on weather, activities, and customer style. Reference product names with brief rationale. Do NOT repeat full catalog details here - just recommend with brief explanations.
+6) **Product Catalog Details** – For each recommended product, provide COMPLETE catalog information: name, brand, price, material, available_colors, available_sizes, description, and availability.
 
-Incorporate the 5 recommended products from the RAG to support the plan.
+IMPORTANT: The itinerary must match the exact trip duration. For a 1-day trip, only show 1 day.
 
 If data is missing, state your assumptions clearly and proceed with best-practice recommendations.
 
@@ -170,6 +171,25 @@ class ProductRecommenderAgent(BaseAgent):
         
         return " ".join(parts)
     
+    def _parse_trip_duration(self, occasion: str) -> tuple:
+        if not occasion:
+            return None, None, 1
+        try:
+            if " to " in occasion:
+                parts = occasion.replace("travel on ", "").split(" to ")
+                if len(parts) == 2:
+                    start = datetime.strptime(parts[0].strip(), "%Y-%m-%d")
+                    end = datetime.strptime(parts[1].strip(), "%Y-%m-%d")
+                    duration = (end - start).days + 1
+                    return parts[0].strip(), parts[1].strip(), max(1, duration)
+            else:
+                date_str = occasion.replace("travel on ", "").strip()
+                if "-" in date_str and len(date_str) == 10:
+                    return date_str, date_str, 1
+        except:
+            pass
+        return None, None, 1
+    
     def _generate_explanation(
         self, 
         context: EnrichedContext, 
@@ -180,6 +200,8 @@ class ProductRecommenderAgent(BaseAgent):
         
         weather_info = context.environmental.weather or {}
         events_info = context.environmental.local_events or []
+        
+        start_date, end_date, duration_days = self._parse_trip_duration(context.intent.occasion)
         
         prompt = f"""
 **User Query:** {context.intent.raw_query}
@@ -196,6 +218,12 @@ class ProductRecommenderAgent(BaseAgent):
 - Occasion: {context.intent.occasion or 'Not specified'}
 - Style: {context.intent.style or 'Not specified'}
 - Budget: ${context.intent.budget_min or 0} - ${context.intent.budget_max or 'No limit'}
+
+**TRIP DURATION (CRITICAL - MUST FOLLOW):**
+- Start Date: {start_date or 'Not specified'}
+- End Date: {end_date or 'Not specified'}
+- Duration: {duration_days} day(s)
+- IMPORTANT: The itinerary MUST be exactly {duration_days} day(s). Do NOT create more days.
 
 **Weather Context:**
 - Temperature: {weather_info.get('temperature', 'N/A')}°C
@@ -223,15 +251,15 @@ class ProductRecommenderAgent(BaseAgent):
     "rating": p.get("rating")
 } for p in products[:5]], indent=2)}
 
-Based on the above context, generate a formal, structured response following all 6 required sections:
+Generate a formal response with these 6 sections:
 1) Weather Overview
 2) Recommended Activities
-3) Itinerary (if travel-related)
+3) Itinerary - EXACTLY {duration_days} day(s). No more, no less.
 4) Local Events Summary
-5) Clothing, Shoes & Accessories Recommendations (include specific products from catalog with details)
-6) Product Catalog Details (complete product info for each recommendation)
+5) Clothing & Accessories Recommendations - Brief outfit guidance explaining WHY each product suits the trip. Reference product names with rationale. Do NOT list detailed specs here.
+6) Product Catalog Details - Full product info (name, brand, price, material, colors, sizes, description) for each recommendation.
 
-Use only the product data provided above. Maintain a professional and formal tone throughout.
+Use only the product data provided. Maintain a professional tone.
 """
         
         response = self.invoke(prompt)
