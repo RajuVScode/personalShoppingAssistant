@@ -213,7 +213,7 @@ export default function ChatPage() {
                         data-testid={`message-${message.role}-${index}`}
                       >
                         {message.role === "assistant" ? (
-                          <div className="prose prose-sm dark:prose-invert max-w-none prose-headings:mt-4 prose-headings:mb-2 prose-p:my-2 prose-ul:my-2 prose-li:my-0">
+                          <div className="prose prose-sm dark:prose-invert max-w-none prose-headings:mt-2 prose-headings:mb-1 prose-p:my-1 prose-ul:my-1 prose-li:my-0 prose-hr:my-2">
                             <ReactMarkdown remarkPlugins={[remarkGfm]}>
                               {message.content}
                             </ReactMarkdown>
@@ -232,7 +232,7 @@ export default function ChatPage() {
                               data-testid={`card-product-${product.id}`}
                             >
                               {product.image_url && (
-                                <div className="aspect-square bg-muted overflow-hidden">
+                                <div className="aspect-[4/3] bg-muted overflow-hidden max-h-32">
                                   <img
                                     src={product.image_url}
                                     alt={product.name}
