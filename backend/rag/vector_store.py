@@ -103,6 +103,15 @@ class ProductVectorStore:
         except Exception:
             return False
     
+    def _get_base_product_name(self, name: str) -> str:
+        if " — " in name:
+            return name.split(" — ")[0].strip()
+        if " - Size" in name:
+            return name.split(" - Size")[0].strip()
+        if " (Size" in name:
+            return name.split(" (Size")[0].strip()
+        return name
+    
     def search(self, query: str, k: int = 5, filters: Dict = None) -> List[Dict[str, Any]]:
         if self.vectors is None or len(self.documents) == 0:
             if not self.load_index():
@@ -114,9 +123,9 @@ class ProductVectorStore:
         
         indices = np.argsort(similarities)[::-1]
         
-        products = []
+        candidates = []
         for idx in indices:
-            if len(products) >= k:
+            if len(candidates) >= k * 10:
                 break
                 
             doc = self.documents[idx]
@@ -136,10 +145,46 @@ class ProductVectorStore:
                     if filters["gender"].lower() != metadata["gender"].lower() and metadata["gender"].lower() != "unisex":
                         continue
             
-            products.append({
+            candidates.append({
                 **metadata,
                 "relevance_score": float(similarities[idx]),
                 "description": doc["content"]
             })
+        
+        products = self._deduplicate_and_diversify(candidates, k)
+        
+        return products
+    
+    def _deduplicate_and_diversify(self, candidates: List[Dict[str, Any]], k: int) -> List[Dict[str, Any]]:
+        seen_base_names = set()
+        seen_subcategories = {}
+        products = []
+        
+        for product in candidates:
+            base_name = self._get_base_product_name(product.get("name", ""))
+            subcategory = product.get("subcategory", "unknown")
+            
+            if base_name in seen_base_names:
+                continue
+            
+            subcat_count = seen_subcategories.get(subcategory, 0)
+            if subcat_count >= 2 and len(products) < k:
+                continue
+            
+            seen_base_names.add(base_name)
+            seen_subcategories[subcategory] = subcat_count + 1
+            products.append(product)
+            
+            if len(products) >= k:
+                break
+        
+        if len(products) < k:
+            for product in candidates:
+                if len(products) >= k:
+                    break
+                base_name = self._get_base_product_name(product.get("name", ""))
+                if base_name not in seen_base_names:
+                    seen_base_names.add(base_name)
+                    products.append(product)
         
         return products
