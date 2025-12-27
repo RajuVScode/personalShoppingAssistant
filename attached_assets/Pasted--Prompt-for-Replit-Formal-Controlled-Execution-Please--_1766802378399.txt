@@ -1,0 +1,91 @@
+________________________________________
+Prompt for Replit (Formal & Controlled Execution)
+Please refer to the attached architecture diagram and sequence diagram for the AI-driven shopping experience system.
+Important:
+⚠️ Do NOT start implementation immediately.
+I will provide instructions step by step. Your task in this response is only to provide a detailed project plan based on the requirements below.
+________________________________________
+Objective
+Design and implement an AI-powered personalized shopping experience using a multi-agent architecture. The solution must strictly follow the provided diagrams and technical constraints.
+________________________________________
+High-Level Requirements
+1. Technology Stack
+•	Backend
+o	Python
+o	LangChain
+o	LangGraph (for agent orchestration and state management)
+•	Frontend
+o	ReactJS (strictly React; no alternatives)
+•	LLM
+o	Azure OpenAI
+o	Model: gpt-4o-mini
+o	Use this model consistently across all agents
+•	Vector Store
+o	Any suitable vector database compatible with LangChain (e.g., FAISS, Azure AI Search, etc.)
+•	Database
+o	Persistent database for storing customer profile data
+________________________________________
+2. Functional Scope
+Agents to Implement
+Based on the diagrams, the system must include (but is not limited to):
+1.	Shopping Experience Agent (Orchestrator)
+2.	Clarifier Agent
+o	Captures, clarifies, and normalizes user intent
+3.	Intent Processor
+o	Produces refined / normalized intent
+4.	Customer 360 Agent
+o	Fetches customer profile, preferences, and historical data from DB
+5.	Context Aggregator / Meta Brain Agent
+o	Aggregates:
+	Refined intent
+	Customer context
+	Real-time environmental context
+6.	Product Recommendation Agent (RAG-based)
+o	Uses Retrieval-Augmented Generation on product catalog
+________________________________________
+3. RAG (Retrieval-Augmented Generation)
+•	I will provide sample data documents for:
+o	Customer profile
+o	Product catalog
+•	Product catalog must be:
+o	Embedded
+o	Stored in a vector database
+o	Queried using semantic search
+•	RAG should combine:
+o	Refined intent
+o	Full aggregated context
+o	Retrieved product knowledge
+________________________________________
+4. External Context Integration
+For contextual enrichment, integrate open-source APIs for:
+•	Weather data
+•	Local events
+•	Social trends
+(Exact API choices can be proposed in the project plan.)
+________________________________________
+5. Data Management
+•	Customer data must be:
+o	Stored in a database
+o	Retrieved dynamically during runtime
+•	Clearly separate:
+o	Transactional customer data (DB)
+o	Knowledge data (Vector DB)
+________________________________________
+What You Need to Do Now
+✅ Step 1 (Only This Step)
+Provide a detailed project plan that includes:
+1.	System Architecture Overview
+2.	Agent Responsibilities & Interaction Flow
+3.	LangGraph State Design
+4.	RAG Pipeline Design
+5.	Database & Vector Store Strategy
+6.	API Integration Plan for External Context
+7.	Frontend–Backend Interaction Plan
+8.	Development Phases / Milestones
+🚫 Do not generate any code yet.
+🚫 Do not assume missing requirements.
+✅ Wait for my explicit instruction before starting implementation.
+________________________________________
+Once the project plan is approved, I will guide you step by step to begin implementation.
+________________________________________
+
