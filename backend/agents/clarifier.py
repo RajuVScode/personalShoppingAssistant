@@ -52,8 +52,10 @@ Rules:
 - "next week" => the following week dates (Monday-Sunday)
 - "this weekend" => Saturday-Sunday of the current week
 - "next weekend" => Saturday-Sunday of the following week
+- "next month" => dates in the following calendar month
 - IMPORTANT: "next week", "this weekend", etc. are VALID date inputs - do NOT ask for more specific dates!
-- If month/day is given without year, infer the year with a future bias relative to {CURRENT_DATE}.
+- CRITICAL: All dates MUST be in the FUTURE relative to {CURRENT_DATE}. If today is late December 2025, "next week" means early January 2026, NOT January 2025.
+- If month/day is given without year, always use the NEXT occurrence of that date in the future. If "January 5" is mentioned and today is December 27, 2025, it means January 5, 2026.
 - If multiple destinations are mentioned, choose the primary after prepositions (to/in/at/for) or the final city in "heading to …".
 - Date format: "YYYY-MM-DD" (single date) or "YYYY-MM-DD to YYYY-MM-DD" (range).
 
