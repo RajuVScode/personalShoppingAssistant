@@ -208,7 +208,8 @@ class ProductRecommenderAgent(BaseAgent):
 
 **Customer Profile:**
 - Name: {context.customer.name}
-- Location/Destination: {context.customer.location or 'Not specified'}
+- Home Location: {context.customer.location or 'Not specified'}
+- Travel Destination: {getattr(context.intent, 'location', None) or 'Not specified'}
 - Style Preferences: {context.customer.style_profile}
 - Recent Purchases: {context.customer.recent_purchases[:3] if context.customer.recent_purchases else 'None'}
 

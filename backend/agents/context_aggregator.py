@@ -15,8 +15,10 @@ class ContextAggregator:
         intent: NormalizedIntent, 
         customer: CustomerContext
     ) -> EnrichedContext:
+        destination = getattr(intent, 'location', None) or customer.location
+        
         env_data = self.external_service.get_environmental_context(
-            customer.location
+            destination
         )
         
         environmental = EnvironmentalContext(
