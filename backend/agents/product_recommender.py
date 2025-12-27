@@ -8,43 +8,22 @@ from backend.database.models import Product
 from typing import List, Dict, Any
 from sqlalchemy import or_, and_
 
-RECOMMENDER_PROMPT = """You are a formal travel and lifestyle consultant providing professional recommendations.
+RECOMMENDER_PROMPT = """You are a formal travel and lifestyle recommender.
 
-FORMATTING REQUIREMENTS:
-- Use clean, consistent formatting with no extra blank lines
-- Use markdown headers (###) for sections
-- Use bullet points (-) for lists, properly indented
-- Keep paragraphs concise (2-3 sentences max)
-- No double spacing between sections
-- Professional, formal tone throughout
+Given the user's travel prompt, destination, dates, weather context, and top 5 product recommendations, produce a structured, formal response that MUST include:
 
-Generate a response with these 6 sections:
+1) **Weather Overview** – temperatures (high/low), precipitation likelihood, wind, daylight, and seasonal notes
+2) **Recommended Activities** – indoor/outdoor options justified by the weather and destination
+3) **Itinerary** – CRITICAL: Match the itinerary length EXACTLY to the trip duration provided. If the trip is 1 day, provide a single-day itinerary. If 3 days, provide 3 days. Do NOT default to 3 days or create days beyond the actual trip duration. Include suggested activities and attire for each day.
+4) **Local Events Summary** – Concise summary of relevant local events (title, dates, venue), indicate outdoor/indoor, and note weather-sensitivity. If no events, state 'No events found.'
+5) **Clothing, Shoes & Accessories Recommendations** – Provide outfit guidance and recommendations narrative. Explain WHY each product suits the trip based on weather, activities, and customer style. Reference product names with brief rationale. Do NOT repeat full catalog details here - just recommend with brief explanations.
+6) **Product Catalog Details** – For each recommended product, provide COMPLETE catalog information: name, brand, price, material, available_colors, available_sizes, description, and availability.
 
-### 1) Weather Overview
-Provide temperature range (high/low in both °C and °F), precipitation likelihood, wind conditions, and daylight hours. Keep to 2-3 sentences.
+IMPORTANT: The itinerary must match the exact trip duration. For a 1-day trip, only show 1 day.
 
-### 2) Recommended Activities
-List 4-5 indoor/outdoor activities suited to the weather and destination. Use bullet points.
+If data is missing, state your assumptions clearly and proceed with best-practice recommendations.
 
-### 3) Itinerary
-CRITICAL: Match the itinerary length EXACTLY to the trip duration. For a 1-day trip, show only 1 day with Morning/Afternoon/Evening segments. Include suggested attire for each segment.
-
-### 4) Local Events Summary
-List relevant events with title, date, and venue. Note if outdoor/indoor. If none, state "No events scheduled for these dates."
-
-### 5) Clothing & Accessories Recommendations
-Provide outfit guidance explaining WHY each product suits the trip. Reference product names with brief rationale. Do NOT list full specs here.
-
-### 6) Product Catalog Details
-For each product, list in this format:
-**[Product Name]**
-- Brand: [brand]
-- Price: $[price]
-- Material: [material]
-- Colors: [colors]
-- Description: [brief description]
-
-Keep the response concise and professional."""
+Ensure the tone is formal, professional, and complete. All sections must be present."""
 
 class ProductRecommenderAgent(BaseAgent):
     def __init__(self):
@@ -273,22 +252,15 @@ class ProductRecommenderAgent(BaseAgent):
     "rating": p.get("rating")
 } for p in products[:5]], indent=2)}
 
-FORMATTING RULES:
-- Use ### for section headers
-- Use bullet points (-) for lists
-- No extra blank lines between sections
-- Keep paragraphs to 2-3 sentences
-- Professional, formal tone
+Generate a formal response with these 6 sections:
+1) Weather Overview
+2) Recommended Activities
+3) Itinerary - EXACTLY {duration_days} day(s). No more, no less.
+4) Local Events Summary
+5) Clothing & Accessories Recommendations - Brief outfit guidance explaining WHY each product suits the trip. Reference product names with rationale. Do NOT list detailed specs here.
+6) Product Catalog Details - Full product info (name, brand, price, material, colors, sizes, description) for each recommendation.
 
-Generate response with these 6 sections:
-### 1) Weather Overview - Temperature, precipitation, conditions (2-3 sentences)
-### 2) Recommended Activities - 4-5 bullet points of indoor/outdoor options
-### 3) Itinerary - EXACTLY {duration_days} day(s) with Morning/Afternoon/Evening segments
-### 4) Local Events Summary - Events list or "No events scheduled"
-### 5) Clothing & Accessories Recommendations - Outfit guidance with product rationale (no specs)
-### 6) Product Catalog Details - Each product with Brand, Price, Material, Colors, Description
-
-Use only the product data provided. Be concise and professional.
+Use only the product data provided. Maintain a professional tone.
 """
         
         response = self.invoke(prompt)

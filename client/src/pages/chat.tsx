@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Send, Sparkles, User, ShoppingBag, Cloud, TrendingUp, Calendar, RefreshCw } from "lucide-react";
-import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -211,9 +210,7 @@ export default function ChatPage() {
                         }`}
                         data-testid={`message-${message.role}-${index}`}
                       >
-                        <div className="prose prose-sm dark:prose-invert max-w-none">
-                          <ReactMarkdown>{message.content}</ReactMarkdown>
-                        </div>
+                        <p className="whitespace-pre-wrap">{message.content}</p>
                       </div>
                       
                       {message.products && message.products.length > 0 && (
