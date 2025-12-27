@@ -57,9 +57,11 @@ class Customer360Agent:
             "lifetime_value": result.lifetime_value_cents / 100 if result.lifetime_value_cents else 0,
         }
         
+        numeric_cust_id = int(customer_id) if isinstance(customer_id, int) else int(cust_id_str.replace("CUST-", ""))
+        
         recent_purchases = (
             self.db.query(PurchaseHistory)
-            .filter(PurchaseHistory.customer_id == cust_id_str)
+            .filter(PurchaseHistory.customer_id == numeric_cust_id)
             .order_by(PurchaseHistory.purchased_at.desc())
             .limit(10)
             .all()
