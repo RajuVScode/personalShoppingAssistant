@@ -95,6 +95,15 @@ SKIP_PHRASES = [
     "no particular", "don't have any", "dont have any", "no additional",
 ]
 
+ACTIVITY_KEYWORDS = [
+    "attending", "attend", "event", "events", "local events", "concert", "concerts",
+    "dinner", "dining", "restaurant", "beach", "hiking", "sightseeing", "tour",
+    "museum", "shopping", "nightlife", "party", "festival", "sports", "game",
+    "meeting", "conference", "business", "wedding", "ceremony", "show", "theater",
+    "theatre", "opera", "ballet", "club", "bar", "swimming", "skiing", "surfing",
+    "exploring", "adventure", "outdoor", "indoor", "relaxing", "spa", "wellness",
+]
+
 class ClarifierAgent(BaseAgent):
     def __init__(self):
         super().__init__("Clarifier", CLARIFIER_PROMPT)
@@ -102,6 +111,10 @@ class ClarifierAgent(BaseAgent):
     def _is_skip_response(self, query: str) -> bool:
         query_lower = query.lower().strip()
         return any(phrase in query_lower for phrase in SKIP_PHRASES)
+    
+    def _mentions_activity(self, query: str) -> bool:
+        query_lower = query.lower().strip()
+        return any(keyword in query_lower for keyword in ACTIVITY_KEYWORDS)
     
     def analyze(self, query: str, conversation_history: list = None, existing_intent: dict = None) -> dict:
         current_date = get_current_date()
@@ -156,8 +169,9 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             )
             
             is_skip = self._is_skip_response(query)
+            mentions_activity = self._mentions_activity(query)
             
-            if has_required and (is_skip or has_optional):
+            if has_required and (is_skip or has_optional or mentions_activity):
                 return {
                     "needs_clarification": False,
                     "clarification_question": "",
