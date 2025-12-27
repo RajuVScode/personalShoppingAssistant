@@ -70,7 +70,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold text-gray-800" data-testid="text-title">
-            Travel & Lifestyle Assistant
+            Personal Shopping Assistant
           </CardTitle>
           <CardDescription data-testid="text-description">
             Sign in with your Customer ID to get personalized recommendations
