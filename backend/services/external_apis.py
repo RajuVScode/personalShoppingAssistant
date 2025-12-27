@@ -70,11 +70,14 @@ class EventsService:
                 if "_embedded" in data and "events" in data["_embedded"]:
                     for event in data["_embedded"]["events"][:10]:
                         event_info = {
-                            "name": event.get("name", "Unknown Event"),
+                            "title": event.get("name", "Unknown Event"),
                             "type": self._get_event_type(event),
-                            "date": self._get_event_date(event),
+                            "start": self._get_event_start(event),
+                            "end": self._get_event_end(event),
                             "venue": self._get_venue(event),
-                            "url": event.get("url", "")
+                            "url": event.get("url", ""),
+                            "description": self._get_description(event),
+                            "weather_sensitive": self._is_weather_sensitive(event)
                         }
                         events.append(event_info)
                 
@@ -91,23 +94,74 @@ class EventsService:
             return segment.get("name", "entertainment").lower()
         return "entertainment"
     
-    def _get_event_date(self, event: Dict) -> str:
+    def _get_event_start(self, event: Dict) -> str:
         dates = event.get("dates", {})
         start = dates.get("start", {})
-        return start.get("localDate", "TBD")
+        local_date = start.get("localDate", "TBD")
+        local_time = start.get("localTime", "")
+        if local_time:
+            return f"{local_date} {local_time}"
+        return local_date
+    
+    def _get_event_end(self, event: Dict) -> str:
+        dates = event.get("dates", {})
+        end = dates.get("end", {})
+        local_date = end.get("localDate", "")
+        local_time = end.get("localTime", "")
+        if local_date and local_time:
+            return f"{local_date} {local_time}"
+        elif local_date:
+            return local_date
+        return ""
     
     def _get_venue(self, event: Dict) -> str:
         embedded = event.get("_embedded", {})
         venues = embedded.get("venues", [])
         if venues:
-            return venues[0].get("name", "")
+            venue = venues[0]
+            name = venue.get("name", "")
+            city = venue.get("city", {}).get("name", "")
+            state = venue.get("state", {}).get("stateCode", "")
+            if city and state:
+                return f"{name}, {city}, {state}"
+            elif city:
+                return f"{name}, {city}"
+            return name
         return ""
+    
+    def _get_description(self, event: Dict) -> str:
+        info = event.get("info", "") or event.get("pleaseNote", "")
+        if info:
+            return info[:200] + "..." if len(info) > 200 else info
+        classifications = event.get("classifications", [])
+        if classifications:
+            genre = classifications[0].get("genre", {}).get("name", "")
+            segment = classifications[0].get("segment", {}).get("name", "")
+            if genre and segment:
+                return f"{segment} - {genre} event"
+            elif segment:
+                return f"{segment} event"
+        return "Live event"
+    
+    def _is_weather_sensitive(self, event: Dict) -> bool:
+        embedded = event.get("_embedded", {})
+        venues = embedded.get("venues", [])
+        if venues:
+            venue = venues[0]
+            if venue.get("upcomingEvents", {}).get("outdoor"):
+                return True
+            venue_type = venue.get("type", "").lower()
+            if "outdoor" in venue_type or "park" in venue_type or "stadium" in venue_type:
+                return True
+        event_type = self._get_event_type(event).lower()
+        outdoor_types = ["sports", "music", "festival", "outdoor"]
+        return any(t in event_type for t in outdoor_types)
     
     def _get_fallback_events(self) -> List[Dict[str, Any]]:
         return [
-            {"name": "Local Fashion Week", "type": "fashion", "date": "Upcoming", "venue": "Convention Center", "url": ""},
-            {"name": "Tech Conference", "type": "business", "date": "Upcoming", "venue": "Expo Hall", "url": ""},
-            {"name": "Music Festival", "type": "entertainment", "date": "Upcoming", "venue": "City Park", "url": ""}
+            {"title": "Local Fashion Week", "type": "fashion", "start": "Upcoming", "end": "", "venue": "Convention Center", "url": "", "description": "Fashion and style showcase", "weather_sensitive": False},
+            {"title": "Tech Conference", "type": "business", "start": "Upcoming", "end": "", "venue": "Expo Hall", "url": "", "description": "Technology and innovation event", "weather_sensitive": False},
+            {"title": "Music Festival", "type": "entertainment", "start": "Upcoming", "end": "", "venue": "City Park", "url": "", "description": "Outdoor music and arts festival", "weather_sensitive": True}
         ]
 
 class TrendsService:
