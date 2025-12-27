@@ -57,3 +57,16 @@ export const customerAddresses = pgTable("customer_addresses", {
 export const insertCustomerAddressSchema = createInsertSchema(customerAddresses).omit({});
 export type InsertCustomerAddress = z.infer<typeof insertCustomerAddressSchema>;
 export type CustomerAddress = typeof customerAddresses.$inferSelect;
+
+export const customerPreferences = pgTable("customer_preferences", {
+  customer_id: varchar("customer_id", { length: 20 }).primaryKey().references(() => customers.customer_id),
+  categories_interested: text("categories_interested").array(),
+  price_sensitivity: varchar("price_sensitivity", { length: 20 }),
+  preferred_brands: text("preferred_brands").array(),
+  preferred_styles: text("preferred_styles").array(),
+  preferred_shopping_days: varchar("preferred_shopping_days", { length: 30 }),
+});
+
+export const insertCustomerPreferencesSchema = createInsertSchema(customerPreferences).omit({});
+export type InsertCustomerPreferences = z.infer<typeof insertCustomerPreferencesSchema>;
+export type CustomerPreferences = typeof customerPreferences.$inferSelect;
