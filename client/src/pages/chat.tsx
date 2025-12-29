@@ -343,7 +343,7 @@ export default function ChatPage() {
                         {currentContext.intent.category}
                       </Badge>
                     )}
-                    {currentContext.intent.occasion && (
+                    {currentContext.intent.occasion && !currentContext.intent.trip_segments?.length && (
                       <Badge variant="outline" className="mr-1">
                         {currentContext.intent.occasion}
                       </Badge>
