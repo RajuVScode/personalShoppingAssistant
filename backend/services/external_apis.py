@@ -1,5 +1,6 @@
 import httpx
 import os
+from datetime import datetime, timedelta
 from typing import Optional, Dict, List, Any
 
 class WeatherService:
@@ -49,8 +50,14 @@ class WeatherService:
         
         return (40.7128, -74.0060)
     
-    def get_weather(self, location: str = None) -> Dict[str, Any]:
+    def get_weather(self, location: str = None, start_date: str = None, end_date: str = None) -> Dict[str, Any]:
         latitude, longitude = self._get_coordinates(location)
+        
+        days_until_travel = self._calculate_days_until_travel(start_date)
+        
+        if days_until_travel > 16:
+            return self._get_historical_weather(latitude, longitude, location, start_date, end_date)
+        
         try:
             with httpx.Client(timeout=10.0) as client:
                 params = {
@@ -72,6 +79,100 @@ class WeatherService:
                 }
         except Exception as e:
             return {"error": str(e), "description": "Unable to fetch weather data"}
+    
+    def _calculate_days_until_travel(self, start_date: str) -> int:
+        if not start_date:
+            return 0
+        try:
+            travel_date = datetime.strptime(start_date, "%Y-%m-%d")
+            today = datetime.now()
+            delta = (travel_date - today).days
+            return max(0, delta)
+        except:
+            return 0
+    
+    def _get_historical_weather(self, latitude: float, longitude: float, location: str, start_date: str, end_date: str) -> Dict[str, Any]:
+        try:
+            from meteostat import Point, Normals
+            
+            point = Point(latitude, longitude)
+            
+            normals = Normals(point)
+            df = normals.fetch()
+            
+            if df.empty:
+                return self._get_climate_estimate(latitude, location)
+            
+            target_month = 1
+            if start_date:
+                try:
+                    travel_date = datetime.strptime(start_date, "%Y-%m-%d")
+                    target_month = travel_date.month
+                except:
+                    pass
+            
+            if target_month in df.index:
+                month_data = df.loc[target_month]
+                avg_temp = month_data.get('tavg')
+                if avg_temp is None:
+                    tmin = month_data.get('tmin', 15)
+                    tmax = month_data.get('tmax', 25)
+                    avg_temp = (tmin + tmax) / 2 if tmin and tmax else 20
+                
+                prcp = month_data.get('prcp', 0)
+                
+                description = self._get_climate_description(avg_temp, prcp)
+                
+                return {
+                    "temperature": round(avg_temp, 1) if avg_temp else 20,
+                    "precipitation": prcp,
+                    "description": f"{description} (historical average)",
+                    "location": location or "Default",
+                    "data_source": "meteostat_normals"
+                }
+            else:
+                return self._get_climate_estimate(latitude, location)
+                
+        except Exception as e:
+            return self._get_climate_estimate(latitude, location)
+    
+    def _get_climate_estimate(self, latitude: float, location: str) -> Dict[str, Any]:
+        if abs(latitude) < 23.5:
+            temp, desc = 28, "Tropical climate"
+        elif abs(latitude) < 35:
+            temp, desc = 22, "Subtropical climate"
+        elif abs(latitude) < 50:
+            temp, desc = 15, "Temperate climate"
+        else:
+            temp, desc = 8, "Cool climate"
+        
+        return {
+            "temperature": temp,
+            "description": f"{desc} (estimated)",
+            "location": location or "Default",
+            "data_source": "estimate"
+        }
+    
+    def _get_climate_description(self, temp: float, prcp: float) -> str:
+        if temp > 30:
+            temp_desc = "Hot"
+        elif temp > 25:
+            temp_desc = "Warm"
+        elif temp > 15:
+            temp_desc = "Mild"
+        elif temp > 5:
+            temp_desc = "Cool"
+        else:
+            temp_desc = "Cold"
+        
+        if prcp > 100:
+            prcp_desc = ", rainy"
+        elif prcp > 50:
+            prcp_desc = ", some rain expected"
+        else:
+            prcp_desc = ""
+        
+        return f"{temp_desc}{prcp_desc}"
     
     def _get_weather_description(self, code: int) -> str:
         weather_codes = {
@@ -227,7 +328,7 @@ class ExternalContextService:
         self.trends_service = TrendsService()
     
     def get_environmental_context(self, location: Optional[str] = None, start_date: str = None, end_date: str = None) -> Dict[str, Any]:
-        weather = self.weather_service.get_weather(location)
+        weather = self.weather_service.get_weather(location, start_date, end_date)
         events = self.events_service.get_local_events(location or "New York", start_date, end_date)
         trends = self.trends_service.get_fashion_trends()
         
