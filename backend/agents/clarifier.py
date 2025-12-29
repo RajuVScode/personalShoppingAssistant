@@ -174,7 +174,9 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             merged_intent = self._merge_intent(existing_intent or {}, new_intent)
             
             ready_for_recs = result.get("ready_for_recommendations", False)
-            has_required = merged_intent.get("destination") and merged_intent.get("travel_date")
+            has_destination = merged_intent.get("destination")
+            has_date = merged_intent.get("travel_date") or merged_intent.get("trip_segments")
+            has_required = has_destination and has_date
             
             has_optional = (
                 merged_intent.get("activities") or 
@@ -186,7 +188,16 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             is_skip = self._is_skip_response(query)
             mentions_activity = self._mentions_activity(query)
             
-            if has_required and (is_skip or has_optional or mentions_activity):
+            query_mentions_date = any(word in query.lower() for word in [
+                "january", "february", "march", "april", "may", "june", 
+                "july", "august", "september", "october", "november", "december",
+                "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday",
+                "next week", "this week", "tomorrow", "today", "weekend",
+                " to ", "-", "1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th",
+                "10th", "11th", "12th", "13th", "14th", "15th"
+            ])
+            
+            if has_required:
                 return {
                     "needs_clarification": False,
                     "clarification_question": "",
@@ -196,12 +207,28 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                     "ready_for_recommendations": True
                 }
             
-            if has_required and not result.get("next_question"):
-                needs_clarification = False
-            elif has_required and ready_for_recs:
-                needs_clarification = False
-            else:
-                needs_clarification = result.get("next_question") is not None
+            if has_destination and query_mentions_date:
+                return {
+                    "needs_clarification": False,
+                    "clarification_question": "",
+                    "assistant_message": "Got it! Let me prepare your personalized recommendations.",
+                    "updated_intent": merged_intent,
+                    "clarified_query": query,
+                    "ready_for_recommendations": True
+                }
+            
+            if is_skip or mentions_activity:
+                if has_destination:
+                    return {
+                        "needs_clarification": False,
+                        "clarification_question": "",
+                        "assistant_message": "Perfect! Let me prepare your personalized recommendations.",
+                        "updated_intent": merged_intent,
+                        "clarified_query": query,
+                        "ready_for_recommendations": True
+                    }
+            
+            needs_clarification = not has_destination or (not has_date and not query_mentions_date)
             
             return {
                 "needs_clarification": needs_clarification,
@@ -209,7 +236,7 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                 "assistant_message": result.get("assistant_message", ""),
                 "updated_intent": merged_intent,
                 "clarified_query": query,
-                "ready_for_recommendations": ready_for_recs or has_required
+                "ready_for_recommendations": not needs_clarification
             }
         except json.JSONDecodeError:
             return {
