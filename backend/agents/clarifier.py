@@ -177,6 +177,15 @@ class ClarifierAgent(BaseAgent):
                 return city
         return None
     
+    def _is_new_trip_request(self, query: str) -> bool:
+        query_lower = query.lower().strip()
+        trip_indicators = [
+            "travelling to", "traveling to", "going to", "flying to",
+            "trip to", "visit", "planning to go", "want to go",
+            "heading to", "travel to"
+        ]
+        return any(indicator in query_lower for indicator in trip_indicators)
+    
     def analyze(self, query: str, conversation_history: list = None, existing_intent: dict = None) -> dict:
         current_date = get_current_date()
         existing_intent = existing_intent or {}
@@ -185,7 +194,13 @@ class ClarifierAgent(BaseAgent):
         is_confirmation = self._is_confirmation(query)
         existing_destination = existing_intent.get("destination")
         
+        is_new_trip = self._is_new_trip_request(query)
+        if is_new_trip:
+            existing_intent["_asked_optional"] = False
+        
         if city_in_query:
+            if city_in_query != existing_destination:
+                existing_intent["_asked_optional"] = False
             existing_intent["destination"] = city_in_query
             if is_confirmation or (len(query.strip().split()) <= 4):
                 pass
