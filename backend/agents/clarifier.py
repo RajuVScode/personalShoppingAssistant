@@ -191,14 +191,23 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             is_skip = self._is_skip_response(query)
             mentions_activity = self._mentions_activity(query)
             
-            query_mentions_date = any(word in query.lower() for word in [
+            query_lower = query.lower()
+            date_keywords = [
                 "january", "february", "march", "april", "may", "june", 
                 "july", "august", "september", "october", "november", "december",
                 "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday",
-                "next week", "this week", "tomorrow", "today", "weekend",
-                " to ", "-", "1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th",
-                "10th", "11th", "12th", "13th", "14th", "15th"
-            ])
+                "next week", "this week", "tomorrow", "today", "weekend", "next month",
+                "1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th",
+                "10th", "11th", "12th", "13th", "14th", "15th",
+                "16th", "17th", "18th", "19th", "20th", "21st", "22nd", "23rd",
+                "24th", "25th", "26th", "27th", "28th", "29th", "30th", "31st"
+            ]
+            
+            import re
+            has_date_range = bool(re.search(r'\d+\s*(to|-)\s*\d+', query_lower))
+            has_month_day = bool(re.search(r'(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\w*\s+\d+', query_lower))
+            
+            query_mentions_date = any(word in query_lower for word in date_keywords) or has_date_range or has_month_day
             
             if has_destination and not has_date and not query_mentions_date:
                 dest = merged_intent.get("destination", "your destination")
