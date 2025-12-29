@@ -235,6 +235,8 @@ class ProductRecommenderAgent(BaseAgent):
             return ""
         
         result = []
+        cumulative_day = 1
+        
         for i, seg in enumerate(segments):
             if hasattr(seg, 'destination'):
                 dest = seg.destination
@@ -249,14 +251,44 @@ class ProductRecommenderAgent(BaseAgent):
                 weather = seg.get('weather', {})
                 events = seg.get('local_events', [])
             
+            try:
+                start_dt = datetime.strptime(start, "%Y-%m-%d")
+                end_dt = datetime.strptime(end, "%Y-%m-%d")
+                segment_days = (end_dt - start_dt).days + 1
+            except:
+                segment_days = 1
+            
+            day_range = f"Day {cumulative_day}" if segment_days == 1 else f"Day {cumulative_day}-{cumulative_day + segment_days - 1}"
+            
             segment_info = f"""
-**Segment {i+1}: {dest} ({start} to {end})**
+**Segment {i+1}: {dest} ({start} to {end}) - {day_range} of trip**
+- Duration: {segment_days} day(s)
 - Weather: {weather.get('temperature', 'N/A')}°C, {weather.get('description', 'N/A')}
 - Local Events: {json.dumps(events[:3], indent=2) if events else 'No events found'}
 """
             result.append(segment_info)
+            cumulative_day += segment_days
         
         return "\n".join(result)
+    
+    def _calculate_actual_trip_days(self, segments) -> int:
+        total_days = 0
+        for seg in segments:
+            if hasattr(seg, 'start_date'):
+                start = seg.start_date
+                end = seg.end_date
+            else:
+                start = seg.get('start_date', '')
+                end = seg.get('end_date', '')
+            
+            try:
+                start_dt = datetime.strptime(start, "%Y-%m-%d")
+                end_dt = datetime.strptime(end, "%Y-%m-%d")
+                total_days += (end_dt - start_dt).days + 1
+            except:
+                total_days += 1
+        
+        return max(1, total_days)
     
     def _generate_explanation(
         self, 
@@ -275,6 +307,7 @@ class ProductRecommenderAgent(BaseAgent):
         start_date, end_date, duration_days = self._parse_trip_duration(context.intent.occasion)
         
         if is_multi_destination:
+            duration_days = self._calculate_actual_trip_days(segments)
             segments_section = self._format_segments_context(segments)
             destination_info = ", ".join([
                 s.destination if hasattr(s, 'destination') else s.get('destination', '') 
