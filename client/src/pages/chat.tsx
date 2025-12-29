@@ -71,7 +71,7 @@ export default function ChatPage() {
   const [currentContext, setCurrentContext] = useState<ContextInfo | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [customerId, setCustomerId] = useState<string | null>(null);
-  const [greetingMessage, setGreetingMessage] = useState<string | null>(null);
+  const [customerName, setCustomerName] = useState<string | null>(null);
   const [, setLocation] = useLocation();
 
   const handleLogout = () => {
@@ -89,18 +89,9 @@ export default function ChatPage() {
 
   useEffect(() => {
     const storedCustomerId = localStorage.getItem("customer_id");
+    const storedCustomerName = localStorage.getItem("customer_name");
     setCustomerId(storedCustomerId);
-    
-    if (storedCustomerId) {
-      fetch(`/api/greeting/${storedCustomerId}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.greeting) {
-            setGreetingMessage(data.greeting);
-          }
-        })
-        .catch(console.error);
-    }
+    setCustomerName(storedCustomerName);
   }, []);
 
   const chatMutation = useMutation({
@@ -206,18 +197,9 @@ export default function ChatPage() {
                   <ShoppingBag className="h-10 w-10 text-primary" />
                 </div>
                 <h2 className="text-2xl font-semibold mb-3">Welcome to AI Shopping</h2>
-                <p className="text-muted-foreground max-w-md mb-6">
-                  Tell me what you're looking for and I'll find personalized recommendations based on your style, the weather, and current trends.
+                <p className="text-muted-foreground max-w-md mb-8" data-testid="text-greeting">
+                  Good day! {customerName || "Guest"}, How may I assist you with your travel shopping? I'll find personalized recommendations based on your style, the weather, and current trends.
                 </p>
-                {greetingMessage && (
-                  <div className="mb-8 p-4 bg-primary/5 rounded-lg border border-primary/20 max-w-md">
-                    <div className="flex items-center gap-2 justify-center mb-2">
-                      <Sparkles className="h-5 w-5 text-primary" />
-                      <span className="text-sm font-medium text-primary">Personal Assistant</span>
-                    </div>
-                    <p className="text-foreground" data-testid="text-greeting">{greetingMessage}</p>
-                  </div>
-                )}
                 <div className="flex flex-wrap gap-2 justify-center max-w-lg">
                   {[
                     "I need shoes for a wedding",
