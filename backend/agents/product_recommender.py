@@ -52,7 +52,8 @@ class ProductRecommenderAgent(BaseAgent):
             try:
                 search_query = self._build_search_query(context)
                 filters = self._build_filters(context)
-                products = self.vector_store.search(search_query, k=num_results, filters=filters)
+                raw_products = self.vector_store.search(search_query, k=num_results * 3, filters=filters)
+                products = self._diversify_by_category(raw_products, num_results)
             except Exception:
                 pass
         
@@ -62,6 +63,44 @@ class ProductRecommenderAgent(BaseAgent):
         explanation = self._generate_explanation(context, products)
         
         return products, explanation
+    
+    def _diversify_by_category(self, products: List[Dict[str, Any]], num_results: int) -> List[Dict[str, Any]]:
+        if not products:
+            return []
+        
+        seen_subcategories = set()
+        seen_names = set()
+        diversified = []
+        
+        for product in products:
+            subcategory = product.get("subcategory", "").lower()
+            base_name = product.get("name", "").split("—")[0].strip().lower()
+            
+            if base_name in seen_names:
+                continue
+            
+            if subcategory and subcategory in seen_subcategories:
+                continue
+            
+            diversified.append(product)
+            if subcategory:
+                seen_subcategories.add(subcategory)
+            seen_names.add(base_name)
+            
+            if len(diversified) >= num_results:
+                break
+        
+        if len(diversified) < num_results:
+            for product in products:
+                if product not in diversified:
+                    base_name = product.get("name", "").split("—")[0].strip().lower()
+                    if base_name not in seen_names:
+                        diversified.append(product)
+                        seen_names.add(base_name)
+                        if len(diversified) >= num_results:
+                            break
+        
+        return diversified[:num_results]
     
     def _build_filters(self, context: EnrichedContext) -> dict:
         filters = {}
@@ -121,7 +160,7 @@ class ProductRecommenderAgent(BaseAgent):
             if conditions:
                 query = query.filter(and_(*conditions))
             
-            products = query.order_by(Product.rating.desc()).limit(num_results).all()
+            products = query.order_by(Product.rating.desc()).limit(num_results * 3).all()
             
             if not products and categories_interested:
                 cat_conditions = []
@@ -153,7 +192,7 @@ class ProductRecommenderAgent(BaseAgent):
                         query = query.filter(Product.price <= context.intent.budget_max)
                     products = query.order_by(Product.rating.desc()).limit(num_results).all()
             
-            return [{
+            raw_products = [{
                 "id": p.id,
                 "name": p.name,
                 "description": p.description,
@@ -168,6 +207,8 @@ class ProductRecommenderAgent(BaseAgent):
                 "colors": p.colors,
                 "tags": p.tags
             } for p in products]
+            
+            return self._diversify_by_category(raw_products, num_results)
         finally:
             db.close()
     
