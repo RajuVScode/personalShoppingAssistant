@@ -319,6 +319,7 @@ IMPORTANT: When recommending products, PRIORITIZE items from the customer's pref
 - End Date: {end_date or 'Not specified'}
 - Duration: {duration_days} day(s)
 - IMPORTANT: The itinerary MUST be exactly {duration_days} day(s). Do NOT create more days.
+- CRITICAL DAY NUMBERING: Always number days as "Day 1", "Day 2", "Day 3", etc. starting from Day 1. Do NOT use day-of-year numbers or any other numbering scheme. For a 7-day trip, use Day 1 through Day 7 only.
 {"- MULTI-DESTINATION TRIP: Include weather and events for EACH destination separately." if is_multi_destination else ""}
 {segments_section if is_multi_destination else f'''
 **Weather Context:**
@@ -351,7 +352,7 @@ IMPORTANT: When recommending products, PRIORITIZE items from the customer's pref
 Generate a formal response with these sections:
 {"1) Weather Overview - Include weather for EACH destination separately" if is_multi_destination else "1) Weather Overview"}
 2) Recommended Activities{" for each destination" if is_multi_destination else ""}
-3) Itinerary - EXACTLY {duration_days} day(s). No more, no less.{" Show which days are in each city." if is_multi_destination else ""}
+3) Itinerary - EXACTLY {duration_days} day(s). Number days as Day 1, Day 2, Day 3... up to Day {duration_days}. Include the actual date in parentheses, e.g., "Day 1 ({start_date})".{" Show which days are in each city." if is_multi_destination else ""}
 4) Local Events Summary{" by destination" if is_multi_destination else ""}
 5) Clothing & Accessories Recommendations - Brief outfit guidance explaining WHY each product suits the trip. Reference product names with rationale.{" Consider varying weather conditions across destinations." if is_multi_destination else ""} Do NOT list detailed specs here.
 6) Product Catalog Details - Full product info (name, brand, price, material, colors, sizes, description) for each recommendation.
