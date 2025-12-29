@@ -33,10 +33,6 @@ class WeatherService:
         if not location:
             return (40.7128, -74.0060)
         
-        location_lower = location.lower().strip()
-        if location_lower in self.location_coords:
-            return self.location_coords[location_lower]
-        
         try:
             with httpx.Client(timeout=5.0) as client:
                 response = client.get(self.geocode_url, params={"name": location, "count": 1})
@@ -46,6 +42,10 @@ class WeatherService:
                     return (result["latitude"], result["longitude"])
         except:
             pass
+        
+        location_lower = location.lower().strip()
+        if location_lower in self.location_coords:
+            return self.location_coords[location_lower]
         
         return (40.7128, -74.0060)
     
