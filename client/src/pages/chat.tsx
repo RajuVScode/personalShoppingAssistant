@@ -30,12 +30,30 @@ interface Product {
   rating?: number;
 }
 
+interface TripSegment {
+  destination: string;
+  start_date: string;
+  end_date: string;
+}
+
+interface SegmentContext {
+  destination: string;
+  start_date: string;
+  end_date: string;
+  weather?: {
+    temperature?: number;
+    description?: string;
+  };
+}
+
 interface ContextInfo {
   intent?: {
     category?: string;
     occasion?: string;
     style?: string;
     budget_max?: number;
+    location?: string;
+    trip_segments?: TripSegment[];
   };
   environmental?: {
     weather?: {
@@ -43,6 +61,7 @@ interface ContextInfo {
       description?: string;
     };
     trends?: string[];
+    segments?: SegmentContext[];
   };
 }
 
@@ -338,9 +357,45 @@ export default function ChatPage() {
                 </div>
               )}
 
+              {currentContext.intent?.trip_segments && currentContext.intent.trip_segments.length > 0 && (
+                <div className="mb-4">
+                  <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+                    <Calendar className="h-3 w-3" /> Trip Destinations
+                  </p>
+                  <div className="space-y-2">
+                    {currentContext.intent.trip_segments.map((segment, i) => (
+                      <div key={i} className="bg-muted/50 rounded-lg p-2">
+                        <p className="text-sm font-medium">{segment.destination}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {segment.start_date} to {segment.end_date}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <Separator className="my-4" />
 
-              {currentContext.environmental?.weather && (
+              {currentContext.environmental?.segments && currentContext.environmental.segments.length > 0 ? (
+                <div className="mb-4">
+                  <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+                    <Cloud className="h-3 w-3" /> Weather by Destination
+                  </p>
+                  <div className="space-y-2">
+                    {currentContext.environmental.segments.map((seg, i) => (
+                      <div key={i} className="bg-muted/50 rounded-lg p-2">
+                        <p className="text-sm font-medium">{seg.destination}</p>
+                        {seg.weather && (
+                          <p className="text-xs text-muted-foreground">
+                            {seg.weather.temperature}°C - {seg.weather.description}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : currentContext.environmental?.weather && (
                 <div className="mb-4">
                   <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
                     <Cloud className="h-3 w-3" /> Weather

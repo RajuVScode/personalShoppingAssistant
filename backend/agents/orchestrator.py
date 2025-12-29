@@ -162,14 +162,20 @@ class ShoppingOrchestrator:
         
         final_state = self.graph.invoke(initial_state)
         
+        normalized_intent = final_state.get("normalized_intent", {})
+        clarifier_intent = final_state.get("clarifier_intent", {})
+        
+        if clarifier_intent.get("trip_segments") and not normalized_intent.get("trip_segments"):
+            normalized_intent["trip_segments"] = clarifier_intent["trip_segments"]
+        
         return {
             "response": final_state["final_response"],
             "products": final_state["products"],
             "clarification_needed": final_state["is_ambiguous"],
             "clarification_question": final_state["clarification_question"],
-            "updated_intent": final_state.get("clarifier_intent", {}),
+            "updated_intent": clarifier_intent,
             "context": {
-                "intent": final_state.get("normalized_intent", {}),
+                "intent": normalized_intent,
                 "environmental": final_state.get("environmental_context", {})
             }
         }
