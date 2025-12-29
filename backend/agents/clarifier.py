@@ -21,12 +21,17 @@ CLARIFIER_PROMPT = """You are a Clarifier Agent for travel planning. Your task:
 - SUPPORT MULTI-DESTINATION TRIPS: If user mentions multiple destinations with dates (e.g., "Paris Jan 5-8, then Rome Jan 9-12"), extract ALL of them into trip_segments.
 
 CRITICAL RULES:
-1. ONLY ask for destination and travel_date if they are truly missing.
-2. Once you have destination AND travel_date, ask ONE COMBINED question for any remaining optional details:
-   "What activities are you planning, any budget constraints, and clothing preferences? (Feel free to share any or skip!)"
-3. If user provides some optional details, ACCEPT them and proceed - do NOT ask for more.
-4. If user says "that's it" or provides destination+dates without extras, PROCEED without asking more questions.
-5. Activities, budget, and clothes are OPTIONAL - do not require them to proceed.
+1. ONLY ask for destination and travel_date if they are truly MISSING (not mentioned at all).
+2. NEVER ask for confirmation of an obvious destination. Accept city names as-is:
+   - "Paris" → destination: "Paris, France" (DO NOT ask "did you mean Paris, France?")
+   - "Rome" → destination: "Rome, Italy"
+   - "Tokyo" → destination: "Tokyo, Japan"
+   - "Parris" or "Prais" → Assume Paris, France (handle typos gracefully)
+3. Once you have destination AND travel_date, proceed - do NOT over-clarify.
+4. If user provides some optional details, ACCEPT them and proceed - do NOT ask for more.
+5. If user says "that's it" or provides destination+dates without extras, PROCEED without asking more questions.
+6. Activities, budget, and clothes are OPTIONAL - do not require them to proceed.
+7. NEVER get stuck in a loop asking the same question. If user confirms a destination, ACCEPT it immediately.
 
 - Use US English tone, be helpful and polite.
 - Infer budget currency from context; default to USD.
@@ -34,6 +39,7 @@ CRITICAL RULES:
 - Activities should be either an array or strings. Accept single activities.
 - Clothes can be a simple descriptive string.
 - Be concise and avoid over-prompting.
+- DO NOT ask "did you mean X?" for obvious destinations - just accept them.
 
 Context:
 - Today's date (ISO): {CURRENT_DATE}
@@ -119,6 +125,35 @@ ACTIVITY_KEYWORDS = [
     "exploring", "adventure", "outdoor", "indoor", "relaxing", "spa", "wellness",
 ]
 
+CONFIRMATION_PATTERNS = [
+    "yes", "yeah", "yep", "yup", "correct", "right", "exactly", "that's right",
+    "it is", "that is", "yes it is", "yes, it is", "confirmed", "affirmative",
+]
+
+CITY_ALIASES = {
+    "paris": "Paris, France",
+    "parris": "Paris, France",
+    "prais": "Paris, France",
+    "pari": "Paris, France",
+    "rome": "Rome, Italy",
+    "tokyo": "Tokyo, Japan",
+    "london": "London, UK",
+    "new york": "New York, USA",
+    "ny": "New York, USA",
+    "nyc": "New York, USA",
+    "miami": "Miami, USA",
+    "los angeles": "Los Angeles, USA",
+    "la": "Los Angeles, USA",
+    "barcelona": "Barcelona, Spain",
+    "madrid": "Madrid, Spain",
+    "berlin": "Berlin, Germany",
+    "amsterdam": "Amsterdam, Netherlands",
+    "sydney": "Sydney, Australia",
+    "dubai": "Dubai, UAE",
+    "singapore": "Singapore",
+    "hong kong": "Hong Kong",
+}
+
 class ClarifierAgent(BaseAgent):
     def __init__(self):
         super().__init__("Clarifier", CLARIFIER_PROMPT)
@@ -131,8 +166,29 @@ class ClarifierAgent(BaseAgent):
         query_lower = query.lower().strip()
         return any(keyword in query_lower for keyword in ACTIVITY_KEYWORDS)
     
+    def _is_confirmation(self, query: str) -> bool:
+        query_lower = query.lower().strip()
+        return any(pattern in query_lower for pattern in CONFIRMATION_PATTERNS)
+    
+    def _extract_city_from_query(self, query: str) -> str:
+        query_lower = query.lower().strip()
+        for alias, city in CITY_ALIASES.items():
+            if alias in query_lower:
+                return city
+        return None
+    
     def analyze(self, query: str, conversation_history: list = None, existing_intent: dict = None) -> dict:
         current_date = get_current_date()
+        existing_intent = existing_intent or {}
+        
+        city_in_query = self._extract_city_from_query(query)
+        is_confirmation = self._is_confirmation(query)
+        existing_destination = existing_intent.get("destination")
+        
+        if city_in_query:
+            existing_intent["destination"] = city_in_query
+            if is_confirmation or (len(query.strip().split()) <= 4):
+                pass
         
         context = ""
         if conversation_history:
