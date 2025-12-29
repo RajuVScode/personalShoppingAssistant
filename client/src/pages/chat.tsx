@@ -71,6 +71,7 @@ export default function ChatPage() {
   const [currentContext, setCurrentContext] = useState<ContextInfo | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [customerId, setCustomerId] = useState<string | null>(null);
+  const [greetingMessage, setGreetingMessage] = useState<string | null>(null);
   const [, setLocation] = useLocation();
 
   const handleLogout = () => {
@@ -90,12 +91,12 @@ export default function ChatPage() {
     const storedCustomerId = localStorage.getItem("customer_id");
     setCustomerId(storedCustomerId);
     
-    if (storedCustomerId && messages.length === 0) {
+    if (storedCustomerId) {
       fetch(`/api/greeting/${storedCustomerId}`)
         .then(res => res.json())
         .then(data => {
           if (data.greeting) {
-            setMessages([{ role: "assistant", content: data.greeting }]);
+            setGreetingMessage(data.greeting);
           }
         })
         .catch(console.error);
@@ -204,6 +205,15 @@ export default function ChatPage() {
                 <div className="h-20 w-20 rounded-2xl bg-primary/10 flex items-center justify-center mb-6">
                   <ShoppingBag className="h-10 w-10 text-primary" />
                 </div>
+                {greetingMessage && (
+                  <div className="mb-6 p-4 bg-primary/5 rounded-lg border border-primary/20 max-w-md">
+                    <div className="flex items-center gap-2 justify-center mb-2">
+                      <Sparkles className="h-5 w-5 text-primary" />
+                      <span className="text-sm font-medium text-primary">Personal Assistant</span>
+                    </div>
+                    <p className="text-foreground" data-testid="text-greeting">{greetingMessage}</p>
+                  </div>
+                )}
                 <h2 className="text-2xl font-semibold mb-3">Welcome to AI Shopping</h2>
                 <p className="text-muted-foreground max-w-md mb-8">
                   Tell me what you're looking for and I'll find personalized recommendations based on your style, the weather, and current trends.
