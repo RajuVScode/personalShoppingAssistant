@@ -175,7 +175,8 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             
             ready_for_recs = result.get("ready_for_recommendations", False)
             has_destination = merged_intent.get("destination")
-            has_date = merged_intent.get("travel_date") or merged_intent.get("trip_segments")
+            trip_segments = merged_intent.get("trip_segments") or []
+            has_date = merged_intent.get("travel_date") or (len(trip_segments) > 0)
             has_required = has_destination and has_date
             
             has_optional = (
