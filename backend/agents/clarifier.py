@@ -200,6 +200,18 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                 "10th", "11th", "12th", "13th", "14th", "15th"
             ])
             
+            if has_destination and not has_date and not query_mentions_date:
+                dest = merged_intent.get("destination", "your destination")
+                date_question = f"When are you planning to travel to {dest}? (e.g., 'next weekend', 'January 15-20', or specific dates)"
+                return {
+                    "needs_clarification": True,
+                    "clarification_question": date_question,
+                    "assistant_message": date_question,
+                    "updated_intent": merged_intent,
+                    "clarified_query": query,
+                    "ready_for_recommendations": False
+                }
+            
             if has_required and already_asked_optional:
                 return {
                     "needs_clarification": False,
