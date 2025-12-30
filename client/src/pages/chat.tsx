@@ -192,12 +192,12 @@ export default function ChatPage() {
         <div className="flex-1 flex overflow-hidden">
           <ScrollArea className="flex-1 p-6 scrollbar-thin">
             {messages.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-center py-20">
-                <div className="h-20 w-20 rounded-2xl bg-primary/10 flex items-center justify-center mb-6">
-                  <ShoppingBag className="h-10 w-10 text-primary" />
+              <div className="flex flex-col items-center justify-center text-center py-8">
+                <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+                  <ShoppingBag className="h-8 w-8 text-primary" />
                 </div>
-                <h2 className="text-2xl font-semibold mb-3">Welcome to AI Shopping</h2>
-                <p className="text-muted-foreground max-w-md mb-8" data-testid="text-greeting">
+                <h2 className="text-2xl font-semibold mb-2">Welcome to AI Shopping</h2>
+                <p className="text-muted-foreground max-w-md mb-6" data-testid="text-greeting">
                   Good day! {customerName || "Guest"}, How may I assist you with your travel shopping? I'll find personalized recommendations based on your style, the weather, and current trends.
                 </p>
                 <div className="flex flex-wrap gap-2 justify-center max-w-lg">
