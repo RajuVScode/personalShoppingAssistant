@@ -25,7 +25,7 @@ export default function Header({ onSignUp, showAuthButtons = true }: HeaderProps
             onClick={onSignUp}
             data-testid="button-header-signup"
           >
-            <UserPlus className="w-4 h-4 mr-1" />
+            <UserPlus className="w-4 h-4 mr-0.5" />
             Sign up
           </Button>
         </div>
