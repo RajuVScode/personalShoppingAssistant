@@ -91,6 +91,11 @@ DECISION LOGIC:
 - Once you have destination + any date reference → PROCEED to recommendations (set next_question: null, ready_for_recommendations: true)
 - DO NOT ask for activities/budget/clothes individually - these are optional extras
 
+USER RESPONSE DETECTION - Use your language understanding to detect:
+- "is_skip_response": true if user wants to skip/proceed without optional info (e.g., "that's it", "no preference", "just proceed", "I'm good", "nothing else", etc.)
+- "mentions_activity": true if user mentions any activity, event, or experience (e.g., "beach", "hiking", "concert", "dining", "wedding", "sightseeing", etc.)
+- "is_confirmation": true if user is confirming something (e.g., "yes", "yeah", "correct", "that's right", etc.)
+
 OUTPUT STRICTLY AS A JSON OBJECT with this shape:
 {{
   "assistant_message": "string - what the assistant says to the user in this turn",
@@ -115,6 +120,9 @@ OUTPUT STRICTLY AS A JSON OBJECT with this shape:
       "budget_currency": "string|null",
       "notes": "string|null"
   }},
+  "is_skip_response": true|false,
+  "mentions_activity": true|false,
+  "is_confirmation": true|false,
   "next_question": "string|null",
   "ready_for_recommendations": true|false
 }}
@@ -122,45 +130,9 @@ OUTPUT STRICTLY AS A JSON OBJECT with this shape:
 Set "ready_for_recommendations": true when destination and travel_date are collected."""
 
 
-SKIP_PHRASES = [
-    "no preference", "no preferences", "no specific preference", "no specific preferences",
-    "none", "nothing", "skip", "proceed", "that's it", "thats it", "that is it",
-    "no budget", "no clothing", "no activities", "no constraints", "no specific",
-    "just proceed", "go ahead", "continue", "no thanks", "no thank you",
-    "i'm good", "im good", "all good", "nothing specific", "nothing else",
-    "no particular", "don't have any", "dont have any", "no additional",
-]
-
-ACTIVITY_KEYWORDS = [
-    "attending", "attend", "event", "events", "local events", "concert", "concerts",
-    "dinner", "dining", "restaurant", "beach", "hiking", "sightseeing", "tour",
-    "museum", "shopping", "nightlife", "party", "festival", "sports", "game",
-    "meeting", "conference", "business", "wedding", "ceremony", "show", "theater",
-    "theatre", "opera", "ballet", "club", "bar", "swimming", "skiing", "surfing",
-    "exploring", "adventure", "outdoor", "indoor", "relaxing", "spa", "wellness",
-]
-
-CONFIRMATION_PATTERNS = [
-    "yes", "yeah", "yep", "yup", "correct", "right", "exactly", "that's right",
-    "it is", "that is", "yes it is", "yes, it is", "confirmed", "affirmative",
-]
-
-
 class ClarifierAgent(BaseAgent):
     def __init__(self):
         super().__init__("Clarifier", CLARIFIER_PROMPT)
-    
-    def _is_skip_response(self, query: str) -> bool:
-        query_lower = query.lower().strip()
-        return any(phrase in query_lower for phrase in SKIP_PHRASES)
-    
-    def _mentions_activity(self, query: str) -> bool:
-        query_lower = query.lower().strip()
-        return any(keyword in query_lower for keyword in ACTIVITY_KEYWORDS)
-    
-    def _is_confirmation(self, query: str) -> bool:
-        query_lower = query.lower().strip()
-        return any(pattern in query_lower for pattern in CONFIRMATION_PATTERNS)
     
     def _is_new_trip_request(self, query: str) -> bool:
         query_lower = query.lower().strip()
@@ -254,8 +226,8 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             
             already_asked_optional = existing_intent.get("_asked_optional", False)
             
-            is_skip = self._is_skip_response(query)
-            mentions_activity = self._mentions_activity(query)
+            is_skip = result.get("is_skip_response", False)
+            mentions_activity = result.get("mentions_activity", False)
             
             query_lower = query.lower()
             date_keywords = [
