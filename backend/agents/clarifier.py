@@ -20,6 +20,11 @@ CLARIFIER_PROMPT = """You are a Clarifier Agent for travel planning. Your task:
   destination, travel_date, activities, preferred_brand, clothes, budget_amount, budget_currency, notes.
 - SUPPORT MULTI-DESTINATION TRIPS: If user mentions multiple destinations with dates (e.g., "Paris Jan 5-8, then Rome Jan 9-12"), extract ALL of them into trip_segments.
 
+CRITICAL - EXTRACT EVERYTHING FROM USER MESSAGE:
+- ACTIVITIES: If user says "travelling to Miami for hiking" or "going to Paris for shopping", IMMEDIATELY extract "hiking" or "shopping" into the activities array. Do NOT wait to ask - capture it NOW.
+- DATES: If user mentions ANY date reference (next weekend, tomorrow, January 5, etc.), set has_date_info: true
+- NEW TRIP: If user is starting a new trip (travelling to, going to, trip to, etc.), set is_new_trip: true
+
 LOCATION EXTRACTION - CRITICAL:
 - You MUST extract and normalize locations using your world knowledge.
 - Set "destination_city" to the normalized city name (e.g., "Liverpool", "Birmingham", "Tokyo")
@@ -128,6 +133,8 @@ OUTPUT STRICTLY AS A JSON OBJECT with this shape:
   "is_skip_response": true|false,
   "mentions_activity": true|false,
   "is_confirmation": true|false,
+  "has_date_info": true|false - true if user mentioned ANY date/time reference,
+  "is_new_trip": true|false - true if user is starting a new trip request,
   "next_question": "string|null",
   "ready_for_recommendations": true|false
 }}
@@ -135,26 +142,32 @@ OUTPUT STRICTLY AS A JSON OBJECT with this shape:
 Set "ready_for_recommendations": true when destination and travel_date are collected."""
 
 
+COMMON_ACTIVITIES = {
+    "hiking", "cycling", "swimming", "surfing", "skiing", "snowboarding",
+    "shopping", "sightseeing", "dining", "beach", "museum", "concert",
+    "wedding", "conference", "meeting", "business", "festival", "party",
+    "spa", "wellness", "yoga", "golf", "tennis", "running", "jogging",
+    "camping", "fishing", "climbing", "diving", "snorkeling", "kayaking",
+    "sailing", "boating", "photography", "wine tasting", "cooking class",
+    "tour", "adventure", "nightlife", "clubbing", "theater", "opera",
+}
+
+
 class ClarifierAgent(BaseAgent):
     def __init__(self):
         super().__init__("Clarifier", CLARIFIER_PROMPT)
     
-    def _is_new_trip_request(self, query: str) -> bool:
-        query_lower = query.lower().strip()
-        trip_indicators = [
-            "travelling to", "traveling to", "going to", "flying to",
-            "trip to", "visit", "planning to go", "want to go",
-            "heading to", "travel to"
-        ]
-        return any(indicator in query_lower for indicator in trip_indicators)
+    def _extract_activities_fallback(self, query: str) -> list:
+        query_lower = query.lower()
+        found = []
+        for activity in COMMON_ACTIVITIES:
+            if activity in query_lower:
+                found.append(activity)
+        return found
     
     def analyze(self, query: str, conversation_history: list = None, existing_intent: dict = None) -> dict:
         current_date = get_current_date()
         existing_intent = existing_intent or {}
-        
-        is_new_trip = self._is_new_trip_request(query)
-        if is_new_trip:
-            existing_intent["_asked_optional"] = False
         
         existing_destination = existing_intent.get("destination")
         
@@ -234,29 +247,28 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             is_skip = result.get("is_skip_response", False)
             mentions_activity = result.get("mentions_activity", False)
             
-            new_activities = new_intent.get("activities")
+            new_activities = new_intent.get("activities") or []
+            
+            fallback_activities = self._extract_activities_fallback(query)
+            if fallback_activities:
+                if isinstance(new_activities, list):
+                    for act in fallback_activities:
+                        if act not in new_activities:
+                            new_activities.append(act)
+                else:
+                    new_activities = fallback_activities
+                merged_intent["activities"] = new_activities
+                mentions_activity = True
+            
             if new_activities and isinstance(new_activities, list) and len(new_activities) > 0:
                 mentions_activity = True
             
-            query_lower = query.lower()
-            date_keywords = [
-                "january", "february", "march", "april", "may", "june", 
-                "july", "august", "september", "october", "november", "december",
-                "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday",
-                "next week", "this week", "tomorrow", "today", "weekend", "next month",
-                "1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th",
-                "10th", "11th", "12th", "13th", "14th", "15th",
-                "16th", "17th", "18th", "19th", "20th", "21st", "22nd", "23rd",
-                "24th", "25th", "26th", "27th", "28th", "29th", "30th", "31st"
-            ]
+            is_new_trip = result.get("is_new_trip", False)
+            if is_new_trip:
+                existing_intent["_asked_optional"] = False
             
-            import re
-            has_date_range = bool(re.search(r'\d+\s*(to|-)\s*\d+', query_lower))
-            has_month_day = bool(re.search(r'(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\w*\s+\d+', query_lower))
-            
-            query_mentions_date = any(word in query_lower for word in date_keywords) or has_date_range or has_month_day
-            
-            has_dates_info = has_date or query_mentions_date
+            llm_has_date_info = result.get("has_date_info", False)
+            has_dates_info = has_date or llm_has_date_info
             
             if has_destination and not has_dates_info:
                 dest = merged_intent.get("destination", "your destination")
