@@ -471,7 +471,7 @@ export default function ChatPage() {
           )}
         </div>
 
-        <div className="border-t p-4 glass-effect">
+        <div className="border-t px-6 py-4 glass-effect">
           <div className="flex gap-3 max-w-3xl">
             <Input
               value={input}
