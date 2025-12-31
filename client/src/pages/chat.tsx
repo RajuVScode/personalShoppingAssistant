@@ -478,14 +478,14 @@ export default function ChatPage() {
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="What are you looking for today?"
-              className="flex-1 rounded-xl border-muted-foreground/20"
+              className="flex-1 rounded-xl border-muted-foreground/20 focus-visible:border-[#1565c0]"
               disabled={chatMutation.isPending}
               data-testid="input-message"
             />
             <Button
               onClick={handleSend}
               disabled={!input.trim() || chatMutation.isPending}
-              className="rounded-xl px-6 bg-[#1565c0]"
+              className="rounded-xl px-6 bg-[#1565c0] focus-visible:ring-[#1565c0]"
               data-testid="button-send"
             >
               <Send className="h-4 w-4" />
