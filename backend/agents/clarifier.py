@@ -93,8 +93,13 @@ DECISION LOGIC:
 
 USER RESPONSE DETECTION - Use your language understanding to detect:
 - "is_skip_response": true if user wants to skip/proceed without optional info (e.g., "that's it", "no preference", "just proceed", "I'm good", "nothing else", etc.)
-- "mentions_activity": true if user mentions any activity, event, or experience (e.g., "beach", "hiking", "concert", "dining", "wedding", "sightseeing", etc.)
+- "mentions_activity": true if user mentions ANY activity, event, sport, or experience. Examples: "hiking", "cycling", "beach", "concert", "dining", "wedding", "sightseeing", "swimming", "shopping", "museum". Even a single word like "hiking" should set this to true.
 - "is_confirmation": true if user is confirming something (e.g., "yes", "yeah", "correct", "that's right", etc.)
+
+IMPORTANT - CAPTURING ACTIVITIES:
+- When user mentions activities (even single words like "hiking" or "cycling"), ADD them to the "activities" array in updated_intent.
+- Example: If user says "hiking", set activities: ["hiking"] AND mentions_activity: true
+- Always preserve existing activities and ADD new ones to the array.
 
 OUTPUT STRICTLY AS A JSON OBJECT with this shape:
 {{
