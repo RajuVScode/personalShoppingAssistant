@@ -1,6 +1,15 @@
 import { useState, useRef, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { Send, Sparkles, User, ShoppingBag, Cloud, TrendingUp, Calendar, RefreshCw } from "lucide-react";
+import {
+  Send,
+  Sparkles,
+  User,
+  ShoppingBag,
+  Cloud,
+  TrendingUp,
+  Calendar,
+  RefreshCw,
+} from "lucide-react";
 import { useLocation } from "wouter";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -68,7 +77,9 @@ interface ContextInfo {
 export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
-  const [currentContext, setCurrentContext] = useState<ContextInfo | null>(null);
+  const [currentContext, setCurrentContext] = useState<ContextInfo | null>(
+    null,
+  );
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [customerId, setCustomerId] = useState<string | null>(null);
   const [customerName, setCustomerName] = useState<string | null>(null);
@@ -87,7 +98,7 @@ export default function ChatPage() {
     const storedCustomerName = localStorage.getItem("customer_name");
     setCustomerId(storedCustomerId);
     setCustomerName(storedCustomerName);
-    
+
     const fetchGreeting = async () => {
       if (storedCustomerId) {
         const userId = parseInt(storedCustomerId.replace("CUST-", "")) || 1;
@@ -152,11 +163,13 @@ export default function ChatPage() {
     const userId = storedId ? parseInt(storedId.replace("CUST-", "")) : 1;
     await fetch(`/api/reset?user_id=${userId}`, { method: "POST" });
     setCurrentContext(null);
-    
+
     if (storedId) {
       const res = await fetch(`/api/greeting/${storedId}`);
       const data = await res.json();
-      setMessages(data.greeting ? [{ role: "assistant", content: data.greeting }] : []);
+      setMessages(
+        data.greeting ? [{ role: "assistant", content: data.greeting }] : [],
+      );
     } else {
       setMessages([]);
     }
@@ -164,21 +177,28 @@ export default function ChatPage() {
 
   return (
     <div className="min-h-screen bg-background flex">
-      <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full">
+      <div className="flex-1 flex flex-col max-w-6xl mx-auto w-full">
         <header className="border-b px-6 py-4 flex items-center justify-between glass-effect sticky top-0 z-10">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center">
               <Sparkles className="h-5 w-5 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-lg font-semibold" data-testid="text-app-title">AI Shopping Assistant</h1>
-              <p className="text-sm text-muted-foreground">Personalized recommendations just for you</p>
+              <h1
+                className="text-lg font-semibold"
+                data-testid="text-app-title"
+              >
+                AI Shopping Assistant
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Personalized recommendations just for you
+              </p>
             </div>
           </div>
           <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               onClick={resetConversation}
               data-testid="button-reset"
             >
@@ -195,16 +215,23 @@ export default function ChatPage() {
                 <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
                   <ShoppingBag className="h-8 w-8 text-primary" />
                 </div>
-                <h2 className="text-2xl font-semibold mb-2">Welcome to AI Shopping</h2>
-                <p className="text-muted-foreground max-w-md mb-6" data-testid="text-greeting">
-                  Good day! {customerName || "Guest"}, How may I assist you with your travel shopping? I'll find personalized recommendations based on your style, the weather, and current trends.
+                <h2 className="text-2xl font-semibold mb-2">
+                  Welcome to AI Shopping
+                </h2>
+                <p
+                  className="text-muted-foreground max-w-md mb-6"
+                  data-testid="text-greeting"
+                >
+                  Good day! {customerName || "Guest"}, How may I assist you with
+                  your travel shopping? I'll find personalized recommendations
+                  based on your style, the weather, and current trends.
                 </p>
                 <div className="flex flex-wrap gap-2 justify-center max-w-lg">
                   {[
                     "I need shoes for a wedding",
                     "Something warm for winter",
                     "Casual weekend outfit",
-                    "Professional work attire"
+                    "Professional work attire",
                   ].map((suggestion) => (
                     <Button
                       key={suggestion}
@@ -231,7 +258,9 @@ export default function ChatPage() {
                         <Sparkles className="h-4 w-4 text-primary-foreground" />
                       </div>
                     )}
-                    <div className={`max-w-[80%] ${message.role === "user" ? "order-first" : ""}`}>
+                    <div
+                      className={`max-w-[80%] ${message.role === "user" ? "order-first" : ""}`}
+                    >
                       <div
                         className={`rounded-2xl px-4 py-3 ${
                           message.role === "user"
@@ -247,15 +276,17 @@ export default function ChatPage() {
                             </ReactMarkdown>
                           </div>
                         ) : (
-                          <p className="whitespace-pre-wrap">{message.content}</p>
+                          <p className="whitespace-pre-wrap">
+                            {message.content}
+                          </p>
                         )}
                       </div>
-                      
+
                       {message.products && message.products.length > 0 && (
                         <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
                           {message.products.slice(0, 4).map((product) => (
-                            <Card 
-                              key={product.id} 
+                            <Card
+                              key={product.id}
                               className="product-card-hover overflow-hidden"
                               data-testid={`card-product-${product.id}`}
                             >
@@ -266,23 +297,34 @@ export default function ChatPage() {
                                     alt={product.name}
                                     className="w-full h-full object-cover"
                                     onError={(e) => {
-                                      (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400";
+                                      (e.target as HTMLImageElement).src =
+                                        "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400";
                                     }}
                                   />
                                 </div>
                               )}
                               <CardContent className="p-3">
-                                <p className="font-medium text-sm line-clamp-1">{product.name}</p>
+                                <p className="font-medium text-sm line-clamp-1">
+                                  {product.name}
+                                </p>
                                 <div className="flex items-center justify-between mt-1">
-                                  <span className="text-xs text-muted-foreground">{product.brand}</span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {product.brand}
+                                  </span>
                                   {product.price && (
-                                    <span className="font-semibold text-sm">${product.price}</span>
+                                    <span className="font-semibold text-sm">
+                                      ${product.price}
+                                    </span>
                                   )}
                                 </div>
                                 {product.rating && (
                                   <div className="flex items-center gap-1 mt-1">
-                                    <span className="text-yellow-500 text-xs">★</span>
-                                    <span className="text-xs text-muted-foreground">{product.rating}</span>
+                                    <span className="text-yellow-500 text-xs">
+                                      ★
+                                    </span>
+                                    <span className="text-xs text-muted-foreground">
+                                      {product.rating}
+                                    </span>
                                   </div>
                                 )}
                               </CardContent>
@@ -298,7 +340,7 @@ export default function ChatPage() {
                     )}
                   </div>
                 ))}
-                
+
                 {chatMutation.isPending && (
                   <div className="flex gap-3 message-enter">
                     <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
@@ -324,21 +366,24 @@ export default function ChatPage() {
                 <Sparkles className="h-4 w-4 text-primary" />
                 Context Insights
               </h3>
-              
+
               {currentContext.intent && (
                 <div className="mb-4">
-                  <p className="text-xs text-muted-foreground mb-2">Understood Intent</p>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Understood Intent
+                  </p>
                   <div className="space-y-1">
                     {currentContext.intent.category && (
                       <Badge variant="secondary" className="mr-1">
                         {currentContext.intent.category}
                       </Badge>
                     )}
-                    {currentContext.intent.occasion && !currentContext.intent.trip_segments?.length && (
-                      <Badge variant="outline" className="mr-1">
-                        {currentContext.intent.occasion}
-                      </Badge>
-                    )}
+                    {currentContext.intent.occasion &&
+                      !currentContext.intent.trip_segments?.length && (
+                        <Badge variant="outline" className="mr-1">
+                          {currentContext.intent.occasion}
+                        </Badge>
+                      )}
                     {currentContext.intent.style && (
                       <Badge variant="outline">
                         {currentContext.intent.style}
@@ -348,27 +393,31 @@ export default function ChatPage() {
                 </div>
               )}
 
-              {currentContext.intent?.trip_segments && currentContext.intent.trip_segments.length > 0 && (
-                <div className="mb-4">
-                  <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
-                    <Calendar className="h-3 w-3" /> Trip Destinations
-                  </p>
-                  <div className="space-y-2">
-                    {currentContext.intent.trip_segments.map((segment, i) => (
-                      <div key={i} className="bg-muted/50 rounded-lg p-2">
-                        <p className="text-sm font-medium">{segment.destination}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {segment.start_date} to {segment.end_date}
-                        </p>
-                      </div>
-                    ))}
+              {currentContext.intent?.trip_segments &&
+                currentContext.intent.trip_segments.length > 0 && (
+                  <div className="mb-4">
+                    <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+                      <Calendar className="h-3 w-3" /> Trip Destinations
+                    </p>
+                    <div className="space-y-2">
+                      {currentContext.intent.trip_segments.map((segment, i) => (
+                        <div key={i} className="bg-muted/50 rounded-lg p-2">
+                          <p className="text-sm font-medium">
+                            {segment.destination}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {segment.start_date} to {segment.end_date}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
               <Separator className="my-4" />
 
-              {currentContext.environmental?.segments && currentContext.environmental.segments.length > 0 ? (
+              {currentContext.environmental?.segments &&
+              currentContext.environmental.segments.length > 0 ? (
                 <div className="mb-4">
                   <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
                     <Cloud className="h-3 w-3" /> Weather by Destination
@@ -379,44 +428,51 @@ export default function ChatPage() {
                         <p className="text-sm font-medium">{seg.destination}</p>
                         {seg.weather && (
                           <p className="text-xs text-muted-foreground">
-                            {seg.weather.temperature}°C - {seg.weather.description}
+                            {seg.weather.temperature}°C -{" "}
+                            {seg.weather.description}
                           </p>
                         )}
                       </div>
                     ))}
                   </div>
                 </div>
-              ) : currentContext.environmental?.weather && (
-                <div className="mb-4">
-                  <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
-                    <Cloud className="h-3 w-3" /> Weather
-                  </p>
-                  <p className="text-sm">
-                    {currentContext.environmental.weather.temperature}°C - {currentContext.environmental.weather.description}
-                  </p>
-                </div>
+              ) : (
+                currentContext.environmental?.weather && (
+                  <div className="mb-4">
+                    <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+                      <Cloud className="h-3 w-3" /> Weather
+                    </p>
+                    <p className="text-sm">
+                      {currentContext.environmental.weather.temperature}°C -{" "}
+                      {currentContext.environmental.weather.description}
+                    </p>
+                  </div>
+                )
               )}
 
-              {currentContext.environmental?.trends && currentContext.environmental.trends.length > 0 && (
-                <div>
-                  <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
-                    <TrendingUp className="h-3 w-3" /> Trending
-                  </p>
-                  <div className="flex flex-wrap gap-1">
-                    {currentContext.environmental.trends.slice(0, 3).map((trend, i) => (
-                      <Badge key={i} variant="outline" className="text-xs">
-                        {trend}
-                      </Badge>
-                    ))}
+              {currentContext.environmental?.trends &&
+                currentContext.environmental.trends.length > 0 && (
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+                      <TrendingUp className="h-3 w-3" /> Trending
+                    </p>
+                    <div className="flex flex-wrap gap-1">
+                      {currentContext.environmental.trends
+                        .slice(0, 3)
+                        .map((trend, i) => (
+                          <Badge key={i} variant="outline" className="text-xs">
+                            {trend}
+                          </Badge>
+                        ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
             </div>
           )}
         </div>
 
         <div className="border-t p-4 glass-effect">
-          <div className="flex gap-3 max-w-3xl mx-auto">
+          <div className="flex gap-3 max-w-3xl">
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -426,8 +482,8 @@ export default function ChatPage() {
               disabled={chatMutation.isPending}
               data-testid="input-message"
             />
-            <Button 
-              onClick={handleSend} 
+            <Button
+              onClick={handleSend}
               disabled={!input.trim() || chatMutation.isPending}
               className="rounded-xl px-6"
               data-testid="button-send"
