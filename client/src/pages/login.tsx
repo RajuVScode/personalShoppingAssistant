@@ -125,7 +125,7 @@ export default function LoginPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     data-testid="input-password"
                     disabled={isLoading}
-                    className="h-11"
+                    className="h-11 pt-[0px] pb-[0px]"
                   />
                 </div>
                 
