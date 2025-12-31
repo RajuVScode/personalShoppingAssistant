@@ -229,10 +229,14 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                 merged_intent.get("preferred_brand")
             )
             
-            already_asked_optional = existing_intent.get("_asked_optional", False)
+            already_asked_optional = existing_intent.get("_asked_optional", False) or merged_intent.get("_asked_optional", False)
             
             is_skip = result.get("is_skip_response", False)
             mentions_activity = result.get("mentions_activity", False)
+            
+            new_activities = new_intent.get("activities")
+            if new_activities and isinstance(new_activities, list) and len(new_activities) > 0:
+                mentions_activity = True
             
             query_lower = query.lower()
             date_keywords = [
