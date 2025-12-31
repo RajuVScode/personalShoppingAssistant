@@ -92,6 +92,19 @@ export default function ChatPage() {
     const storedCustomerName = localStorage.getItem("customer_name");
     setCustomerId(storedCustomerId);
     setCustomerName(storedCustomerName);
+    
+    const fetchGreeting = async () => {
+      if (storedCustomerId) {
+        const userId = parseInt(storedCustomerId.replace("CUST-", "")) || 1;
+        await fetch(`/api/reset?user_id=${userId}`, { method: "POST" });
+        const res = await fetch(`/api/greeting/${storedCustomerId}`);
+        const data = await res.json();
+        if (data.greeting) {
+          setMessages([{ role: "assistant", content: data.greeting }]);
+        }
+      }
+    };
+    fetchGreeting();
   }, []);
 
   const chatMutation = useMutation({
