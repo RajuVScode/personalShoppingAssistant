@@ -20,13 +20,25 @@ CLARIFIER_PROMPT = """You are a Clarifier Agent for travel planning. Your task:
   destination, travel_date, activities, preferred_brand, clothes, budget_amount, budget_currency, notes.
 - SUPPORT MULTI-DESTINATION TRIPS: If user mentions multiple destinations with dates (e.g., "Paris Jan 5-8, then Rome Jan 9-12"), extract ALL of them into trip_segments.
 
+LOCATION EXTRACTION - CRITICAL:
+- You MUST extract and normalize locations using your world knowledge.
+- Set "destination_city" to the normalized city name (e.g., "Liverpool", "Birmingham", "Tokyo")
+- Set "destination_country" to the normalized country name (e.g., "UK", "USA", "Japan")
+- Set "country_only" to true if user mentions ONLY a country without a specific city (e.g., "travelling to the UK", "going to France")
+- Handle typos gracefully using your knowledge (e.g., "Parris" → Paris, "Londun" → London)
+- Combine city and country into "destination" field (e.g., "Liverpool, UK", "Tokyo, Japan")
+
+COUNTRY-ONLY DETECTION:
+- If user says "travelling to the UK" or "going to France" WITHOUT mentioning a city → set country_only: true
+- If user says "travelling to Liverpool UK" or "going to Paris" → set country_only: false (city is present)
+- When country_only is true, the system will ask which city they're visiting
+
 CRITICAL RULES:
 1. ONLY ask for destination and travel_date if they are truly MISSING (not mentioned at all).
 2. NEVER ask for confirmation of an obvious destination. Accept city names as-is:
-   - "Paris" → destination: "Paris, France" (DO NOT ask "did you mean Paris, France?")
-   - "Rome" → destination: "Rome, Italy"
-   - "Tokyo" → destination: "Tokyo, Japan"
-   - "Parris" or "Prais" → Assume Paris, France (handle typos gracefully)
+   - "Paris" → destination: "Paris, France", destination_city: "Paris", destination_country: "France"
+   - "Liverpool UK" → destination: "Liverpool, UK", destination_city: "Liverpool", destination_country: "UK"
+   - Handle any city worldwide using your knowledge - no hardcoded list needed
 3. Once you have destination AND travel_date, proceed - do NOT over-clarify.
 4. If user provides some optional details, ACCEPT them and proceed - do NOT ask for more.
 5. If user says "that's it" or provides destination+dates without extras, PROCEED without asking more questions.
@@ -83,7 +95,10 @@ OUTPUT STRICTLY AS A JSON OBJECT with this shape:
 {{
   "assistant_message": "string - what the assistant says to the user in this turn",
   "updated_intent": {{
-      "destination": "string|null - primary destination (first if multiple)",
+      "destination": "string|null - normalized 'City, Country' format (e.g., 'Liverpool, UK')",
+      "destination_city": "string|null - just the city name (e.g., 'Liverpool')",
+      "destination_country": "string|null - just the country name (e.g., 'UK')",
+      "country_only": true|false - true if user mentioned country without city,
       "travel_date": "string|null - full date range",
       "trip_segments": [
           {{
@@ -130,148 +145,6 @@ CONFIRMATION_PATTERNS = [
     "it is", "that is", "yes it is", "yes, it is", "confirmed", "affirmative",
 ]
 
-CITY_ALIASES = {
-    "paris": "Paris, France",
-    "parris": "Paris, France",
-    "prais": "Paris, France",
-    "pari": "Paris, France",
-    "rome": "Rome, Italy",
-    "tokyo": "Tokyo, Japan",
-    "london": "London, UK",
-    "manchester": "Manchester, UK",
-    "birmingham": "Birmingham, UK",
-    "liverpool": "Liverpool, UK",
-    "edinburgh": "Edinburgh, UK",
-    "glasgow": "Glasgow, UK",
-    "bristol": "Bristol, UK",
-    "leeds": "Leeds, UK",
-    "sheffield": "Sheffield, UK",
-    "newcastle": "Newcastle, UK",
-    "cardiff": "Cardiff, UK",
-    "belfast": "Belfast, UK",
-    "oxford": "Oxford, UK",
-    "cambridge": "Cambridge, UK",
-    "new york": "New York, USA",
-    "ny": "New York, USA",
-    "nyc": "New York, USA",
-    "miami": "Miami, USA",
-    "los angeles": "Los Angeles, USA",
-    "la": "Los Angeles, USA",
-    "chicago": "Chicago, USA",
-    "san francisco": "San Francisco, USA",
-    "seattle": "Seattle, USA",
-    "boston": "Boston, USA",
-    "washington": "Washington D.C., USA",
-    "las vegas": "Las Vegas, USA",
-    "orlando": "Orlando, USA",
-    "barcelona": "Barcelona, Spain",
-    "madrid": "Madrid, Spain",
-    "berlin": "Berlin, Germany",
-    "munich": "Munich, Germany",
-    "frankfurt": "Frankfurt, Germany",
-    "amsterdam": "Amsterdam, Netherlands",
-    "sydney": "Sydney, Australia",
-    "melbourne": "Melbourne, Australia",
-    "dubai": "Dubai, UAE",
-    "singapore": "Singapore",
-    "hong kong": "Hong Kong",
-    "toronto": "Toronto, Canada",
-    "vancouver": "Vancouver, Canada",
-    "montreal": "Montreal, Canada",
-    "mexico city": "Mexico City, Mexico",
-    "cancun": "Cancun, Mexico",
-    "mumbai": "Mumbai, India",
-    "delhi": "Delhi, India",
-    "bangalore": "Bangalore, India",
-    "bangkok": "Bangkok, Thailand",
-    "phuket": "Phuket, Thailand",
-    "bali": "Bali, Indonesia",
-    "jakarta": "Jakarta, Indonesia",
-    "kuala lumpur": "Kuala Lumpur, Malaysia",
-    "seoul": "Seoul, South Korea",
-    "beijing": "Beijing, China",
-    "shanghai": "Shanghai, China",
-    "lisbon": "Lisbon, Portugal",
-    "porto": "Porto, Portugal",
-    "athens": "Athens, Greece",
-    "santorini": "Santorini, Greece",
-    "istanbul": "Istanbul, Turkey",
-    "vienna": "Vienna, Austria",
-    "prague": "Prague, Czech Republic",
-    "budapest": "Budapest, Hungary",
-    "warsaw": "Warsaw, Poland",
-    "zurich": "Zurich, Switzerland",
-    "geneva": "Geneva, Switzerland",
-    "brussels": "Brussels, Belgium",
-    "copenhagen": "Copenhagen, Denmark",
-    "stockholm": "Stockholm, Sweden",
-    "oslo": "Oslo, Norway",
-    "helsinki": "Helsinki, Finland",
-    "dublin": "Dublin, Ireland",
-    "auckland": "Auckland, New Zealand",
-    "cape town": "Cape Town, South Africa",
-    "johannesburg": "Johannesburg, South Africa",
-    "cairo": "Cairo, Egypt",
-    "marrakech": "Marrakech, Morocco",
-}
-
-COUNTRY_NAMES = {
-    "uk": "the UK",
-    "united kingdom": "the UK",
-    "britain": "the UK",
-    "england": "England",
-    "usa": "the USA",
-    "united states": "the USA",
-    "america": "the USA",
-    "us": "the USA",
-    "france": "France",
-    "germany": "Germany",
-    "italy": "Italy",
-    "spain": "Spain",
-    "japan": "Japan",
-    "china": "China",
-    "australia": "Australia",
-    "canada": "Canada",
-    "mexico": "Mexico",
-    "brazil": "Brazil",
-    "india": "India",
-    "netherlands": "the Netherlands",
-    "holland": "the Netherlands",
-    "switzerland": "Switzerland",
-    "austria": "Austria",
-    "portugal": "Portugal",
-    "greece": "Greece",
-    "turkey": "Turkey",
-    "thailand": "Thailand",
-    "vietnam": "Vietnam",
-    "indonesia": "Indonesia",
-    "malaysia": "Malaysia",
-    "south korea": "South Korea",
-    "korea": "South Korea",
-    "uae": "the UAE",
-    "united arab emirates": "the UAE",
-    "saudi arabia": "Saudi Arabia",
-    "egypt": "Egypt",
-    "morocco": "Morocco",
-    "south africa": "South Africa",
-    "new zealand": "New Zealand",
-    "ireland": "Ireland",
-    "scotland": "Scotland",
-    "wales": "Wales",
-    "belgium": "Belgium",
-    "sweden": "Sweden",
-    "norway": "Norway",
-    "denmark": "Denmark",
-    "finland": "Finland",
-    "poland": "Poland",
-    "czech republic": "the Czech Republic",
-    "hungary": "Hungary",
-    "russia": "Russia",
-    "argentina": "Argentina",
-    "chile": "Chile",
-    "colombia": "Colombia",
-    "peru": "Peru",
-}
 
 class ClarifierAgent(BaseAgent):
     def __init__(self):
@@ -289,13 +162,6 @@ class ClarifierAgent(BaseAgent):
         query_lower = query.lower().strip()
         return any(pattern in query_lower for pattern in CONFIRMATION_PATTERNS)
     
-    def _extract_city_from_query(self, query: str) -> str:
-        query_lower = query.lower().strip()
-        for alias, city in CITY_ALIASES.items():
-            if alias in query_lower:
-                return city
-        return None
-    
     def _is_new_trip_request(self, query: str) -> bool:
         query_lower = query.lower().strip()
         trip_indicators = [
@@ -305,48 +171,15 @@ class ClarifierAgent(BaseAgent):
         ]
         return any(indicator in query_lower for indicator in trip_indicators)
     
-    def _extract_country_only(self, query: str) -> str:
-        query_lower = query.lower().strip()
-        city_found = self._extract_city_from_query(query)
-        if city_found:
-            return None
-        
-        for country_key, country_name in COUNTRY_NAMES.items():
-            if country_key in query_lower:
-                return country_name
-        return None
-    
     def analyze(self, query: str, conversation_history: list = None, existing_intent: dict = None) -> dict:
         current_date = get_current_date()
         existing_intent = existing_intent or {}
-        
-        city_in_query = self._extract_city_from_query(query)
-        is_confirmation = self._is_confirmation(query)
-        existing_destination = existing_intent.get("destination")
         
         is_new_trip = self._is_new_trip_request(query)
         if is_new_trip:
             existing_intent["_asked_optional"] = False
         
-        if city_in_query:
-            if city_in_query != existing_destination:
-                existing_intent["_asked_optional"] = False
-            existing_intent["destination"] = city_in_query
-            if is_confirmation or (len(query.strip().split()) <= 4):
-                pass
-        
-        country_only = self._extract_country_only(query)
-        if country_only and not city_in_query and not existing_destination:
-            existing_intent["_pending_country"] = country_only
-            city_question = f"Which city are you travelling to in {country_only}?"
-            return {
-                "needs_clarification": True,
-                "clarification_question": city_question,
-                "assistant_message": city_question,
-                "updated_intent": existing_intent,
-                "clarified_query": query,
-                "ready_for_recommendations": False
-            }
+        existing_destination = existing_intent.get("destination")
         
         context = ""
         if conversation_history:
@@ -386,6 +219,25 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             
             new_intent = result.get("updated_intent", {})
             merged_intent = self._merge_intent(existing_intent or {}, new_intent)
+            
+            country_only = new_intent.get("country_only", False)
+            destination_country = new_intent.get("destination_country")
+            destination_city = new_intent.get("destination_city")
+            
+            if country_only and destination_country and not destination_city and not existing_destination:
+                city_question = f"Which city are you travelling to in {destination_country}?"
+                merged_intent["_pending_country"] = destination_country
+                return {
+                    "needs_clarification": True,
+                    "clarification_question": city_question,
+                    "assistant_message": city_question,
+                    "updated_intent": merged_intent,
+                    "clarified_query": query,
+                    "ready_for_recommendations": False
+                }
+            
+            if destination_city and destination_city != existing_destination:
+                existing_intent["_asked_optional"] = False
             
             ready_for_recs = result.get("ready_for_recommendations", False)
             has_destination = merged_intent.get("destination")
