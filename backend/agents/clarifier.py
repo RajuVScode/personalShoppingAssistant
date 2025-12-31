@@ -294,6 +294,16 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                     }
             
             if has_destination and has_dates_info and not already_asked_optional:
+                if mentions_activity or has_optional:
+                    return {
+                        "needs_clarification": False,
+                        "clarification_question": "",
+                        "assistant_message": "Perfect! Let me prepare your personalized recommendations.",
+                        "updated_intent": merged_intent,
+                        "clarified_query": query,
+                        "ready_for_recommendations": True
+                    }
+                
                 destinations = []
                 if merged_intent.get("trip_segments"):
                     for seg in merged_intent["trip_segments"]:
@@ -310,7 +320,7 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                 
                 merged_intent["_asked_optional"] = True
                 
-                optional_question = f"Great! Your trip to {dest_str} is confirmed. Do you have any preferences for activities, budget, or favorite brands? (This is optional - feel free to skip!)"
+                optional_question = f"Great! Your trip to {dest_str} is confirmed. Do you have any preferences for budget or favorite brands? (This is optional - feel free to skip!)"
                 
                 return {
                     "needs_clarification": True,
