@@ -22,7 +22,7 @@ export default function Logo({ className = "h-12" }: { className?: string }) {
       </g>
 
       <text x="110" y="65" fontFamily="Calibri, Segoe UI, Arial, sans-serif" fontSize="56" fontWeight="700" fill="#fff">PSA</text>
-      <text x="110" y="90" fontFamily="Calibri, Segoe UI, Arial, sans-serif" fontSize="24" fontWeight="400" fill="#fff" opacity="0.9">AI Shopping Assistant</text>
+      <text x="110" y="90" fontFamily="Calibri, Segoe UI, Arial, sans-serif" fontSize="26" fontWeight="400" fill="#fff" opacity="0.9">AI Shopping Assistant</text>
     </svg>
   );
 }
