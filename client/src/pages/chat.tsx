@@ -485,7 +485,7 @@ export default function ChatPage() {
             <Button
               onClick={handleSend}
               disabled={!input.trim() || chatMutation.isPending}
-              className="rounded-xl px-6"
+              className="rounded-xl px-6 bg-[#1565c0]"
               data-testid="button-send"
             >
               <Send className="h-4 w-4" />
