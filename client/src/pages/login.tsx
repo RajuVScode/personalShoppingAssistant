@@ -6,8 +6,6 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 import { LogIn, Twitter, Facebook, Linkedin } from "lucide-react";
 
 export default function LoginPage() {
@@ -71,10 +69,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50" style={{ fontFamily: 'Calibri, sans-serif' }}>
-      <Header showAuthButtons={true} />
-      
-      <main className="flex-1 flex items-center justify-center p-6">
+    <div className="flex-1 flex items-center justify-center p-6 bg-gray-50" style={{ fontFamily: 'Calibri, sans-serif' }}>
         <div className="w-full max-w-4xl grid md:grid-cols-2 gap-0 shadow-xl rounded-lg overflow-hidden">
           <div 
             className="bg-gradient-to-br from-[#1565C0] to-[#0D47A1] text-white p-10 flex flex-col justify-center"
@@ -204,9 +199,6 @@ export default function LoginPage() {
             </CardContent>
           </Card>
         </div>
-      </main>
-      
-      <Footer />
     </div>
   );
 }

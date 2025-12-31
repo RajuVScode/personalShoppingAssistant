@@ -6,6 +6,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import ChatPage from "@/pages/chat";
 import LoginPage from "@/pages/login";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 
 function Router() {
   return (
@@ -21,8 +23,14 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
+        <div className="min-h-screen flex flex-col" style={{ fontFamily: 'Calibri, sans-serif' }}>
+          <Header showAuthButtons={true} />
+          <main className="flex-1">
+            <Router />
+          </main>
+          <Footer />
+        </div>
         <Toaster />
-        <Router />
       </TooltipProvider>
     </QueryClientProvider>
   );
