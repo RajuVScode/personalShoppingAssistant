@@ -154,6 +154,64 @@ CITY_ALIASES = {
     "hong kong": "Hong Kong",
 }
 
+COUNTRY_NAMES = {
+    "uk": "the UK",
+    "united kingdom": "the UK",
+    "britain": "the UK",
+    "england": "England",
+    "usa": "the USA",
+    "united states": "the USA",
+    "america": "the USA",
+    "us": "the USA",
+    "france": "France",
+    "germany": "Germany",
+    "italy": "Italy",
+    "spain": "Spain",
+    "japan": "Japan",
+    "china": "China",
+    "australia": "Australia",
+    "canada": "Canada",
+    "mexico": "Mexico",
+    "brazil": "Brazil",
+    "india": "India",
+    "netherlands": "the Netherlands",
+    "holland": "the Netherlands",
+    "switzerland": "Switzerland",
+    "austria": "Austria",
+    "portugal": "Portugal",
+    "greece": "Greece",
+    "turkey": "Turkey",
+    "thailand": "Thailand",
+    "vietnam": "Vietnam",
+    "indonesia": "Indonesia",
+    "malaysia": "Malaysia",
+    "south korea": "South Korea",
+    "korea": "South Korea",
+    "uae": "the UAE",
+    "united arab emirates": "the UAE",
+    "saudi arabia": "Saudi Arabia",
+    "egypt": "Egypt",
+    "morocco": "Morocco",
+    "south africa": "South Africa",
+    "new zealand": "New Zealand",
+    "ireland": "Ireland",
+    "scotland": "Scotland",
+    "wales": "Wales",
+    "belgium": "Belgium",
+    "sweden": "Sweden",
+    "norway": "Norway",
+    "denmark": "Denmark",
+    "finland": "Finland",
+    "poland": "Poland",
+    "czech republic": "the Czech Republic",
+    "hungary": "Hungary",
+    "russia": "Russia",
+    "argentina": "Argentina",
+    "chile": "Chile",
+    "colombia": "Colombia",
+    "peru": "Peru",
+}
+
 class ClarifierAgent(BaseAgent):
     def __init__(self):
         super().__init__("Clarifier", CLARIFIER_PROMPT)
@@ -186,6 +244,17 @@ class ClarifierAgent(BaseAgent):
         ]
         return any(indicator in query_lower for indicator in trip_indicators)
     
+    def _extract_country_only(self, query: str) -> str:
+        query_lower = query.lower().strip()
+        city_found = self._extract_city_from_query(query)
+        if city_found:
+            return None
+        
+        for country_key, country_name in COUNTRY_NAMES.items():
+            if country_key in query_lower:
+                return country_name
+        return None
+    
     def analyze(self, query: str, conversation_history: list = None, existing_intent: dict = None) -> dict:
         current_date = get_current_date()
         existing_intent = existing_intent or {}
@@ -204,6 +273,19 @@ class ClarifierAgent(BaseAgent):
             existing_intent["destination"] = city_in_query
             if is_confirmation or (len(query.strip().split()) <= 4):
                 pass
+        
+        country_only = self._extract_country_only(query)
+        if country_only and not city_in_query and not existing_destination:
+            existing_intent["_pending_country"] = country_only
+            city_question = f"Which city are you travelling to in {country_only}?"
+            return {
+                "needs_clarification": True,
+                "clarification_question": city_question,
+                "assistant_message": city_question,
+                "updated_intent": existing_intent,
+                "clarified_query": query,
+                "ready_for_recommendations": False
+            }
         
         context = ""
         if conversation_history:
