@@ -492,7 +492,7 @@ export default function ChatPage() {
 
         <div className="border-t px-6 py-4 glass-effect">
           <div className="max-w-3xl">
-            <div className="relative flex items-end gap-3 bg-muted/30 rounded-2xl border border-muted-foreground/10 p-3">
+            <div className="relative flex items-end gap-3 bg-muted/30 rounded-2xl p-3">
               <div className="flex-1">
                 <Textarea
                   value={input}
@@ -503,7 +503,7 @@ export default function ChatPage() {
                       handleSend();
                     }
                   }}
-                  placeholder="Message Tensai..."
+                  placeholder="What are you looking for today?"
                   className="min-h-[40px] max-h-[120px] resize-none border-0 bg-transparent p-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-sm"
                   disabled={chatMutation.isPending}
                   data-testid="input-message"
@@ -514,7 +514,7 @@ export default function ChatPage() {
                 onClick={handleSend}
                 disabled={!input.trim() || chatMutation.isPending}
                 size="icon"
-                className="rounded-full h-9 w-9 bg-violet-600 hover:bg-violet-700 shrink-0"
+                className="rounded-full h-9 w-9 bg-[#1565C0] hover:bg-[#1255a0] shrink-0"
                 data-testid="button-send"
               >
                 <Send className="h-4 w-4" />
