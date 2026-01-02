@@ -152,10 +152,24 @@ COMMON_ACTIVITIES = {
     "tour", "adventure", "nightlife", "clubbing", "theater", "opera",
 }
 
+KNOWN_BRANDS = {
+    "riviera atelier", "montclair house", "maison signature", "aurelle couture",
+    "golden atelier", "veloce luxe", "luxe & co.", "evangeline", "opal essence",
+    "bellezza studio", "seaside atelier", "sable & stone"
+}
+
 
 class ClarifierAgent(BaseAgent):
     def __init__(self):
         super().__init__("Clarifier", CLARIFIER_PROMPT)
+    
+    def _extract_brand_fallback(self, query: str) -> str:
+        """Extract brand name from user query by matching against known brands."""
+        query_lower = query.lower().strip()
+        for brand in KNOWN_BRANDS:
+            if brand in query_lower:
+                return brand.title()
+        return None
     
     def _extract_activities_fallback(self, query: str) -> list:
         query_lower = query.lower()
@@ -236,11 +250,6 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             has_date = merged_intent.get("travel_date") or (len(trip_segments) > 0)
             has_required = has_destination and has_date
             
-            has_budget_or_brand = (
-                merged_intent.get("budget_amount") or 
-                merged_intent.get("preferred_brand")
-            )
-            
             already_asked_optional = existing_intent.get("_asked_optional", False) or merged_intent.get("_asked_optional", False)
             already_asked_activities = existing_intent.get("_asked_activities", False) or merged_intent.get("_asked_activities", False)
             
@@ -262,6 +271,18 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             
             if new_activities and isinstance(new_activities, list) and len(new_activities) > 0:
                 mentions_activity = True
+            
+            # Fallback brand extraction - check if user mentioned a brand
+            fallback_brand = self._extract_brand_fallback(query)
+            if fallback_brand and not merged_intent.get("preferred_brand"):
+                merged_intent["preferred_brand"] = fallback_brand
+                print(f"[DEBUG] Extracted brand from query: {fallback_brand}")
+            
+            # Check for budget or brand AFTER fallback extraction
+            has_budget_or_brand = (
+                merged_intent.get("budget_amount") or 
+                merged_intent.get("preferred_brand")
+            )
             
             is_new_trip = result.get("is_new_trip", False)
             if is_new_trip:
