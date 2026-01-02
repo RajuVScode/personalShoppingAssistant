@@ -129,6 +129,10 @@ class ProductRecommenderAgent(BaseAgent):
             
             conditions = []
             
+            # If user specified a brand in the intent, prioritize that brand
+            if context.intent.brand:
+                conditions.append(Product.brand.ilike(f"%{context.intent.brand}%"))
+            
             if context.intent.subcategory:
                 conditions.append(Product.subcategory.ilike(f"%{context.intent.subcategory}%"))
             elif context.intent.category:
@@ -153,7 +157,8 @@ class ProductRecommenderAgent(BaseAgent):
                 preferred_brands = prefs.get("preferred_brands", []) or []
                 categories_interested = prefs.get("categories_interested", []) or []
             
-            if preferred_brands:
+            # Only add preferred brands if no specific brand was requested
+            if preferred_brands and not context.intent.brand:
                 brand_conditions = [Product.brand.ilike(f"%{brand}%") for brand in preferred_brands[:5]]
                 conditions.append(or_(*brand_conditions))
             
@@ -437,5 +442,37 @@ Generate a formal response with these sections:
 Use only the product data provided. Maintain a professional tone.
 """
         
-        response = self.invoke(prompt)
-        return response
+        try:
+            response = self.invoke(prompt)
+            return response
+        except Exception as e:
+            print(f"LLM explanation failed: {e}")
+            return self._generate_fallback_explanation(context, products)
+    
+    def _generate_fallback_explanation(
+        self,
+        context: EnrichedContext,
+        products: List[Dict[str, Any]]
+    ) -> str:
+        """Generate a simple explanation when LLM fails."""
+        destination = getattr(context.intent, 'location', None) or 'your destination'
+        weather_info = context.environmental.weather or {}
+        temp = weather_info.get('temperature', 'N/A')
+        conditions = weather_info.get('description', 'varied conditions')
+        
+        product_list = "\n".join([
+            f"- **{p.get('name')}** by {p.get('brand')} - ${p.get('price', 'N/A')}"
+            for p in products[:5]
+        ])
+        
+        return f"""## Travel Recommendations for {destination}
+
+### Weather Overview
+Expected temperature: {temp}°C with {conditions}.
+
+### Recommended Products
+Based on your travel plans and preferences, here are my top recommendations:
+
+{product_list}
+
+These items have been selected to match your trip requirements. Each product is in stock and ready to ship."""
