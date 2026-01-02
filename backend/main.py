@@ -232,6 +232,20 @@ def reset_conversation(user_id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"status": "conversation reset"}
 
+@app.get("/api/conversation/{user_id}")
+def get_conversation(user_id: int, db: Session = Depends(get_db)):
+    conversation = db.query(Conversation).filter(
+        Conversation.customer_id == user_id
+    ).order_by(Conversation.id.desc()).first()
+    
+    if not conversation or not conversation.messages:
+        return {"messages": [], "context": {}}
+    
+    return {
+        "messages": conversation.messages,
+        "context": conversation.context or {}
+    }
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

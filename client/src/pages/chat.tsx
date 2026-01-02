@@ -99,18 +99,35 @@ export default function ChatPage() {
     setCustomerId(storedCustomerId);
     setCustomerName(storedCustomerName);
 
-    const fetchGreeting = async () => {
+    const loadConversation = async () => {
       if (storedCustomerId) {
         const userId = parseInt(storedCustomerId.replace("CUST-", "")) || 1;
-        await fetch(`/api/reset?user_id=${userId}`, { method: "POST" });
-        const res = await fetch(`/api/greeting/${storedCustomerId}`);
-        const data = await res.json();
-        if (data.greeting) {
-          setMessages([{ role: "assistant", content: data.greeting }]);
+        
+        // Try to load existing conversation
+        const convRes = await fetch(`/api/conversation/${userId}`);
+        const convData = await convRes.json();
+        
+        if (convData.messages && convData.messages.length > 0) {
+          // Restore existing conversation
+          const restoredMessages: Message[] = convData.messages.map((msg: { role: string; content: string }) => ({
+            role: msg.role as "user" | "assistant",
+            content: msg.content,
+          }));
+          setMessages(restoredMessages);
+          if (convData.context) {
+            setCurrentContext(convData.context);
+          }
+        } else {
+          // No existing conversation, show greeting
+          const res = await fetch(`/api/greeting/${storedCustomerId}`);
+          const data = await res.json();
+          if (data.greeting) {
+            setMessages([{ role: "assistant", content: data.greeting }]);
+          }
         }
       }
     };
-    fetchGreeting();
+    loadConversation();
   }, []);
 
   const chatMutation = useMutation({
