@@ -14,7 +14,7 @@ import { useLocation } from "wouter";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -491,24 +491,35 @@ export default function ChatPage() {
         </div>
 
         <div className="border-t px-6 py-4 glass-effect">
-          <div className="flex gap-3 max-w-3xl">
-            <Input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="What are you looking for today?"
-              className="flex-1 rounded-xl border-muted-foreground/20 focus-visible:border-[#1565c0]"
-              disabled={chatMutation.isPending}
-              data-testid="input-message"
-            />
-            <Button
-              onClick={handleSend}
-              disabled={!input.trim() || chatMutation.isPending}
-              className="rounded-xl px-6 bg-[#1565c0] focus-visible:ring-[#1565c0]"
-              data-testid="button-send"
-            >
-              <Send className="h-4 w-4" />
-            </Button>
+          <div className="max-w-3xl">
+            <div className="relative flex items-end gap-3 bg-muted/30 rounded-2xl border border-muted-foreground/10 p-3">
+              <div className="flex-1">
+                <Textarea
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSend();
+                    }
+                  }}
+                  placeholder="Message Tensai..."
+                  className="min-h-[40px] max-h-[120px] resize-none border-0 bg-transparent p-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-sm"
+                  disabled={chatMutation.isPending}
+                  data-testid="input-message"
+                  rows={1}
+                />
+              </div>
+              <Button
+                onClick={handleSend}
+                disabled={!input.trim() || chatMutation.isPending}
+                size="icon"
+                className="rounded-full h-9 w-9 bg-violet-600 hover:bg-violet-700 shrink-0"
+                data-testid="button-send"
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </div>
