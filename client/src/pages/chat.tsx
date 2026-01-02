@@ -515,7 +515,8 @@ export default function ChatPage() {
                 onClick={handleSend}
                 disabled={!input.trim() || chatMutation.isPending}
                 size="icon"
-                className="rounded-full h-9 w-9 bg-violet-600 hover:bg-violet-700 shrink-0"
+                className="rounded-full h-9 w-9 shrink-0"
+                style={{ backgroundColor: '#0d6efd' }}
                 data-testid="button-send"
               >
                 <Send className="h-4 w-4" />
