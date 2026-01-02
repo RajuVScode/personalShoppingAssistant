@@ -168,8 +168,7 @@ class ClarifierAgent(BaseAgent):
     def analyze(self, query: str, conversation_history: list = None, existing_intent: dict = None) -> dict:
         current_date = get_current_date()
         existing_intent = existing_intent or {}
-        
-        existing_destination = existing_intent.get("destination")
+        conversation_history = conversation_history or []
         
         context = ""
         if conversation_history:
@@ -243,6 +242,7 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             )
             
             already_asked_optional = existing_intent.get("_asked_optional", False) or merged_intent.get("_asked_optional", False)
+            already_asked_activities = existing_intent.get("_asked_activities", False) or merged_intent.get("_asked_activities", False)
             
             is_skip = result.get("is_skip_response", False)
             mentions_activity = result.get("mentions_activity", False)
@@ -266,6 +266,7 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             is_new_trip = result.get("is_new_trip", False)
             if is_new_trip:
                 existing_intent["_asked_optional"] = False
+                existing_intent["_asked_activities"] = False
             
             llm_has_date_info = result.get("has_date_info", False)
             has_dates_info = has_date or llm_has_date_info
@@ -282,7 +283,55 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                     "ready_for_recommendations": False
                 }
             
-            if already_asked_optional:
+            # 1. Ask Activities if missing
+            if has_destination and has_dates_info and not already_asked_activities:
+                if mentions_activity:
+                    merged_intent["_asked_activities"] = True
+                else:
+                    merged_intent["_asked_activities"] = True
+                    activity_question = "What kind of activities are you planning for this trip? (e.g., hiking, shopping, dining)"
+                    return {
+                        "needs_clarification": True,
+                        "clarification_question": activity_question,
+                        "assistant_message": activity_question,
+                        "updated_intent": merged_intent,
+                        "clarified_query": query,
+                        "ready_for_recommendations": False
+                    }
+
+            # 2. Ask Optional (Budget/Brand) if missing
+            if has_destination and has_dates_info and already_asked_activities and not already_asked_optional:
+                if has_optional:
+                    merged_intent["_asked_optional"] = True
+                else:
+                    destinations = []
+                    if merged_intent.get("trip_segments"):
+                        for seg in merged_intent["trip_segments"]:
+                            if isinstance(seg, dict):
+                                destinations.append(seg.get("destination", ""))
+                            else:
+                                destinations.append(seg.destination)
+                    if not destinations:
+                        destinations = [merged_intent.get("destination", "")]
+                    
+                    dest_str = " and ".join([d for d in destinations if d])
+                    if not dest_str:
+                        dest_str = "your destinations"
+                    
+                    merged_intent["_asked_optional"] = True
+                    
+                    optional_question = f"Great! Your trip to {dest_str} is confirmed. Do you have any preferences for budget or favorite brands? (This is optional - feel free to skip!)"
+                    
+                    return {
+                        "needs_clarification": True,
+                        "clarification_question": optional_question,
+                        "assistant_message": optional_question,
+                        "updated_intent": merged_intent,
+                        "clarified_query": query,
+                        "ready_for_recommendations": False
+                    }
+            
+            if already_asked_optional and already_asked_activities:
                 if is_skip or has_optional or mentions_activity or has_dates_info:
                     return {
                         "needs_clarification": False,
@@ -292,44 +341,6 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                         "clarified_query": query,
                         "ready_for_recommendations": True
                     }
-            
-            if has_destination and has_dates_info and not already_asked_optional:
-                if mentions_activity or has_optional:
-                    return {
-                        "needs_clarification": False,
-                        "clarification_question": "",
-                        "assistant_message": "Perfect! Let me prepare your personalized recommendations.",
-                        "updated_intent": merged_intent,
-                        "clarified_query": query,
-                        "ready_for_recommendations": True
-                    }
-                
-                destinations = []
-                if merged_intent.get("trip_segments"):
-                    for seg in merged_intent["trip_segments"]:
-                        if isinstance(seg, dict):
-                            destinations.append(seg.get("destination", ""))
-                        else:
-                            destinations.append(seg.destination)
-                if not destinations:
-                    destinations = [merged_intent.get("destination", "")]
-                
-                dest_str = " and ".join([d for d in destinations if d])
-                if not dest_str:
-                    dest_str = "your destinations"
-                
-                merged_intent["_asked_optional"] = True
-                
-                optional_question = f"Great! Your trip to {dest_str} is confirmed. Do you have any preferences for budget or favorite brands? (This is optional - feel free to skip!)"
-                
-                return {
-                    "needs_clarification": True,
-                    "clarification_question": optional_question,
-                    "assistant_message": optional_question,
-                    "updated_intent": merged_intent,
-                    "clarified_query": query,
-                    "ready_for_recommendations": False
-                }
             
             if not has_destination:
                 return {

@@ -215,6 +215,9 @@ class ProductRecommenderAgent(BaseAgent):
     def _build_search_query(self, context: EnrichedContext) -> str:
         parts = []
         
+        if context.intent.brand:
+            parts.append(f"brand {context.intent.brand}")
+            
         if context.intent.raw_query:
             parts.append(context.intent.raw_query)
         
