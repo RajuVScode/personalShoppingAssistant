@@ -103,27 +103,29 @@ export default function ChatPage() {
       if (storedCustomerId) {
         const userId = parseInt(storedCustomerId.replace("CUST-", "")) || 1;
         
+        // Always fetch the greeting first
+        const greetingRes = await fetch(`/api/greeting/${storedCustomerId}`);
+        const greetingData = await greetingRes.json();
+        const greetingMessage: Message = { role: "assistant", content: greetingData.greeting || "How may I assist you?" };
+        
         // Try to load existing conversation
         const convRes = await fetch(`/api/conversation/${userId}`);
         const convData = await convRes.json();
         
         if (convData.messages && convData.messages.length > 0) {
-          // Restore existing conversation
+          // Restore existing conversation with greeting prepended
           const restoredMessages: Message[] = convData.messages.map((msg: { role: string; content: string }) => ({
             role: msg.role as "user" | "assistant",
             content: msg.content,
           }));
-          setMessages(restoredMessages);
+          // Prepend greeting if not already present
+          setMessages([greetingMessage, ...restoredMessages]);
           if (convData.context) {
             setCurrentContext(convData.context);
           }
         } else {
-          // No existing conversation, show greeting
-          const res = await fetch(`/api/greeting/${storedCustomerId}`);
-          const data = await res.json();
-          if (data.greeting) {
-            setMessages([{ role: "assistant", content: data.greeting }]);
-          }
+          // No existing conversation, show greeting only
+          setMessages([greetingMessage]);
         }
       }
     };
