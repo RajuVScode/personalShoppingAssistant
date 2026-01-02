@@ -18,39 +18,51 @@ from backend.database.seed import seed_database
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    Base.metadata.create_all(bind=engine)
-    
-    db = next(get_db())
     try:
-        existing_products = db.query(Product).first()
-        if not existing_products:
-            seed_database(db)
-            
-            products = db.query(Product).all()
-            product_data = [{
-                "id": p.id,
-                "name": p.name,
-                "description": p.description,
-                "category": p.category,
-                "subcategory": p.subcategory,
-                "price": p.price,
-                "brand": p.brand,
-                "gender": p.gender,
-                "colors": p.colors,
-                "tags": p.tags,
-                "image_url": p.image_url,
-                "in_stock": p.in_stock,
-                "rating": p.rating
-            } for p in products]
-            
-            if os.getenv("AZURE_OPENAI_API_KEY"):
-                try:
-                    vector_store = ProductVectorStore()
-                    vector_store.create_index(product_data)
-                except Exception as e:
-                    print(f"Warning: Could not create vector index: {e}")
-    finally:
-        db.close()
+        print("Starting database initialization...", flush=True)
+        Base.metadata.create_all(bind=engine)
+        print("Database tables created", flush=True)
+        
+        db = next(get_db())
+        try:
+            print("Checking for existing products...", flush=True)
+            existing_products = db.query(Product).first()
+            if not existing_products:
+                print("Seeding database...", flush=True)
+                seed_database(db)
+                
+                products = db.query(Product).all()
+                product_data = [{
+                    "id": p.id,
+                    "name": p.name,
+                    "description": p.description,
+                    "category": p.category,
+                    "subcategory": p.subcategory,
+                    "price": p.price,
+                    "brand": p.brand,
+                    "gender": p.gender,
+                    "colors": p.colors,
+                    "tags": p.tags,
+                    "image_url": p.image_url,
+                    "in_stock": p.in_stock,
+                    "rating": p.rating
+                } for p in products]
+                
+                if os.getenv("AZURE_OPENAI_API_KEY"):
+                    try:
+                        vector_store = ProductVectorStore()
+                        vector_store.create_index(product_data)
+                    except Exception as e:
+                        print(f"Warning: Could not create vector index: {e}", flush=True)
+            else:
+                print("Database already seeded", flush=True)
+        finally:
+            db.close()
+        print("Startup complete!", flush=True)
+    except Exception as e:
+        print(f"Error during startup: {e}", flush=True)
+        import traceback
+        traceback.print_exc()
     
     yield
 
