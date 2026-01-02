@@ -82,6 +82,7 @@ class NormalizedIntent(BaseModel):
     raw_query: str = ""
     location: Optional[str] = None
     trip_segments: Optional[List[TripSegment]] = []
+    brand: Optional[str] = None
 
 class CustomerContext(BaseModel):
     customer_id: Union[int, str]
