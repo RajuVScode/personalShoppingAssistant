@@ -16,10 +16,15 @@ from backend.agents.orchestrator import ShoppingOrchestrator
 from backend.rag.vector_store import ProductVectorStore
 from backend.database.seed import seed_database
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
+db_initialized = False
+
+def initialize_database():
+    global db_initialized
+    if db_initialized:
+        return True
+    
     try:
-        print("Starting database initialization...", flush=True)
+        print("Attempting database initialization...", flush=True)
         Base.metadata.create_all(bind=engine)
         print("Database tables created", flush=True)
         
@@ -58,12 +63,18 @@ async def lifespan(app: FastAPI):
                 print("Database already seeded", flush=True)
         finally:
             db.close()
-        print("Startup complete!", flush=True)
+        
+        db_initialized = True
+        print("Database initialization complete!", flush=True)
+        return True
     except Exception as e:
-        print(f"Error during startup: {e}", flush=True)
-        import traceback
-        traceback.print_exc()
-    
+        print(f"Database initialization failed (will retry on request): {e}", flush=True)
+        return False
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    initialize_database()
+    print("Application startup complete (database may initialize lazily)", flush=True)
     yield
 
 app = FastAPI(
@@ -87,31 +98,46 @@ class LoginRequest(BaseModel):
 
 @app.get("/api/health")
 def health_check():
-    return {"status": "healthy", "service": "AI Shopping Experience"}
+    global db_initialized
+    if not db_initialized:
+        initialize_database()
+    return {
+        "status": "healthy", 
+        "service": "AI Shopping Experience",
+        "database": "connected" if db_initialized else "connecting"
+    }
 
 @app.post("/api/login")
 def login(request: LoginRequest, db: Session = Depends(get_db)):
-    from sqlalchemy import text
-    result = db.execute(
-        text("SELECT customer_id, first_name, last_name, email, password FROM customers WHERE customer_id = :cid"),
-        {"cid": request.customer_id}
-    ).fetchone()
+    global db_initialized
+    if not db_initialized:
+        initialize_database()
     
-    if not result:
-        return {"success": False, "message": "Customer ID not found"}
-    
-    if result.password != request.password:
-        return {"success": False, "message": "Invalid password"}
-    
-    return {
-        "success": True,
-        "customer": {
-            "customer_id": result.customer_id,
-            "first_name": result.first_name,
-            "last_name": result.last_name,
-            "email": result.email
+    try:
+        from sqlalchemy import text
+        result = db.execute(
+            text("SELECT customer_id, first_name, last_name, email, password FROM customers WHERE customer_id = :cid"),
+            {"cid": request.customer_id}
+        ).fetchone()
+        
+        if not result:
+            return {"success": False, "message": "Customer ID not found"}
+        
+        if result.password != request.password:
+            return {"success": False, "message": "Invalid password"}
+        
+        return {
+            "success": True,
+            "customer": {
+                "customer_id": result.customer_id,
+                "first_name": result.first_name,
+                "last_name": result.last_name,
+                "email": result.email
+            }
         }
-    }
+    except Exception as e:
+        print(f"Login error: {e}", flush=True)
+        return {"success": False, "message": "Service temporarily unavailable. Please try again."}
 
 @app.get("/api/greeting/{customer_id}")
 def get_greeting(customer_id: str, db: Session = Depends(get_db)):
