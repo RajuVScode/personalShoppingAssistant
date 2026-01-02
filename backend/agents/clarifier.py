@@ -170,6 +170,8 @@ class ClarifierAgent(BaseAgent):
         existing_intent = existing_intent or {}
         conversation_history = conversation_history or []
         
+        existing_destination = existing_intent.get("destination")
+        
         context = ""
         if conversation_history:
             context = f"\nConversation history: {json.dumps(conversation_history[-5:])}"
