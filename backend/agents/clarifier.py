@@ -287,26 +287,22 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             
             # 1. Ask Activities if missing
             if has_destination and has_dates_info and not already_asked_activities:
-                if mentions_activity:
+                if mentions_activity or merged_intent.get("activities"):
                     merged_intent["_asked_activities"] = True
                 else:
-                    # Check if activities are already present in merged_intent
-                    if not merged_intent.get("activities"):
-                        merged_intent["_asked_activities"] = True
-                        activity_question = "What kind of activities are you planning for this trip? (e.g., hiking, shopping, dining)"
-                        return {
-                            "needs_clarification": True,
-                            "clarification_question": activity_question,
-                            "assistant_message": activity_question,
-                            "updated_intent": merged_intent,
-                            "clarified_query": query,
-                            "ready_for_recommendations": False
-                        }
-                    else:
-                        merged_intent["_asked_activities"] = True
+                    merged_intent["_asked_activities"] = True
+                    activity_question = "What kind of activities are you planning for this trip? (e.g., hiking, shopping, dining)"
+                    return {
+                        "needs_clarification": True,
+                        "clarification_question": activity_question,
+                        "assistant_message": activity_question,
+                        "updated_intent": merged_intent,
+                        "clarified_query": query,
+                        "ready_for_recommendations": False
+                    }
 
             # 2. Ask Optional (Budget/Brand) if missing
-            if has_destination and has_dates_info and already_asked_activities and not already_asked_optional:
+            if has_destination and has_dates_info and (already_asked_activities or merged_intent.get("_asked_activities")) and not already_asked_optional:
                 if has_optional:
                     merged_intent["_asked_optional"] = True
                 else:
