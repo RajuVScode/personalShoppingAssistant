@@ -2,6 +2,7 @@ import os
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
+from sqlalchemy.orm.attributes import flag_modified
 from contextlib import asynccontextmanager
 
 from backend.database.connection import engine, get_db, Base
@@ -158,11 +159,13 @@ def chat(request: ChatRequest, db: Session = Depends(get_db)):
     updated_context["accumulated_intent"] = result.get("updated_intent", {})
     
     if conversation:
-        messages = conversation.messages or []
+        messages = list(conversation.messages or [])
         messages.append({"role": "user", "content": request.message})
         messages.append({"role": "assistant", "content": result["response"]})
         conversation.messages = messages
         conversation.context = updated_context
+        flag_modified(conversation, "messages")
+        flag_modified(conversation, "context")
         db.commit()
     else:
         new_conversation = Conversation(
