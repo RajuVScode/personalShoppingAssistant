@@ -113,10 +113,17 @@ class ProductRecommenderAgent(BaseAgent):
         if context.intent.gender:
             filters["gender"] = context.intent.gender
         
-        if context.customer.preferences:
+        # User-specified brand takes priority
+        if context.intent.brand:
+            filters["brand"] = context.intent.brand
+        elif context.customer.preferences:
+            # Fall back to customer's preferred brands if no specific brand requested
             prefs = context.customer.preferences
             if prefs.get("preferred_brands"):
                 filters["preferred_brands"] = prefs["preferred_brands"]
+        
+        if context.customer.preferences:
+            prefs = context.customer.preferences
             if prefs.get("categories_interested"):
                 filters["categories_interested"] = prefs["categories_interested"]
         
@@ -167,35 +174,43 @@ class ProductRecommenderAgent(BaseAgent):
             
             products = query.order_by(Product.rating.desc()).limit(num_results * 3).all()
             
-            if not products and categories_interested:
-                cat_conditions = []
-                for cat in categories_interested[:3]:
-                    cat_conditions.append(or_(
-                        Product.category.ilike(f"%{cat}%"),
-                        Product.subcategory.ilike(f"%{cat}%")
-                    ))
-                if cat_conditions:
-                    query = db.query(Product).filter(Product.in_stock == True)
-                    query = query.filter(or_(*cat_conditions))
-                    if context.intent.budget_max:
-                        query = query.filter(Product.price <= context.intent.budget_max)
-                    products = query.order_by(Product.rating.desc()).limit(num_results).all()
+            # If user specified a brand but no products found, try brand-only search
+            if not products and context.intent.brand:
+                brand_query = db.query(Product).filter(Product.in_stock == True)
+                brand_query = brand_query.filter(Product.brand.ilike(f"%{context.intent.brand}%"))
+                products = brand_query.order_by(Product.rating.desc()).limit(num_results * 3).all()
             
-            if not products and context.intent.keywords:
-                keyword_conditions = []
-                for kw in context.intent.keywords[:3]:
-                    keyword_conditions.append(or_(
-                        Product.name.ilike(f"%{kw}%"),
-                        Product.description.ilike(f"%{kw}%"),
-                        Product.subcategory.ilike(f"%{kw}%"),
-                        Product.material.ilike(f"%{kw}%")
-                    ))
-                if keyword_conditions:
-                    query = db.query(Product).filter(Product.in_stock == True)
-                    query = query.filter(or_(*keyword_conditions))
-                    if context.intent.budget_max:
-                        query = query.filter(Product.price <= context.intent.budget_max)
-                    products = query.order_by(Product.rating.desc()).limit(num_results).all()
+            # Only try other fallbacks if NO explicit brand was requested
+            if not products and not context.intent.brand:
+                if categories_interested:
+                    cat_conditions = []
+                    for cat in categories_interested[:3]:
+                        cat_conditions.append(or_(
+                            Product.category.ilike(f"%{cat}%"),
+                            Product.subcategory.ilike(f"%{cat}%")
+                        ))
+                    if cat_conditions:
+                        query = db.query(Product).filter(Product.in_stock == True)
+                        query = query.filter(or_(*cat_conditions))
+                        if context.intent.budget_max:
+                            query = query.filter(Product.price <= context.intent.budget_max)
+                        products = query.order_by(Product.rating.desc()).limit(num_results).all()
+                
+                if not products and context.intent.keywords:
+                    keyword_conditions = []
+                    for kw in context.intent.keywords[:3]:
+                        keyword_conditions.append(or_(
+                            Product.name.ilike(f"%{kw}%"),
+                            Product.description.ilike(f"%{kw}%"),
+                            Product.subcategory.ilike(f"%{kw}%"),
+                            Product.material.ilike(f"%{kw}%")
+                        ))
+                    if keyword_conditions:
+                        query = db.query(Product).filter(Product.in_stock == True)
+                        query = query.filter(or_(*keyword_conditions))
+                        if context.intent.budget_max:
+                            query = query.filter(Product.price <= context.intent.budget_max)
+                        products = query.order_by(Product.rating.desc()).limit(num_results).all()
             
             raw_products = [{
                 "id": p.id,

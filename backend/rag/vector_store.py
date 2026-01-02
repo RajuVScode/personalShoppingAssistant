@@ -144,6 +144,18 @@ class ProductVectorStore:
                 if filters.get("gender") and metadata.get("gender"):
                     if filters["gender"].lower() != metadata["gender"].lower() and metadata["gender"].lower() != "unisex":
                         continue
+                # Filter by user-specified brand
+                if filters.get("brand") and metadata.get("brand"):
+                    if filters["brand"].lower() not in metadata["brand"].lower():
+                        continue
+                # Filter by customer preferred brands (if no specific brand requested)
+                if filters.get("preferred_brands") and metadata.get("brand") and not filters.get("brand"):
+                    brand_match = any(
+                        pb.lower() in metadata["brand"].lower() 
+                        for pb in filters["preferred_brands"]
+                    )
+                    if not brand_match:
+                        continue
             
             candidates.append({
                 **metadata,
