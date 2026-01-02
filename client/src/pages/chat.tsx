@@ -492,7 +492,7 @@ export default function ChatPage() {
 
         <div className="border-t px-6 py-4 glass-effect">
           <div className="max-w-3xl">
-            <div className="relative flex items-end gap-3 bg-muted/30 rounded-2xl border border-muted-foreground/10 p-3">
+            <div className="relative flex items-end gap-3 bg-muted/30 border border-muted-foreground/10 p-3" style={{ borderRadius: '12px' }}>
               <div className="flex-1">
                 <Textarea
                   value={input}

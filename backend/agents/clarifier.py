@@ -1,6 +1,7 @@
 import json
 from datetime import datetime, timedelta
 from backend.agents.base import BaseAgent
+from backend.utils.date_parser import parse_relative_date, parse_relative_weekend
 
 def get_current_date():
     return datetime.now().strftime("%Y-%m-%d")
@@ -74,10 +75,14 @@ Rules:
 - "tomorrow" => {CURRENT_DATE} + 1 day
 - "this week" => current week dates
 - "next week" => the following week dates (Monday-Sunday)
-- "this weekend" => Saturday-Sunday of the current week
-- "next weekend" => Saturday-Sunday of the following week
+- "this weekend" / "upcoming weekend" => the upcoming Saturday-Sunday
+- "next weekend" => the weekend AFTER the upcoming one (NOT the immediate upcoming weekend!)
+  - Example: If today is Friday Jan 2, upcoming weekend is Jan 3-4, so "next weekend" is Jan 10-11
+- "1 week from next weekend" => next weekend + 1 week
+  - Example: If "next weekend" is Jan 10-11, then "1 week from next weekend" is Jan 17-18
+- "2 weeks from next weekend" => next weekend + 2 weeks
 - "next month" => dates in the following calendar month
-- IMPORTANT: "next week", "this weekend", etc. are VALID date inputs - do NOT ask for more specific dates!
+- IMPORTANT: "next week", "this weekend", "1 week from next weekend", etc. are VALID date inputs - do NOT ask for more specific dates!
 - CRITICAL: All dates MUST be in the FUTURE relative to {CURRENT_DATE}. If today is late December 2025, "next week" means early January 2026, NOT January 2025.
 - If month/day is given without year, always use the NEXT occurrence of that date in the future. If "January 5" is mentioned and today is December 27, 2025, it means January 5, 2026.
 - Date format: "YYYY-MM-DD" (single date) or "YYYY-MM-DD to YYYY-MM-DD" (range).
@@ -224,6 +229,13 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             
             new_intent = result.get("updated_intent", {})
             merged_intent = self._merge_intent(existing_intent or {}, new_intent)
+            
+            if not merged_intent.get("travel_date"):
+                parsed_date = parse_relative_date(query, datetime.now())
+                if parsed_date:
+                    merged_intent["travel_date"] = parsed_date
+                    result["has_date_info"] = True
+                    print(f"[DEBUG] Parsed relative date from query: {parsed_date}")
             
             country_only = new_intent.get("country_only", False)
             destination_country = new_intent.get("destination_country")
