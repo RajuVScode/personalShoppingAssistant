@@ -504,7 +504,8 @@ export default function ChatPage() {
                     }
                   }}
                   placeholder="Message Tensai..."
-                  className="min-h-[40px] max-h-[120px] resize-none border-0 bg-transparent p-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-sm"
+                  className="min-h-[40px] max-h-[120px] resize-none border-none bg-transparent p-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:outline-none text-sm"
+                  style={{ border: 'none', outline: 'none' }}
                   disabled={chatMutation.isPending}
                   data-testid="input-message"
                   rows={1}
