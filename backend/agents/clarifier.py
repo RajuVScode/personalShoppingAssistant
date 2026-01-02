@@ -236,10 +236,8 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             has_date = merged_intent.get("travel_date") or (len(trip_segments) > 0)
             has_required = has_destination and has_date
             
-            has_optional = (
-                merged_intent.get("activities") or 
+            has_budget_or_brand = (
                 merged_intent.get("budget_amount") or 
-                merged_intent.get("clothes") or
                 merged_intent.get("preferred_brand")
             )
             
@@ -303,7 +301,7 @@ Extract travel intent and respond with the JSON structure. If key details are mi
 
             # 2. Ask Optional (Budget/Brand) if missing
             if has_destination and has_dates_info and (already_asked_activities or merged_intent.get("_asked_activities")) and not already_asked_optional:
-                if has_optional:
+                if has_budget_or_brand:
                     merged_intent["_asked_optional"] = True
                 else:
                     destinations = []
@@ -334,7 +332,7 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                     }
             
             if already_asked_optional and already_asked_activities:
-                if is_skip or has_optional or mentions_activity or has_dates_info:
+                if is_skip or has_budget_or_brand or mentions_activity or has_dates_info:
                     return {
                         "needs_clarification": False,
                         "clarification_question": "",
