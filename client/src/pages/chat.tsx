@@ -503,7 +503,7 @@ export default function ChatPage() {
                       handleSend();
                     }
                   }}
-                  placeholder="Message Tensai..."
+                  placeholder="What are you looking for today?"
                   className="min-h-[40px] max-h-[120px] resize-none border-none bg-transparent p-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:outline-none text-sm"
                   style={{ border: 'none', outline: 'none' }}
                   disabled={chatMutation.isPending}
