@@ -5,14 +5,16 @@ from typing import Optional, Tuple
 def get_upcoming_weekend(current_date: datetime) -> Tuple[datetime, datetime]:
     """
     Get the upcoming weekend (Saturday-Sunday).
-    If today is Saturday or Sunday, returns this weekend.
+    If today is Saturday, returns this weekend.
+    If today is Sunday, returns NEXT weekend (since this one is ending).
+    Always ensures returned dates are in the future or today.
     """
     current_weekday = current_date.weekday()
     
     if current_weekday == 5:
         saturday = current_date
     elif current_weekday == 6:
-        saturday = current_date - timedelta(days=1)
+        saturday = current_date + timedelta(days=6)
     else:
         days_until_saturday = (5 - current_weekday) % 7
         if days_until_saturday == 0:
