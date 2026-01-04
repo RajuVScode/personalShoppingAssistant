@@ -81,8 +81,10 @@ Rules:
 - "1 week from next weekend" => next weekend + 1 week
   - Example: If "next weekend" is Jan 10-11, then "1 week from next weekend" is Jan 17-18
 - "2 weeks from next weekend" => next weekend + 2 weeks
+- "1 week" / "a week" / "one week" => 1 week (7 days) from today
+- "2 weeks" / "in 2 weeks" => 2 weeks (14 days) from today
 - "next month" => dates in the following calendar month
-- IMPORTANT: "next week", "this weekend", "1 week from next weekend", etc. are VALID date inputs - do NOT ask for more specific dates!
+- IMPORTANT: "next week", "this weekend", "1 week from next weekend", "1 week", etc. are VALID date inputs - do NOT ask for more specific dates!
 - CRITICAL: All dates MUST be in the FUTURE relative to {CURRENT_DATE}. If today is late December 2025, "next week" means early January 2026, NOT January 2025.
 - If month/day is given without year, always use the NEXT occurrence of that date in the future. If "January 5" is mentioned and today is December 27, 2025, it means January 5, 2026.
 - Date format: "YYYY-MM-DD" (single date) or "YYYY-MM-DD to YYYY-MM-DD" (range).

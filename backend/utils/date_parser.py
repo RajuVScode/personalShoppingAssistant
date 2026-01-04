@@ -148,6 +148,16 @@ def parse_relative_date(text: str, current_date: Optional[datetime] = None) -> O
         target = current_date + timedelta(days=days)
         return target.strftime("%Y-%m-%d")
     
+    weeks_match = re.search(r'(?:in\s+)?(\d+|a|one)\s*weeks?(?:\s+from\s+(?:now|today))?', text_lower)
+    if weeks_match:
+        weeks_str = weeks_match.group(1)
+        if weeks_str in ('a', 'one'):
+            weeks = 1
+        else:
+            weeks = int(weeks_str)
+        target = current_date + timedelta(weeks=weeks)
+        return target.strftime("%Y-%m-%d")
+    
     return None
 
 def format_date_range(start_date: str, end_date: str) -> str:
