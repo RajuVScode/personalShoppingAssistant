@@ -1,8 +1,59 @@
+import re
 from typing import TypedDict, Literal
 from langgraph.graph import StateGraph, END
 from sqlalchemy.orm import Session
 
 from backend.agents.clarifier import ClarifierAgent
+
+OFF_TOPIC_MESSAGE = """Thank you for your message. I am a travel shopping assistant designed to help you find the perfect items for your travel needs.
+
+I would be happy to assist you with:
+- Travel destination planning and outfit recommendations
+- Weather-appropriate clothing suggestions for your trips
+- Shopping recommendations based on your travel activities
+- Budget-friendly travel wardrobe options
+
+Please feel free to share your travel plans or shopping needs, and I will be glad to help you find suitable recommendations."""
+
+TRAVEL_SHOPPING_KEYWORDS = {
+    'travel', 'trip', 'vacation', 'holiday', 'destination', 'flying', 'flight',
+    'beach', 'mountain', 'city', 'country', 'abroad', 'overseas', 'weekend',
+    'shopping', 'clothes', 'clothing', 'outfit', 'wear', 'dress', 'shirt', 'pants',
+    'jacket', 'coat', 'shoes', 'accessories', 'bag', 'luggage', 'suitcase',
+    'pack', 'packing', 'wardrobe', 'fashion', 'style', 'brand', 'buy', 'purchase',
+    'recommend', 'suggestion', 'hiking', 'swimming', 'skiing', 'camping',
+    'business', 'meeting', 'conference', 'wedding', 'formal', 'casual',
+    'summer', 'winter', 'spring', 'fall', 'autumn', 'weather', 'hot', 'cold',
+    'warm', 'rainy', 'sunny', 'budget', 'price', 'cost', 'affordable',
+    'paris', 'london', 'tokyo', 'new york', 'miami', 'rome', 'dubai',
+    'hotel', 'resort', 'cruise', 'tour', 'adventure', 'explore',
+    'next week', 'next weekend', 'tomorrow', 'january', 'february', 'march',
+    'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'
+}
+
+def is_travel_shopping_related(query: str) -> bool:
+    """Check if the query is related to travel or shopping topics."""
+    query_lower = query.lower()
+    
+    for keyword in TRAVEL_SHOPPING_KEYWORDS:
+        if keyword in query_lower:
+            return True
+    
+    travel_patterns = [
+        r'\bgoing\s+to\b', r'\btravel(?:l)?ing\s+to\b', r'\bvisit(?:ing)?\b',
+        r'\bflying\s+to\b', r'\bheading\s+to\b', r'\boff\s+to\b',
+        r'\bneed\s+(?:some|a|an)?\s*(?:new)?\s*(?:clothes|outfit|dress|shirt)',
+        r'\bwhat\s+(?:should|can|to)\s+(?:i\s+)?(?:wear|pack|bring)\b',
+        r'\brecommend(?:ation)?s?\b', r'\bsuggestion?s?\b',
+        r'\bweek(?:s)?\s+from\b', r'\bdays?\s+from\b'
+    ]
+    
+    for pattern in travel_patterns:
+        if re.search(pattern, query_lower):
+            return True
+    
+    return False
+
 from backend.agents.intent_processor import IntentProcessor
 from backend.agents.customer360 import Customer360Agent
 from backend.agents.context_aggregator import ContextAggregator
@@ -143,6 +194,32 @@ class ShoppingOrchestrator:
         return state
     
     def process_message(self, user_id: int, message: str, conversation_history: list = None, existing_intent: dict = None) -> dict:
+        has_conversation_history = conversation_history and len(conversation_history) > 0
+        
+        has_existing_context = existing_intent and (
+            existing_intent.get("destination") or 
+            existing_intent.get("destination_city") or
+            existing_intent.get("destination_country") or
+            existing_intent.get("travel_date") or
+            existing_intent.get("activities") or
+            existing_intent.get("trip_segments") or
+            existing_intent.get("location") or
+            existing_intent.get("_asked_optional") or
+            existing_intent.get("_asked_activities")
+        )
+        
+        is_new_conversation = not has_conversation_history and not has_existing_context
+        
+        if is_new_conversation and not is_travel_shopping_related(message):
+            return {
+                "response": OFF_TOPIC_MESSAGE,
+                "products": [],
+                "clarification_needed": False,
+                "clarification_question": None,
+                "updated_intent": existing_intent or {},
+                "context": {}
+            }
+        
         initial_state: GraphState = {
             "messages": [],
             "user_id": user_id,
