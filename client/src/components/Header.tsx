@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -18,7 +18,7 @@ interface HeaderProps {
 
 export default function Header({ onSignUp, showAuthButtons = true }: HeaderProps) {
   const [customerName, setCustomerName] = useState<string | null>(null);
-  const [, setLocation] = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const checkAuth = () => {
@@ -41,7 +41,7 @@ export default function Header({ onSignUp, showAuthButtons = true }: HeaderProps
     localStorage.removeItem("customer_id");
     localStorage.removeItem("customer_name");
     setCustomerName(null);
-    setLocation("/");
+    navigate("/");
   };
 
   const handleEditProfile = () => {

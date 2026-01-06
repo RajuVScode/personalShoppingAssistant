@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useLocation } from "wouter";
+import { Navigate } from "react-router-dom";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -7,19 +7,22 @@ interface ProtectedRouteProps {
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [, setLocation] = useLocation();
 
   useEffect(() => {
     const customerId = localStorage.getItem("customer_id");
-    if (!customerId) {
-      setLocation("/");
-    } else {
+    if (customerId) {
       setIsAuthenticated(true);
+    } else {
+      setIsAuthenticated(false);
     }
-  }, [setLocation]);
+  }, []);
 
   if (isAuthenticated === null) {
     return null;
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/" replace />;
   }
 
   return <>{children}</>;

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,15 +13,15 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [, setLocation] = useLocation();
+  const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
     const existingCustomer = localStorage.getItem("customer_name");
     if (existingCustomer) {
-      setLocation("/chat");
+      navigate("/chat", { replace: true });
     }
-  }, [setLocation]);
+  }, [navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,7 +56,7 @@ export default function LoginPage() {
           title: "Welcome!",
           description: `Logged in as ${data.customer.first_name} ${data.customer.last_name}`,
         });
-        setLocation("/chat");
+        navigate("/chat");
       } else {
         toast({
           title: "Login Failed",
