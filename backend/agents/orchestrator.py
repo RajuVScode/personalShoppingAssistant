@@ -164,6 +164,64 @@ class ShoppingOrchestrator:
                 intent_dict["brand"] = clarifier_intent["preferred_brand"]
             if clarifier_intent.get("trip_segments"):
                 intent_dict["trip_segments"] = clarifier_intent["trip_segments"]
+            
+            # Extract product category from notes field (user's answer to "What products?")
+            if clarifier_intent.get("notes") and not intent_dict.get("category"):
+                notes = clarifier_intent["notes"].lower()
+                # Map common product terms to catalog categories
+                category_mapping = {
+                    "shoes": "Footwear",
+                    "shoe": "Footwear",
+                    "sneakers": "Footwear",
+                    "boots": "Footwear",
+                    "heels": "Footwear",
+                    "sandals": "Footwear",
+                    "footwear": "Footwear",
+                    "loafers": "Footwear",
+                    "flats": "Footwear",
+                    "clothing": "Clothing",
+                    "clothes": "Clothing",
+                    "dress": "Clothing",
+                    "dresses": "Clothing",
+                    "shirt": "Clothing",
+                    "shirts": "Clothing",
+                    "pants": "Clothing",
+                    "jeans": "Clothing",
+                    "jacket": "Outerwear",
+                    "jackets": "Outerwear",
+                    "coat": "Outerwear",
+                    "coats": "Outerwear",
+                    "outerwear": "Outerwear",
+                    "bag": "Handbags",
+                    "bags": "Handbags",
+                    "handbag": "Handbags",
+                    "handbags": "Handbags",
+                    "purse": "Handbags",
+                    "accessories": "Accessories",
+                    "jewelry": "Fine Jewelry",
+                    "jewellery": "Fine Jewelry",
+                    "makeup": "Makeup",
+                    "cosmetics": "Beauty",
+                    "skincare": "Skincare",
+                    "perfume": "Fragrance",
+                    "fragrance": "Fragrance",
+                }
+                
+                for keyword, category in category_mapping.items():
+                    if keyword in notes:
+                        intent_dict["category"] = category
+                        # Also set subcategory for more specific terms
+                        if keyword in ["sneakers", "boots", "heels", "sandals", "loafers", "flats"]:
+                            intent_dict["subcategory"] = keyword.capitalize()
+                        elif keyword in ["dress", "dresses"]:
+                            intent_dict["subcategory"] = "Dresses"
+                        elif keyword in ["shirt", "shirts"]:
+                            intent_dict["subcategory"] = "Tops"
+                        break
+                
+                # Add notes to keywords for better search
+                existing_keywords = intent_dict.get("keywords") or []
+                intent_dict["keywords"] = existing_keywords + [clarifier_intent["notes"]]
         
         state["normalized_intent"] = intent_dict
         return state
