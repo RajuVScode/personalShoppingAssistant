@@ -489,6 +489,14 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             shopping_flow_complete = merged_intent.get("_shopping_flow_complete", False) or existing_intent.get("_shopping_flow_complete", False)
             declined_shopping = merged_intent.get("_declined_shopping", False) or existing_intent.get("_declined_shopping", False)
             
+            # Debug logging
+            print(f"[DEBUG] Activity check - has_destination: {has_destination}, has_dates_info: {has_dates_info}")
+            print(f"[DEBUG] Activity check - already_asked_activities: {already_asked_activities}, shopping_flow_complete: {shopping_flow_complete}, declined_shopping: {declined_shopping}")
+            print(f"[DEBUG] Activity check - existing_intent._asked_activities: {existing_intent.get('_asked_activities')}")
+            print(f"[DEBUG] Activity check - merged_intent._asked_activities: {merged_intent.get('_asked_activities')}")
+            print(f"[DEBUG] Activity check - merged_intent.activities: {merged_intent.get('activities')}")
+            print(f"[DEBUG] Activity check - existing_intent.activities: {existing_intent.get('activities')}")
+            
             if has_destination and has_dates_info and not already_asked_activities and not shopping_flow_complete and not declined_shopping:
                 # Check if specific activities were captured (not just mentions_activity flag)
                 captured_activities = merged_intent.get("activities") or existing_intent.get("activities")
