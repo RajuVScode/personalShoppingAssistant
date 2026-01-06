@@ -490,7 +490,11 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             declined_shopping = merged_intent.get("_declined_shopping", False) or existing_intent.get("_declined_shopping", False)
             
             if has_destination and has_dates_info and not already_asked_activities and not shopping_flow_complete and not declined_shopping:
-                if mentions_activity or merged_intent.get("activities"):
+                # Check if specific activities were captured (not just mentions_activity flag)
+                captured_activities = merged_intent.get("activities") or existing_intent.get("activities")
+                has_specific_activities = captured_activities and len(captured_activities) > 0
+                
+                if has_specific_activities:
                     merged_intent["_asked_activities"] = True
                     # Activities already captured by early detection, continue to optional
                 else:
