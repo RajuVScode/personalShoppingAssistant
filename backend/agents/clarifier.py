@@ -157,7 +157,56 @@ COMMON_ACTIVITIES = {
     "camping", "fishing", "climbing", "diving", "snorkeling", "kayaking",
     "sailing", "boating", "photography", "wine tasting", "cooking class",
     "tour", "adventure", "nightlife", "clubbing", "theater", "opera",
+    "trekking", "cooking", "gym", "gaming", "travel",
 }
+
+SHOPPING_KEYWORDS = {
+    "shopping", "buy", "purchase", "order", "get a product", "looking to buy",
+    "need to purchase", "want to buy", "buying", "purchasing", "shop",
+    "need some", "looking for", "want some", "get some",
+}
+
+NON_SHOPPING_ACTIVITIES = {
+    "hiking", "trekking", "running", "dining", "cooking", "camping", "gym",
+    "gaming", "photography", "swimming", "cycling", "surfing", "skiing",
+    "snowboarding", "yoga", "golf", "tennis", "jogging", "fishing",
+    "climbing", "diving", "snorkeling", "kayaking", "sailing", "boating",
+    "wine tasting", "cooking class", "tour", "adventure", "nightlife",
+    "clubbing", "theater", "opera", "sightseeing", "beach", "museum",
+    "concert", "wedding", "conference", "meeting", "business", "festival",
+    "party", "spa", "wellness",
+}
+
+def detect_shopping_intent(query: str) -> bool:
+    """Check if the query indicates shopping/purchasing intent."""
+    query_lower = query.lower()
+    for keyword in SHOPPING_KEYWORDS:
+        if keyword in query_lower:
+            return True
+    return False
+
+def detect_non_shopping_activity(query: str) -> str:
+    """Check if the query mentions a non-shopping activity. Returns the activity name or None."""
+    query_lower = query.lower()
+    for activity in NON_SHOPPING_ACTIVITIES:
+        if activity in query_lower:
+            return activity
+    return None
+
+def is_affirmative_response(query: str) -> bool:
+    """Check if the query is an affirmative response."""
+    affirmatives = {"yes", "yeah", "sure", "okay", "ok", "go ahead", "proceed", 
+                   "yep", "yup", "absolutely", "definitely", "please", "of course",
+                   "sounds good", "let's do it", "yes please", "sure thing"}
+    query_lower = query.lower().strip()
+    return query_lower in affirmatives or any(aff in query_lower for aff in affirmatives)
+
+def is_negative_response(query: str) -> bool:
+    """Check if the query is a negative response."""
+    negatives = {"no", "nope", "nah", "not really", "no thanks", "no thank you",
+                "i'm good", "skip", "not interested", "don't need"}
+    query_lower = query.lower().strip()
+    return query_lower in negatives or any(neg in query_lower for neg in negatives)
 
 KNOWN_BRANDS = {
     "riviera atelier", "montclair house", "maison signature", "aurelle couture",
@@ -306,6 +355,124 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             llm_has_date_info = result.get("has_date_info", False)
             has_dates_info = has_date or llm_has_date_info
             
+            # EARLY SHOPPING/ACTIVITY DETECTION from raw query (runs BEFORE destination/date checks)
+            # Skip detection if we're waiting for a product category answer
+            already_asked_product_category = existing_intent.get("_asked_product_category", False)
+            
+            if already_asked_product_category and not existing_intent.get("_product_category_received", False):
+                # User is answering what products they want - capture and proceed
+                merged_intent["_product_category_received"] = True
+                merged_intent["_shopping_flow_complete"] = True
+                merged_intent["notes"] = query if not merged_intent.get("notes") else f"{merged_intent.get('notes')}; {query}"
+                # Skip shopping/activity detection for this response
+                direct_shopping_intent = False
+                direct_non_shopping_activity = None
+            else:
+                direct_shopping_intent = detect_shopping_intent(query)
+                direct_non_shopping_activity = detect_non_shopping_activity(query)
+            
+            # Handle shopping confirmation response (yes/no to "Would you like to shop for activity?")
+            awaiting_shopping_confirm = existing_intent.get("_awaiting_shopping_confirm", False)
+            if awaiting_shopping_confirm:
+                if is_affirmative_response(query):
+                    merged_intent["_awaiting_shopping_confirm"] = False
+                    merged_intent["_confirmed_shopping"] = True
+                    merged_intent["_asked_product_category"] = True
+                    product_question = "What kind of products or category of products would you like to buy?"
+                    return {
+                        "needs_clarification": True,
+                        "clarification_question": product_question,
+                        "assistant_message": product_question,
+                        "updated_intent": merged_intent,
+                        "clarified_query": query,
+                        "ready_for_recommendations": False
+                    }
+                elif is_negative_response(query):
+                    merged_intent["_awaiting_shopping_confirm"] = False
+                    merged_intent["_declined_shopping"] = True
+                    activity_name = existing_intent.get("_pending_activity", "your activity")
+                    tip_message = f"No problem! Here are some tips for {activity_name}: Make sure to check weather conditions, bring appropriate gear, and stay hydrated. Enjoy your trip!"
+                    return {
+                        "needs_clarification": False,
+                        "clarification_question": "",
+                        "assistant_message": tip_message,
+                        "updated_intent": merged_intent,
+                        "clarified_query": query,
+                        "ready_for_recommendations": False
+                    }
+            
+            # Handle direct shopping intent from query (e.g., "I want to buy shoes")
+            # This runs regardless of destination/date status
+            if direct_shopping_intent and not existing_intent.get("_asked_product_category", False):
+                # Add shopping to activities if not present
+                current_activities = merged_intent.get("activities", []) or []
+                if "shopping" not in current_activities:
+                    current_activities.append("shopping")
+                    merged_intent["activities"] = current_activities
+                
+                merged_intent["_asked_product_category"] = True
+                merged_intent["_asked_activities"] = True
+                product_question = "What kind of products would you like to buy?"
+                return {
+                    "needs_clarification": True,
+                    "clarification_question": product_question,
+                    "assistant_message": product_question,
+                    "updated_intent": merged_intent,
+                    "clarified_query": query,
+                    "ready_for_recommendations": False
+                }
+            
+            # Handle direct non-shopping activity from query (e.g., "planning a hiking trip")
+            # This runs regardless of destination/date status
+            if direct_non_shopping_activity and not direct_shopping_intent:
+                if not existing_intent.get("_asked_shopping_for_activity", False):
+                    # Add the activity to activities list
+                    current_activities = merged_intent.get("activities", []) or []
+                    if direct_non_shopping_activity not in current_activities:
+                        current_activities.append(direct_non_shopping_activity)
+                        merged_intent["activities"] = current_activities
+                    
+                    merged_intent["_asked_shopping_for_activity"] = True
+                    merged_intent["_awaiting_shopping_confirm"] = True
+                    merged_intent["_pending_activity"] = direct_non_shopping_activity
+                    merged_intent["_asked_activities"] = True
+                    shopping_question = f"Would you like to do shopping for {direct_non_shopping_activity}?"
+                    return {
+                        "needs_clarification": True,
+                        "clarification_question": shopping_question,
+                        "assistant_message": shopping_question,
+                        "updated_intent": merged_intent,
+                        "clarified_query": query,
+                        "ready_for_recommendations": False
+                    }
+            
+            # Handle ambiguous intent - neither shopping nor activity detected
+            # Only ask if we haven't already asked and user hasn't provided clear context
+            if not direct_shopping_intent and not direct_non_shopping_activity:
+                if not existing_intent.get("_asked_ambiguous_intent", False):
+                    # Check if we have enough context already (destination, activities, etc.)
+                    has_any_context = (
+                        has_destination or 
+                        merged_intent.get("activities") or 
+                        existing_intent.get("_asked_activities", False) or
+                        existing_intent.get("_shopping_flow_complete", False) or
+                        existing_intent.get("_declined_shopping", False) or
+                        is_skip or
+                        result.get("is_confirmation", False)
+                    )
+                    
+                    if not has_any_context and len(query.strip()) > 3:
+                        merged_intent["_asked_ambiguous_intent"] = True
+                        ambiguous_question = "Are you looking to buy something, or are you asking about an activity?"
+                        return {
+                            "needs_clarification": True,
+                            "clarification_question": ambiguous_question,
+                            "assistant_message": ambiguous_question,
+                            "updated_intent": merged_intent,
+                            "clarified_query": query,
+                            "ready_for_recommendations": False
+                        }
+            
             if has_destination and not has_dates_info:
                 dest = merged_intent.get("destination", "your destination")
                 date_question = f"When are you planning to travel to {dest}? (e.g., 'next weekend', 'January 15-20', or specific dates)"
@@ -318,10 +485,14 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                     "ready_for_recommendations": False
                 }
             
-            # 1. Ask Activities if missing
-            if has_destination and has_dates_info and not already_asked_activities:
+            # 1. Ask Activities if missing (only if shopping flow wasn't triggered earlier)
+            shopping_flow_complete = merged_intent.get("_shopping_flow_complete", False) or existing_intent.get("_shopping_flow_complete", False)
+            declined_shopping = merged_intent.get("_declined_shopping", False) or existing_intent.get("_declined_shopping", False)
+            
+            if has_destination and has_dates_info and not already_asked_activities and not shopping_flow_complete and not declined_shopping:
                 if mentions_activity or merged_intent.get("activities"):
                     merged_intent["_asked_activities"] = True
+                    # Activities already captured by early detection, continue to optional
                 else:
                     merged_intent["_asked_activities"] = True
                     activity_question = "What kind of activities are you planning for this trip? (e.g., hiking, shopping, dining)"
