@@ -10,7 +10,6 @@ import {
   Calendar,
   RefreshCw,
 } from "lucide-react";
-import { useLocation } from "wouter";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
@@ -80,20 +79,9 @@ export default function ChatPage() {
   const [currentContext, setCurrentContext] = useState<ContextInfo | null>(
     null,
   );
-  const [isAuthChecked, setIsAuthChecked] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [customerId, setCustomerId] = useState<string | null>(null);
   const [customerName, setCustomerName] = useState<string | null>(null);
-  const [, setLocation] = useLocation();
-
-  useEffect(() => {
-    const storedCustomerId = localStorage.getItem("customer_id");
-    if (!storedCustomerId) {
-      setLocation("/");
-      return;
-    }
-    setIsAuthChecked(true);
-  }, [setLocation]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -104,8 +92,6 @@ export default function ChatPage() {
   }, [messages]);
 
   useEffect(() => {
-    if (!isAuthChecked) return;
-    
     const storedCustomerId = localStorage.getItem("customer_id");
     const storedCustomerName = localStorage.getItem("customer_name");
     setCustomerId(storedCustomerId);
@@ -142,7 +128,7 @@ export default function ChatPage() {
       }
     };
     loadConversation();
-  }, [isAuthChecked]);
+  }, []);
 
   const chatMutation = useMutation({
     mutationFn: async (message: string) => {
@@ -205,10 +191,6 @@ export default function ChatPage() {
       setMessages([]);
     }
   };
-
-  if (!isAuthChecked) {
-    return null;
-  }
 
   return (
     <div className="min-h-screen bg-background flex">

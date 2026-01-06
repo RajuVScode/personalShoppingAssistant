@@ -8,12 +8,17 @@ import ChatPage from "@/pages/chat";
 import LoginPage from "@/pages/login";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={LoginPage} />
-      <Route path="/chat" component={ChatPage} />
+      <Route path="/chat">
+        <ProtectedRoute>
+          <ChatPage />
+        </ProtectedRoute>
+      </Route>
       <Route component={NotFound} />
     </Switch>
   );
