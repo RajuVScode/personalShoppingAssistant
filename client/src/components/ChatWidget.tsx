@@ -110,13 +110,15 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
     if (isOpen) {
       setShouldRender(true);
       requestAnimationFrame(() => {
-        setIsAnimating(true);
+        requestAnimationFrame(() => {
+          setIsAnimating(true);
+        });
       });
     } else {
       setIsAnimating(false);
       const timer = setTimeout(() => {
         setShouldRender(false);
-      }, 500);
+      }, 600);
       return () => clearTimeout(timer);
     }
   }, [isOpen]);
