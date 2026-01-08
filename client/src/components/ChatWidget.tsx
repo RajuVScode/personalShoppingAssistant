@@ -474,7 +474,11 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                       className={`max-w-[80%] ${message.role === "user" ? "order-first" : ""}`}
                     >
                       <div
-                        className="rounded-2xl px-4 py-3 bg-primary text-primary-foreground ml-auto pl-[10px] pr-[10px] pt-[2px] pb-[2px]"
+                        className={`rounded-2xl px-4 py-3 ${
+                          message.role === "user"
+                            ? "bg-primary text-primary-foreground ml-auto"
+                            : "bg-muted"
+                        }`}
                         data-testid={`message-${message.role}-${index}`}
                       >
                         {message.role === "assistant" ? (
@@ -715,6 +719,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
           )}
         </div>
       </div>
+
       {showLoginModal && (
         <div 
           className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50"
