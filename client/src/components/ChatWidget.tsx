@@ -333,7 +333,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
         className={`bg-white w-[90vw] h-[95vh] rounded-[5px] shadow-2xl flex flex-col overflow-hidden transition-transform duration-500 ease-in-out ${isAnimating ? 'translate-x-0' : 'translate-x-[105%]'}`} 
         data-testid="chat-modal"
       >
-        <div className="bg-[#1565C0] text-white px-4 py-3 flex items-center justify-between" data-testid="chat-header">
+        <div className="bg-[#1565C0] text-white px-4 py-1.5 flex items-center justify-between" data-testid="chat-header">
           <div className="flex items-center gap-3">
             <Logo className="h-10" />
           </div>
