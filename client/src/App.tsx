@@ -1,4 +1,4 @@
-import { BrowserRouter, useRoutes } from "react-router-dom";
+import { BrowserRouter, useRoutes, useLocation } from "react-router-dom";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -12,18 +12,35 @@ function AppRoutes() {
   return element;
 }
 
+function AppContent() {
+  const location = useLocation();
+  const isHomePage = location.pathname === "/";
+
+  if (isHomePage) {
+    return (
+      <div className="min-h-screen" style={{ fontFamily: 'Calibri, sans-serif' }}>
+        <AppRoutes />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen flex flex-col" style={{ fontFamily: 'Calibri, sans-serif' }}>
+      <Header showAuthButtons={true} />
+      <main className="flex-1">
+        <AppRoutes />
+      </main>
+      <Footer />
+    </div>
+  );
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <BrowserRouter>
-          <div className="min-h-screen flex flex-col" style={{ fontFamily: 'Calibri, sans-serif' }}>
-            <Header showAuthButtons={true} />
-            <main className="flex-1">
-              <AppRoutes />
-            </main>
-            <Footer />
-          </div>
+          <AppContent />
           <Toaster />
         </BrowserRouter>
       </TooltipProvider>

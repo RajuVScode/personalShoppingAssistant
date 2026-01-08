@@ -630,10 +630,11 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                     return {
                         "needs_clarification": True,
                         "clarification_question": optional_question,
-                        "assistant_message": optional_question,
+                        "assistant_message": change_acknowledgment + optional_question if change_acknowledgment else optional_question,
                         "updated_intent": merged_intent,
                         "clarified_query": query,
-                        "ready_for_recommendations": False
+                        "ready_for_recommendations": False,
+                        "detected_changes": detected_changes
                     }
             
             if already_asked_optional and already_asked_activities:
@@ -652,13 +653,15 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                     }
             
             if not has_destination:
+                next_question = result.get("next_question") or "Where would you like to travel?"
                 return {
                     "needs_clarification": True,
-                    "clarification_question": result.get("next_question") or "Where would you like to travel?",
-                    "assistant_message": result.get("assistant_message", ""),
+                    "clarification_question": next_question,
+                    "assistant_message": change_acknowledgment + next_question if change_acknowledgment else next_question,
                     "updated_intent": merged_intent,
                     "clarified_query": query,
-                    "ready_for_recommendations": False
+                    "ready_for_recommendations": False,
+                    "detected_changes": detected_changes
                 }
             
             base_message = "Perfect! Let me prepare your personalized recommendations."
@@ -678,7 +681,8 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                 "needs_clarification": False,
                 "clarified_query": query,
                 "assistant_message": "",
-                "updated_intent": existing_intent or {}
+                "updated_intent": existing_intent or {},
+                "detected_changes": {"has_changes": False, "destination_changed": False, "dates_changed": False, "activities_changed": False, "changes": []}
             }
     
     def _merge_intent(self, existing: dict, new: dict) -> dict:

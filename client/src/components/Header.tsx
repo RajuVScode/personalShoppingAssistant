@@ -41,7 +41,7 @@ export default function Header({ onSignUp, showAuthButtons = true }: HeaderProps
     localStorage.removeItem("customer_id");
     localStorage.removeItem("customer_name");
     setCustomerName(null);
-    navigate("/");
+    navigate("/login");
   };
 
   const handleEditProfile = () => {
