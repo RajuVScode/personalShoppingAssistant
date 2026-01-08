@@ -116,7 +116,7 @@ export default function HomePage() {
         data-testid="chat-widget-button"
       >
         <MessageCircle className="w-5 h-5 mr-2" />
-        <span className="font-medium">Personal Shopping</span>
+        <span className="text-[14px] font-thin">Personal Shopping</span>
         <div className="absolute -top-2 -right-2 bg-[#c9a227] text-white text-xs rounded-full w-6 h-6 flex items-center justify-center animate-pulse">
           AI
         </div>
