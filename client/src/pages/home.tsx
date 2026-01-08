@@ -11,7 +11,6 @@ export default function HomePage() {
       <div className="bg-[#1a1a2e] text-white text-center py-2 text-sm" data-testid="promo-banner">
         LAST CALL® DESIGNER SALE: UP TO 70% OFF | FREE SHIPPING ON QUALIFYING ORDERS OF $300+
       </div>
-
       <header className="bg-white border-b" data-testid="main-header">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-center justify-between py-4">
@@ -45,7 +44,6 @@ export default function HomePage() {
           </div>
         </div>
       </header>
-
       <section className="relative" data-testid="hero-section">
         <div className="bg-gradient-to-r from-gray-300 via-gray-400 to-gray-500 py-32">
           <div className="absolute inset-0 flex items-start p-4">
@@ -66,7 +64,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
       <section className="py-16 bg-[#fdf5f5]" data-testid="denim-section">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-start justify-between">
@@ -85,7 +82,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
       <section className="py-16" data-testid="featured-section">
         <div className="max-w-7xl mx-auto px-4">
           <h3 className="text-2xl font-bold text-gray-900 mb-8 text-center">Featured Categories</h3>
@@ -102,7 +98,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
       <section className="py-16 bg-gray-50" data-testid="brands-section">
         <div className="max-w-7xl mx-auto px-4">
           <h3 className="text-2xl font-bold text-gray-900 mb-8 text-center">Shop by Brand</h3>
@@ -115,10 +110,9 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
       <button
         onClick={() => setIsChatOpen(true)}
-        className="fixed bottom-8 right-8 bg-[#1a1a2e] text-white px-6 py-4 rounded-full shadow-lg hover:bg-[#2a2a3e] transition-all duration-300 z-50 flex items-center gap-2 group"
+        className="fixed bottom-8 right-8 bg-[#1a1a2e] text-white px-6 py-4 rounded-full shadow-lg hover:bg-[#2a2a3e] transition-all duration-300 z-50 flex items-center gap-2 group pl-[12px] pr-[12px] pt-[5px] pb-[5px]"
         data-testid="chat-widget-button"
       >
         <MessageCircle className="w-5 h-5 mr-2" />
@@ -127,7 +121,6 @@ export default function HomePage() {
           AI
         </div>
       </button>
-
       <ChatWidget isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
     </div>
   );
