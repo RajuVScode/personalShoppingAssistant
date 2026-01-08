@@ -469,7 +469,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                             ? "bg-primary text-primary-foreground ml-auto"
                             : "bg-muted rounded-2xl py-3"
                         }`}
-                        style={message.role === "user" ? { borderRadius: "10px", paddingTop: "7px", paddingBottom: "7px" } : undefined}
+                        style={message.role === "user" ? { borderRadius: "10px", paddingTop: "3px", paddingBottom: "3px" } : undefined}
                         data-testid={`message-${message.role}-${index}`}
                       >
                         {message.role === "assistant" ? (
