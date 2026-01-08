@@ -1,48 +1,142 @@
 from sqlalchemy.orm import Session
-from backend.database.models import Customer, Product
+from datetime import date
+from backend.database.models import Customer, Product, CustomerPreferences, CustomerAddress
 
 def seed_database(db: Session):
     customers = [
         Customer(
-            name="Sarah Johnson",
+            customer_id="CUST001",
+            first_name="Sarah",
+            last_name="Johnson",
             email="sarah@example.com",
-            location="New York, NY",
-            preferences={"notifications": True, "newsletter": True},
-            style_profile={
-                "preferred_styles": ["modern", "minimalist", "professional"],
-                "favorite_colors": ["black", "navy", "white"],
-                "avoid_patterns": ["loud prints"]
-            },
-            size_info={"top": "M", "bottom": "8", "shoes": "8"}
+            phone_number="+1-212-555-0101",
+            date_of_birth=date(1990, 5, 15),
+            gender="female",
+            preferred_channel="email",
+            marketing_opt_in=True,
+            vip_flag=True,
+            lifetime_value_cents=125000,
+            avg_order_value_cents=25000,
+            total_orders=5,
+            preferred_store_id="NYC001",
+            notes="Prefers modern, minimalist styles",
+            password="password123"
         ),
         Customer(
-            name="Michael Chen",
+            customer_id="CUST002",
+            first_name="Michael",
+            last_name="Chen",
             email="michael@example.com",
-            location="San Francisco, CA",
-            preferences={"notifications": True, "newsletter": False},
-            style_profile={
-                "preferred_styles": ["casual", "tech-wear", "athleisure"],
-                "favorite_colors": ["gray", "blue", "green"],
-                "avoid_patterns": []
-            },
-            size_info={"top": "L", "bottom": "32", "shoes": "10"}
+            phone_number="+1-415-555-0102",
+            date_of_birth=date(1988, 9, 22),
+            gender="male",
+            preferred_channel="sms",
+            marketing_opt_in=True,
+            vip_flag=False,
+            lifetime_value_cents=75000,
+            avg_order_value_cents=15000,
+            total_orders=5,
+            preferred_store_id="SF001",
+            notes="Tech-savvy, loves athleisure",
+            password="password123"
         ),
         Customer(
-            name="Emma Williams",
+            customer_id="CUST003",
+            first_name="Emma",
+            last_name="Williams",
             email="emma@example.com",
-            location="Los Angeles, CA",
-            preferences={"notifications": False, "newsletter": True},
-            style_profile={
-                "preferred_styles": ["bohemian", "elegant", "sustainable"],
-                "favorite_colors": ["earth tones", "pastels"],
-                "avoid_patterns": []
-            },
-            size_info={"top": "S", "bottom": "4", "shoes": "7"}
+            phone_number="+1-310-555-0103",
+            date_of_birth=date(1995, 3, 8),
+            gender="female",
+            preferred_channel="email",
+            marketing_opt_in=False,
+            vip_flag=False,
+            lifetime_value_cents=45000,
+            avg_order_value_cents=15000,
+            total_orders=3,
+            preferred_store_id="LA001",
+            notes="Eco-conscious, prefers sustainable brands",
+            password="password123"
         )
     ]
     
     for customer in customers:
         db.add(customer)
+    
+    customer_preferences = [
+        CustomerPreferences(
+            customer_id="CUST001",
+            categories_interested=["dresses", "blazers", "accessories"],
+            price_sensitivity="low",
+            preferred_brands=["Hugo Boss", "Everlane", "Reformation"],
+            preferred_styles=["modern", "minimalist", "professional"],
+            preferred_shopping_days="weekends"
+        ),
+        CustomerPreferences(
+            customer_id="CUST002",
+            categories_interested=["sneakers", "activewear", "outerwear"],
+            price_sensitivity="medium",
+            preferred_brands=["Adidas", "Patagonia", "North Face"],
+            preferred_styles=["casual", "tech-wear", "athleisure"],
+            preferred_shopping_days="evenings"
+        ),
+        CustomerPreferences(
+            customer_id="CUST003",
+            categories_interested=["sustainable fashion", "organic cotton", "accessories"],
+            price_sensitivity="medium",
+            preferred_brands=["Patagonia", "Everlane", "Reformation"],
+            preferred_styles=["bohemian", "elegant", "sustainable"],
+            preferred_shopping_days="weekends"
+        )
+    ]
+    
+    for pref in customer_preferences:
+        db.add(pref)
+    
+    customer_addresses = [
+        CustomerAddress(
+            address_id="ADDR001",
+            customer_id="CUST001",
+            label="Home",
+            address_line1="123 Park Avenue",
+            address_line2="Apt 15B",
+            city="New York",
+            state="NY",
+            postal_code="10022",
+            country="USA",
+            is_default_shipping=True,
+            is_default_billing=True
+        ),
+        CustomerAddress(
+            address_id="ADDR002",
+            customer_id="CUST002",
+            label="Home",
+            address_line1="456 Market Street",
+            address_line2="Suite 200",
+            city="San Francisco",
+            state="CA",
+            postal_code="94102",
+            country="USA",
+            is_default_shipping=True,
+            is_default_billing=True
+        ),
+        CustomerAddress(
+            address_id="ADDR003",
+            customer_id="CUST003",
+            label="Home",
+            address_line1="789 Sunset Blvd",
+            address_line2=None,
+            city="Los Angeles",
+            state="CA",
+            postal_code="90028",
+            country="USA",
+            is_default_shipping=True,
+            is_default_billing=True
+        )
+    ]
+    
+    for addr in customer_addresses:
+        db.add(addr)
     
     products = [
         Product(
@@ -58,7 +152,10 @@ def seed_database(db: Session):
             tags=["formal", "leather", "classic", "office", "wedding"],
             image_url="https://images.unsplash.com/photo-1533867617858-e7b97e060509?w=400",
             in_stock=True,
-            rating=4.7
+            rating=4.7,
+            material="Leather",
+            season="all-season",
+            care_instructions="Polish regularly, store with shoe trees"
         ),
         Product(
             name="Ultra Boost Running Shoes",
@@ -73,7 +170,10 @@ def seed_database(db: Session):
             tags=["running", "athletic", "comfortable", "sports", "gym"],
             image_url="https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400",
             in_stock=True,
-            rating=4.8
+            rating=4.8,
+            material="Mesh/Synthetic",
+            season="all-season",
+            care_instructions="Wipe clean with damp cloth"
         ),
         Product(
             name="Merino Wool Blazer",
@@ -88,7 +188,10 @@ def seed_database(db: Session):
             tags=["professional", "wool", "office", "meeting", "elegant"],
             image_url="https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=400",
             in_stock=True,
-            rating=4.6
+            rating=4.6,
+            material="Merino Wool",
+            season="fall/winter",
+            care_instructions="Dry clean only"
         ),
         Product(
             name="Cashmere Turtleneck Sweater",
@@ -103,7 +206,10 @@ def seed_database(db: Session):
             tags=["cashmere", "luxury", "winter", "cozy", "elegant"],
             image_url="https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=400",
             in_stock=True,
-            rating=4.9
+            rating=4.9,
+            material="100% Cashmere",
+            season="fall/winter",
+            care_instructions="Hand wash cold, lay flat to dry"
         ),
         Product(
             name="Leather Crossbody Bag",
@@ -118,7 +224,10 @@ def seed_database(db: Session):
             tags=["leather", "everyday", "minimalist", "practical"],
             image_url="https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=400",
             in_stock=True,
-            rating=4.5
+            rating=4.5,
+            material="Italian Leather",
+            season="all-season",
+            care_instructions="Condition leather regularly"
         ),
         Product(
             name="Waterproof Rain Jacket",
@@ -133,7 +242,10 @@ def seed_database(db: Session):
             tags=["rain", "waterproof", "outdoor", "travel", "sustainable"],
             image_url="https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=400",
             in_stock=True,
-            rating=4.7
+            rating=4.7,
+            material="Recycled Nylon",
+            season="spring/fall",
+            care_instructions="Machine wash cold, tumble dry low"
         ),
         Product(
             name="Slim Fit Chinos",
@@ -148,7 +260,10 @@ def seed_database(db: Session):
             tags=["casual", "office", "cotton", "versatile"],
             image_url="https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=400",
             in_stock=True,
-            rating=4.4
+            rating=4.4,
+            material="Cotton Twill",
+            season="all-season",
+            care_instructions="Machine wash, tumble dry"
         ),
         Product(
             name="Silk Midi Dress",
@@ -163,7 +278,10 @@ def seed_database(db: Session):
             tags=["silk", "elegant", "event", "wedding", "special occasion"],
             image_url="https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400",
             in_stock=True,
-            rating=4.8
+            rating=4.8,
+            material="100% Silk",
+            season="spring/summer",
+            care_instructions="Dry clean only"
         ),
         Product(
             name="Chunky White Sneakers",
@@ -178,7 +296,10 @@ def seed_database(db: Session):
             tags=["trendy", "casual", "comfortable", "street style"],
             image_url="https://images.unsplash.com/photo-1460353581641-37baddab0fa2?w=400",
             in_stock=True,
-            rating=4.6
+            rating=4.6,
+            material="Leather/Synthetic",
+            season="all-season",
+            care_instructions="Wipe clean with damp cloth"
         ),
         Product(
             name="Organic Cotton T-Shirt",
@@ -193,7 +314,10 @@ def seed_database(db: Session):
             tags=["sustainable", "organic", "casual", "basic", "everyday"],
             image_url="https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400",
             in_stock=True,
-            rating=4.5
+            rating=4.5,
+            material="100% Organic Cotton",
+            season="all-season",
+            care_instructions="Machine wash cold"
         ),
         Product(
             name="Leather Belt",
@@ -208,7 +332,10 @@ def seed_database(db: Session):
             tags=["leather", "classic", "formal", "casual", "essential"],
             image_url="https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400",
             in_stock=True,
-            rating=4.7
+            rating=4.7,
+            material="Full-Grain Leather",
+            season="all-season",
+            care_instructions="Condition leather regularly"
         ),
         Product(
             name="Down Puffer Jacket",
@@ -223,7 +350,10 @@ def seed_database(db: Session):
             tags=["winter", "warm", "down", "packable", "outdoor"],
             image_url="https://images.unsplash.com/photo-1544923246-77307dd628b8?w=400",
             in_stock=True,
-            rating=4.8
+            rating=4.8,
+            material="Down/Nylon",
+            season="winter",
+            care_instructions="Machine wash gentle, tumble dry low"
         ),
         Product(
             name="Aviator Sunglasses",
@@ -238,7 +368,10 @@ def seed_database(db: Session):
             tags=["classic", "sunglasses", "summer", "travel", "timeless"],
             image_url="https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=400",
             in_stock=True,
-            rating=4.9
+            rating=4.9,
+            material="Metal/Glass",
+            season="spring/summer",
+            care_instructions="Clean with microfiber cloth"
         ),
         Product(
             name="High-Waist Yoga Pants",
@@ -253,7 +386,10 @@ def seed_database(db: Session):
             tags=["yoga", "gym", "athletic", "comfortable", "stretchy"],
             image_url="https://images.unsplash.com/photo-1506629082955-511b1aa562c8?w=400",
             in_stock=True,
-            rating=4.8
+            rating=4.8,
+            material="Nylon/Lycra",
+            season="all-season",
+            care_instructions="Machine wash cold, lay flat to dry"
         ),
         Product(
             name="Canvas Weekender Bag",
@@ -268,7 +404,10 @@ def seed_database(db: Session):
             tags=["travel", "weekend", "canvas", "carry-on", "durable"],
             image_url="https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400",
             in_stock=True,
-            rating=4.6
+            rating=4.6,
+            material="Canvas/Leather",
+            season="all-season",
+            care_instructions="Spot clean only"
         )
     ]
     
@@ -276,4 +415,4 @@ def seed_database(db: Session):
         db.add(product)
     
     db.commit()
-    print(f"Seeded {len(customers)} customers and {len(products)} products")
+    print(f"Seeded {len(customers)} customers, {len(customer_preferences)} preferences, {len(customer_addresses)} addresses, and {len(products)} products")
