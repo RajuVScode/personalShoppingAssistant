@@ -478,7 +478,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
             </ScrollArea>
 
             <div className="border-t px-6 py-4">
-              <div className="relative flex items-end gap-3 bg-muted/30 border border-muted-foreground/10 p-3" style={{ borderRadius: '12px' }}>
+              <div className="relative flex items-end gap-3 bg-muted/30 border border-muted-foreground/10 p-3 pl-[5px] pr-[5px] pt-[5px] pb-[5px]" style={{ borderRadius: '12px' }}>
                 <div className="flex-1">
                   <Textarea
                     value={input}
