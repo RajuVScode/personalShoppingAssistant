@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import Logo from "@/components/Logo";
 
 interface Message {
   role: "user" | "assistant";
@@ -185,19 +186,10 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" data-testid="chat-overlay">
       <div className="bg-white w-full max-w-4xl h-[600px] rounded-lg shadow-2xl flex flex-col overflow-hidden" data-testid="chat-modal">
-        <div className="bg-[#1a1a2e] text-white px-4 py-3 flex items-center justify-between" data-testid="chat-header">
+        <div className="bg-[#1565C0] text-white px-4 py-3 flex items-center justify-between" data-testid="chat-header">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-teal-400 to-teal-600 rounded-full flex items-center justify-center">
-              <MessageCircle className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-lg">tensai</span>
-                <span className="text-[10px] align-top">®</span>
-                <Badge className="bg-purple-600 text-white text-xs px-2 py-0.5">Personal Shopping</Badge>
-              </div>
-              <span className="text-xs text-gray-300">AgentVerse for Retail</span>
-            </div>
+            <Logo className="h-10" />
+            <Badge className="bg-purple-600 text-white text-xs px-2 py-0.5">Personal Shopping</Badge>
           </div>
 
           <div className="flex items-center gap-4">
