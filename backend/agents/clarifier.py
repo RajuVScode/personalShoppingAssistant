@@ -686,8 +686,16 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             }
     
     def _merge_intent(self, existing: dict, new: dict) -> dict:
+        """Merge new intent with existing, preserving non-empty existing values when new values are empty."""
         merged = existing.copy()
         for key, value in new.items():
-            if value is not None:
-                merged[key] = value
+            if value is None:
+                continue
+            if isinstance(value, str) and value.strip() == "":
+                continue
+            if isinstance(value, list) and len(value) == 0:
+                existing_value = existing.get(key)
+                if existing_value and isinstance(existing_value, list) and len(existing_value) > 0:
+                    continue
+            merged[key] = value
         return merged
