@@ -464,11 +464,12 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                       className={`max-w-[80%] ${message.role === "user" ? "order-first" : ""}`}
                     >
                       <div
-                        className={`rounded-2xl px-4 py-3 ${
+                        className={`px-4 ${
                           message.role === "user"
                             ? "bg-primary text-primary-foreground ml-auto"
-                            : "bg-muted"
+                            : "bg-muted rounded-2xl py-3"
                         }`}
+                        style={message.role === "user" ? { borderRadius: "10px", paddingTop: "7px", paddingBottom: "7px" } : undefined}
                         data-testid={`message-${message.role}-${index}`}
                       >
                         {message.role === "assistant" ? (
