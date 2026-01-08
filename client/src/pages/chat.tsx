@@ -9,6 +9,8 @@ import {
   TrendingUp,
   Calendar,
   RefreshCw,
+  Check,
+  Plus,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -75,6 +77,7 @@ interface ContextInfo {
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [shoppingList, setShoppingList] = useState<Set<number>>(new Set());
   const [input, setInput] = useState("");
   const [currentContext, setCurrentContext] = useState<ContextInfo | null>(
     null,
@@ -346,6 +349,44 @@ export default function ChatPage() {
                                     </span>
                                   </div>
                                 )}
+                                <Button
+                                  size="sm"
+                                  className={`w-full mt-2 text-xs h-7 ${
+                                    shoppingList.has(product.id)
+                                      ? "text-white"
+                                      : ""
+                                  }`}
+                                  style={
+                                    shoppingList.has(product.id)
+                                      ? { backgroundColor: "rgb(22 163 74)" }
+                                      : undefined
+                                  }
+                                  variant={shoppingList.has(product.id) ? "default" : "outline"}
+                                  onClick={() => {
+                                    setShoppingList((prev) => {
+                                      const newSet = new Set(prev);
+                                      if (newSet.has(product.id)) {
+                                        newSet.delete(product.id);
+                                      } else {
+                                        newSet.add(product.id);
+                                      }
+                                      return newSet;
+                                    });
+                                  }}
+                                  data-testid={`button-add-shopping-${product.id}`}
+                                >
+                                  {shoppingList.has(product.id) ? (
+                                    <>
+                                      <Check className="h-3 w-3 mr-1" />
+                                      Added
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Plus className="h-3 w-3 mr-1" />
+                                      Add to Shopping List
+                                    </>
+                                  )}
+                                </Button>
                               </CardContent>
                             </Card>
                           ))}
