@@ -322,14 +322,14 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
 
   return (
     <div 
-      className={`fixed inset-0 z-50 flex items-center justify-end pr-[3%] bg-black/50 transition-opacity duration-500 ${isAnimating ? 'opacity-100' : 'opacity-0'}`} 
+      className={`fixed inset-0 z-50 flex items-center justify-end pr-[1%] bg-black/50 transition-opacity duration-500 ${isAnimating ? 'opacity-100' : 'opacity-0'}`} 
       data-testid="chat-overlay"
       onClick={(e) => {
         if (e.target === e.currentTarget) handleClose();
       }}
     >
       <div 
-        className={`bg-white w-[90vw] h-[95vh] rounded-[5px] shadow-2xl flex flex-col overflow-hidden transition-transform duration-500 ease-in-out ${isAnimating ? 'translate-x-0' : 'translate-x-[105%]'}`} 
+        className={`bg-white w-[98vw] h-[95vh] rounded-[5px] shadow-2xl flex flex-col overflow-hidden transition-transform duration-500 ease-in-out ${isAnimating ? 'translate-x-0' : 'translate-x-[105%]'}`} 
         data-testid="chat-modal"
       >
         <div className="bg-[#1565C0] text-white px-4 py-1.5 flex items-center justify-between" data-testid="chat-header">
