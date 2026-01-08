@@ -219,6 +219,80 @@ class ClarifierAgent(BaseAgent):
     def __init__(self):
         super().__init__("Clarifier", CLARIFIER_PROMPT)
     
+    def _detect_changes(self, existing_intent: dict, new_intent: dict, merged_intent: dict) -> dict:
+        """Detect modifications to destination, dates, and activities."""
+        changes = {
+            "has_changes": False,
+            "destination_changed": False,
+            "dates_changed": False,
+            "activities_changed": False,
+            "changes": []
+        }
+        
+        old_destination = existing_intent.get("destination")
+        new_destination = new_intent.get("destination") or merged_intent.get("destination")
+        if old_destination and new_destination and old_destination.lower() != new_destination.lower():
+            changes["has_changes"] = True
+            changes["destination_changed"] = True
+            changes["changes"].append({
+                "field": "destination",
+                "old_value": old_destination,
+                "new_value": new_destination
+            })
+        
+        old_dates = existing_intent.get("travel_date")
+        new_dates = new_intent.get("travel_date") or merged_intent.get("travel_date")
+        if old_dates and new_dates and old_dates != new_dates:
+            changes["has_changes"] = True
+            changes["dates_changed"] = True
+            changes["changes"].append({
+                "field": "travel_date",
+                "old_value": old_dates,
+                "new_value": new_dates
+            })
+        
+        old_activities = set(existing_intent.get("activities") or [])
+        new_activities_raw = new_intent.get("activities") or merged_intent.get("activities") or []
+        new_activities = set(new_activities_raw)
+        
+        if old_activities or new_activities:
+            removed = old_activities - new_activities if old_activities else set()
+            added = new_activities - old_activities if new_activities else set()
+            
+            if removed or added:
+                changes["has_changes"] = True
+                changes["activities_changed"] = True
+                changes["changes"].append({
+                    "field": "activities",
+                    "type": "modified",
+                    "old_value": list(old_activities),
+                    "new_value": list(new_activities),
+                    "removed": list(removed),
+                    "added": list(added)
+                })
+        
+        return changes
+    
+    def _generate_change_acknowledgment(self, changes: dict) -> str:
+        """Generate a user-friendly acknowledgment message for detected changes."""
+        if not changes["has_changes"]:
+            return ""
+        
+        messages = []
+        for change in changes["changes"]:
+            field = change["field"]
+            if field == "destination":
+                messages.append(f"I've updated your destination from {change['old_value']} to {change['new_value']}")
+            elif field == "travel_date":
+                messages.append(f"I've updated your travel dates from {change['old_value']} to {change['new_value']}")
+            elif field == "activities":
+                if change.get("removed"):
+                    messages.append(f"I've updated your activities (removed: {', '.join(change['removed'])}; added: {', '.join(change.get('added', []))})")
+                else:
+                    messages.append(f"I've updated your activities to include: {', '.join(change.get('added', []))}")
+        
+        return ". ".join(messages) + ". " if messages else ""
+    
     def _extract_brand_fallback(self, query: str) -> str:
         """Extract brand name from user query by matching against known brands."""
         query_lower = query.lower().strip()
@@ -281,6 +355,16 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             new_intent = result.get("updated_intent", {})
             merged_intent = self._merge_intent(existing_intent or {}, new_intent)
             
+            detected_changes = self._detect_changes(existing_intent or {}, new_intent, merged_intent)
+            change_acknowledgment = self._generate_change_acknowledgment(detected_changes)
+            
+            if detected_changes["has_changes"]:
+                merged_intent["_context_refresh_needed"] = True
+                if detected_changes["destination_changed"]:
+                    merged_intent["_asked_optional"] = False
+                    merged_intent["_asked_activities"] = False
+                print(f"[DEBUG] Detected changes: {detected_changes['changes']}")
+            
             if not merged_intent.get("travel_date"):
                 parsed_date = parse_relative_date(query, datetime.now())
                 if parsed_date:
@@ -298,10 +382,11 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                 return {
                     "needs_clarification": True,
                     "clarification_question": city_question,
-                    "assistant_message": city_question,
+                    "assistant_message": change_acknowledgment + city_question if change_acknowledgment else city_question,
                     "updated_intent": merged_intent,
                     "clarified_query": query,
-                    "ready_for_recommendations": False
+                    "ready_for_recommendations": False,
+                    "detected_changes": detected_changes
                 }
             
             if destination_city and destination_city != existing_destination:
@@ -382,10 +467,11 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                     return {
                         "needs_clarification": True,
                         "clarification_question": product_question,
-                        "assistant_message": product_question,
+                        "assistant_message": change_acknowledgment + product_question if change_acknowledgment else product_question,
                         "updated_intent": merged_intent,
                         "clarified_query": query,
-                        "ready_for_recommendations": False
+                        "ready_for_recommendations": False,
+                        "detected_changes": detected_changes
                     }
                 elif is_negative_response(query):
                     merged_intent["_awaiting_shopping_confirm"] = False
@@ -395,10 +481,11 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                     return {
                         "needs_clarification": False,
                         "clarification_question": "",
-                        "assistant_message": tip_message,
+                        "assistant_message": change_acknowledgment + tip_message if change_acknowledgment else tip_message,
                         "updated_intent": merged_intent,
                         "clarified_query": query,
-                        "ready_for_recommendations": False
+                        "ready_for_recommendations": False,
+                        "detected_changes": detected_changes
                     }
             
             # Handle direct shopping intent from query (e.g., "I want to buy shoes")
@@ -416,10 +503,11 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                 return {
                     "needs_clarification": True,
                     "clarification_question": product_question,
-                    "assistant_message": product_question,
+                    "assistant_message": change_acknowledgment + product_question if change_acknowledgment else product_question,
                     "updated_intent": merged_intent,
                     "clarified_query": query,
-                    "ready_for_recommendations": False
+                    "ready_for_recommendations": False,
+                    "detected_changes": detected_changes
                 }
             
             # Handle direct non-shopping activity from query (e.g., "planning a hiking trip")
@@ -440,10 +528,11 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                     return {
                         "needs_clarification": True,
                         "clarification_question": shopping_question,
-                        "assistant_message": shopping_question,
+                        "assistant_message": change_acknowledgment + shopping_question if change_acknowledgment else shopping_question,
                         "updated_intent": merged_intent,
                         "clarified_query": query,
-                        "ready_for_recommendations": False
+                        "ready_for_recommendations": False,
+                        "detected_changes": detected_changes
                     }
             
             # Handle ambiguous intent - neither shopping nor activity detected
@@ -467,10 +556,11 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                         return {
                             "needs_clarification": True,
                             "clarification_question": ambiguous_question,
-                            "assistant_message": ambiguous_question,
+                            "assistant_message": change_acknowledgment + ambiguous_question if change_acknowledgment else ambiguous_question,
                             "updated_intent": merged_intent,
                             "clarified_query": query,
-                            "ready_for_recommendations": False
+                            "ready_for_recommendations": False,
+                            "detected_changes": detected_changes
                         }
             
             if has_destination and not has_dates_info:
@@ -479,10 +569,11 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                 return {
                     "needs_clarification": True,
                     "clarification_question": date_question,
-                    "assistant_message": date_question,
+                    "assistant_message": change_acknowledgment + date_question if change_acknowledgment else date_question,
                     "updated_intent": merged_intent,
                     "clarified_query": query,
-                    "ready_for_recommendations": False
+                    "ready_for_recommendations": False,
+                    "detected_changes": detected_changes
                 }
             
             # 1. Ask Activities if missing (only if shopping flow wasn't triggered earlier)
@@ -506,10 +597,11 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                     return {
                         "needs_clarification": True,
                         "clarification_question": activity_question,
-                        "assistant_message": activity_question,
+                        "assistant_message": change_acknowledgment + activity_question if change_acknowledgment else activity_question,
                         "updated_intent": merged_intent,
                         "clarified_query": query,
-                        "ready_for_recommendations": False
+                        "ready_for_recommendations": False,
+                        "detected_changes": detected_changes
                     }
 
             # 2. Ask Optional (Budget/Brand) if missing
@@ -546,13 +638,17 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             
             if already_asked_optional and already_asked_activities:
                 if is_skip or has_budget_or_brand or mentions_activity or has_dates_info:
+                    base_message = "Perfect! Let me prepare your personalized recommendations."
+                    if change_acknowledgment:
+                        base_message = change_acknowledgment + "Let me update your recommendations."
                     return {
                         "needs_clarification": False,
                         "clarification_question": "",
-                        "assistant_message": "Perfect! Let me prepare your personalized recommendations.",
+                        "assistant_message": base_message,
                         "updated_intent": merged_intent,
                         "clarified_query": query,
-                        "ready_for_recommendations": True
+                        "ready_for_recommendations": True,
+                        "detected_changes": detected_changes
                     }
             
             if not has_destination:
@@ -565,13 +661,17 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                     "ready_for_recommendations": False
                 }
             
+            base_message = "Perfect! Let me prepare your personalized recommendations."
+            if change_acknowledgment:
+                base_message = change_acknowledgment + "Let me update your recommendations."
             return {
                 "needs_clarification": False,
                 "clarification_question": "",
-                "assistant_message": "Perfect! Let me prepare your personalized recommendations.",
+                "assistant_message": base_message,
                 "updated_intent": merged_intent,
                 "clarified_query": query,
-                "ready_for_recommendations": True
+                "ready_for_recommendations": True,
+                "detected_changes": detected_changes
             }
         except json.JSONDecodeError:
             return {

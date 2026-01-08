@@ -78,6 +78,8 @@ class GraphState(TypedDict):
     products: list
     final_response: str
     conversation_history: list
+    detected_changes: dict
+    context_refresh_needed: bool
 
 class ShoppingOrchestrator:
     def __init__(self, db: Session):
@@ -129,6 +131,10 @@ class ShoppingOrchestrator:
         state["clarification_question"] = result.get("clarification_question", "")
         state["assistant_message"] = result.get("assistant_message", "")
         state["clarifier_intent"] = result.get("updated_intent", {})
+        
+        detected_changes = result.get("detected_changes", {})
+        state["detected_changes"] = detected_changes
+        state["context_refresh_needed"] = detected_changes.get("has_changes", False)
         
         if state["is_ambiguous"]:
             state["final_response"] = result.get("assistant_message", "") or state["clarification_question"]
@@ -292,7 +298,9 @@ class ShoppingOrchestrator:
             "enriched_context": {},
             "products": [],
             "final_response": "",
-            "conversation_history": conversation_history or []
+            "conversation_history": conversation_history or [],
+            "detected_changes": {},
+            "context_refresh_needed": False
         }
         
         final_state = self.graph.invoke(initial_state)
@@ -303,6 +311,8 @@ class ShoppingOrchestrator:
         if clarifier_intent.get("trip_segments") and not normalized_intent.get("trip_segments"):
             normalized_intent["trip_segments"] = clarifier_intent["trip_segments"]
         
+        detected_changes = final_state.get("detected_changes", {})
+        
         return {
             "response": final_state["final_response"],
             "products": final_state["products"],
@@ -312,5 +322,7 @@ class ShoppingOrchestrator:
             "context": {
                 "intent": normalized_intent,
                 "environmental": final_state.get("environmental_context", {})
-            }
+            },
+            "detected_changes": detected_changes,
+            "context_refresh_needed": final_state.get("context_refresh_needed", False)
         }
