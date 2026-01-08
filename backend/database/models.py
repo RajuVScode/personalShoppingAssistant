@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Text, JSON, DateTime, ForeignKey, Boolean, Date, ARRAY
+from sqlalchemy import Column, Integer, String, Float, Text, JSON, DateTime, ForeignKey, Boolean, Date
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from backend.database.connection import Base
@@ -49,10 +49,10 @@ class CustomerPreferences(Base):
     __tablename__ = "customer_preferences"
     
     customer_id = Column(String(20), ForeignKey("customers.customer_id"), primary_key=True)
-    categories_interested = Column(ARRAY(Text), default=list)
+    categories_interested = Column(JSON, default=list)
     price_sensitivity = Column(String(20))
-    preferred_brands = Column(ARRAY(Text), default=list)
-    preferred_styles = Column(ARRAY(Text), default=list)
+    preferred_brands = Column(JSON, default=list)
+    preferred_styles = Column(JSON, default=list)
     preferred_shopping_days = Column(String(30))
     
     customer = relationship("Customer", back_populates="preferences")

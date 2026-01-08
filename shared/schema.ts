@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, date, integer, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, date, integer, boolean, json } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -60,10 +60,10 @@ export type CustomerAddress = typeof customerAddresses.$inferSelect;
 
 export const customerPreferences = pgTable("customer_preferences", {
   customer_id: varchar("customer_id", { length: 20 }).primaryKey().references(() => customers.customer_id),
-  categories_interested: text("categories_interested").array(),
+  categories_interested: json("categories_interested").$type<string[]>().default([]),
   price_sensitivity: varchar("price_sensitivity", { length: 20 }),
-  preferred_brands: text("preferred_brands").array(),
-  preferred_styles: text("preferred_styles").array(),
+  preferred_brands: json("preferred_brands").$type<string[]>().default([]),
+  preferred_styles: json("preferred_styles").$type<string[]>().default([]),
   preferred_shopping_days: varchar("preferred_shopping_days", { length: 30 }),
 });
 
