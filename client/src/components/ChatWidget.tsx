@@ -189,7 +189,6 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
         <div className="bg-[#1565C0] text-white px-4 py-3 flex items-center justify-between" data-testid="chat-header">
           <div className="flex items-center gap-3">
             <Logo className="h-10" />
-            <Badge className="bg-purple-600 text-white text-xs px-2 py-0.5">Personal Shopping</Badge>
           </div>
 
           <div className="flex items-center gap-4">
