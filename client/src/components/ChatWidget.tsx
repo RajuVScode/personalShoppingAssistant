@@ -16,6 +16,7 @@ import {
   Calendar,
   RefreshCw,
   ShoppingBag,
+  LogIn,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -23,8 +24,12 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/hooks/use-toast";
 import Logo from "@/components/Logo";
 
 interface Message {
@@ -97,6 +102,11 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const [isAnimating, setIsAnimating] = useState(false);
   const [shouldRender, setShouldRender] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [loginCustomerId, setLoginCustomerId] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const { toast } = useToast();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -237,6 +247,78 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
     onClose();
   };
 
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!loginCustomerId.trim() || !loginPassword.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter both Customer ID and Password",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoggingIn(true);
+    
+    try {
+      const response = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          customer_id: loginCustomerId.toUpperCase().trim(), 
+          password: loginPassword 
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        localStorage.setItem("customer_id", data.customer.customer_id);
+        localStorage.setItem("customer_name", `${data.customer.first_name} ${data.customer.last_name}`);
+        setCustomerId(data.customer.customer_id);
+        setCustomerName(`${data.customer.first_name} ${data.customer.last_name}`);
+        toast({
+          title: "Welcome!",
+          description: `Logged in as ${data.customer.first_name} ${data.customer.last_name}`,
+        });
+        setShowLoginModal(false);
+        setLoginCustomerId("");
+        setLoginPassword("");
+        loadConversation(data.customer.customer_id);
+      } else {
+        toast({
+          title: "Login Failed",
+          description: data.message || "Invalid Customer ID or Password",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Unable to connect to the server. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("customer_id");
+    localStorage.removeItem("customer_name");
+    setCustomerId(null);
+    setCustomerName(null);
+    setMessages([]);
+    setCurrentContext(null);
+    setCurrentIntent({});
+    setCurrentStep(1);
+    toast({
+      title: "Logged out",
+      description: "You have been logged out successfully",
+    });
+  };
+
   if (!shouldRender) return null;
 
   return (
@@ -271,8 +353,20 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
               <RefreshCw className="h-4 w-4 mr-2" />
               New Chat
             </Button>
-            <button className="hover:bg-white/10 p-1 rounded" data-testid="btn-user">
-              <User className="w-5 h-5" />
+            <button 
+              className="hover:bg-white/10 p-1 rounded flex items-center gap-1" 
+              data-testid="btn-user"
+              onClick={() => customerName ? handleLogout() : setShowLoginModal(true)}
+              title={customerName ? `Logout (${customerName})` : "Login"}
+            >
+              {customerName ? (
+                <>
+                  <User className="w-5 h-5" />
+                  <span className="text-xs max-w-[80px] truncate">{customerName.split(' ')[0]}</span>
+                </>
+              ) : (
+                <LogIn className="w-5 h-5" />
+              )}
             </button>
             <button className="hover:bg-white/10 p-1 rounded" data-testid="btn-globe">
               <Globe className="w-5 h-5" />
@@ -625,6 +719,77 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
           )}
         </div>
       </div>
+
+      {showLoginModal && (
+        <div 
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowLoginModal(false);
+          }}
+        >
+          <Card className="w-full max-w-md mx-4 shadow-2xl">
+            <CardHeader className="text-center pb-4">
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <CardTitle className="text-xl font-bold text-gray-800">
+                    Welcome back
+                  </CardTitle>
+                  <CardDescription>
+                    Sign in with your Customer ID to get personalized recommendations
+                  </CardDescription>
+                </div>
+                <button 
+                  onClick={() => setShowLoginModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="loginCustomerId">Customer ID / User Name</Label>
+                  <Input
+                    id="loginCustomerId"
+                    type="text"
+                    placeholder="e.g., CUST-0000001"
+                    value={loginCustomerId}
+                    onChange={(e) => setLoginCustomerId(e.target.value)}
+                    data-testid="input-login-customer-id"
+                    disabled={isLoggingIn}
+                    className="h-11"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="loginPassword">Password</Label>
+                  <Input
+                    id="loginPassword"
+                    type="password"
+                    placeholder="Enter your password"
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    data-testid="input-login-password"
+                    disabled={isLoggingIn}
+                    className="h-11"
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  className="w-full h-11 bg-[#1565C0] hover:bg-[#0D47A1]"
+                  disabled={isLoggingIn}
+                  data-testid="button-login-submit"
+                >
+                  {isLoggingIn ? "Signing in..." : "Sign In"}
+                </Button>
+              </form>
+              <p className="text-sm text-gray-500 text-center mt-4">
+                Default password: password123
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
