@@ -377,7 +377,6 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
               <Info className="w-5 h-5" />
             </button>
             <div className="flex items-center gap-1 text-sm">
-              <span>{currentStep}/10</span>
               <button className="hover:bg-white/10 p-1 rounded" data-testid="btn-prev">
                 <ChevronLeft className="w-4 h-4" />
               </button>
