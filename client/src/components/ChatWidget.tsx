@@ -601,7 +601,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
           </div>
 
           {currentContext && (
-            <div className="w-72 border-l p-4 hidden lg:block">
+            <div className="w-56 border-l p-3 hidden lg:block overflow-y-auto">
               <h3 className="font-medium text-sm mb-4 flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-primary" />
                 Context Insights
