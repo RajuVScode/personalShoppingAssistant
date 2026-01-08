@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Heart, ShoppingCart, BarChart3, User } from "lucide-react";
+import { Search, Heart, ShoppingCart, BarChart3, User, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ChatWidget from "@/components/ChatWidget";
 
@@ -118,12 +118,14 @@ export default function HomePage() {
 
       <button
         onClick={() => setIsChatOpen(true)}
-        className="fixed bottom-6 right-6 bg-white shadow-lg rounded-full px-4 py-3 flex items-center gap-2 border border-gray-200 hover:shadow-xl transition-shadow z-40"
+        className="fixed bottom-8 right-8 bg-[#1a1a2e] text-white px-6 py-4 rounded-full shadow-lg hover:bg-[#2a2a3e] transition-all duration-300 z-50 flex items-center gap-2 group"
         data-testid="chat-widget-button"
       >
-        <Search className="w-4 h-4 text-gray-600" />
-        <span className="text-sm font-medium text-gray-700">Personal Shopping</span>
-        <span className="w-2 h-2 bg-yellow-400 rounded-full"></span>
+        <MessageCircle className="w-5 h-5 mr-2" />
+        <span className="font-medium">Personal Shopping</span>
+        <div className="absolute -top-2 -right-2 bg-[#c9a227] text-white text-xs rounded-full w-6 h-6 flex items-center justify-center animate-pulse">
+          AI
+        </div>
       </button>
 
       <ChatWidget isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
