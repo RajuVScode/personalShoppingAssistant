@@ -352,6 +352,15 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
               <RefreshCw className="h-4 w-4 mr-2" />
               New Chat
             </Button>
+            <button className="hover:bg-white/10 p-1 rounded" data-testid="btn-globe">
+              <Globe className="w-5 h-5" />
+            </button>
+            <button className="hover:bg-white/10 p-1 rounded" data-testid="btn-settings">
+              <Settings className="w-5 h-5" />
+            </button>
+            <button className="hover:bg-white/10 p-1 rounded" data-testid="btn-info">
+              <Info className="w-5 h-5" />
+            </button>
             <button 
               className="hover:bg-white/10 p-1 rounded flex items-center gap-1" 
               data-testid="btn-user"
@@ -367,23 +376,6 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                 <LogIn className="w-5 h-5" />
               )}
             </button>
-            <button className="hover:bg-white/10 p-1 rounded" data-testid="btn-globe">
-              <Globe className="w-5 h-5" />
-            </button>
-            <button className="hover:bg-white/10 p-1 rounded" data-testid="btn-settings">
-              <Settings className="w-5 h-5" />
-            </button>
-            <button className="hover:bg-white/10 p-1 rounded" data-testid="btn-info">
-              <Info className="w-5 h-5" />
-            </button>
-            <div className="flex items-center gap-1 text-sm">
-              <button className="hover:bg-white/10 p-1 rounded" data-testid="btn-prev">
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <button className="hover:bg-white/10 p-1 rounded" data-testid="btn-next">
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
             <button onClick={handleClose} className="hover:bg-white/10 p-1 rounded" data-testid="btn-close-chat">
               <X className="w-5 h-5" />
             </button>
