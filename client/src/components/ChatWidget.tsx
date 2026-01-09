@@ -671,7 +671,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                         handleSend();
                       }
                     }}
-                    placeholder="What are you looking for today?"
+                    placeholder="Ask me anything about style or travel..."
                     className="min-h-[40px] max-h-[120px] resize-none border-none bg-transparent p-[10px] shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:outline-none text-sm"
                     style={{ border: 'none', outline: 'none' }}
                     disabled={chatMutation.isPending}
