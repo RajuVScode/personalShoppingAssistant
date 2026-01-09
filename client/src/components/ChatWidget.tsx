@@ -346,7 +346,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
         className={`bg-white w-[97vw] h-[95vh] rounded-[5px] shadow-2xl flex flex-col overflow-hidden transition-transform duration-500 ease-in-out ${isAnimating ? 'translate-x-0' : 'translate-x-[105%]'}`} 
         data-testid="chat-modal"
       >
-        <div className="bg-[#1565C0] text-white px-4 py-1.5 flex items-center justify-between rounded-t-[5px]" data-testid="chat-header">
+        <div className="bg-[#1565C0] text-white px-4 py-1.5 flex items-center justify-between rounded-t-[5px] relative" data-testid="chat-header">
           <div className="flex items-center gap-3">
             <Logo className="h-10" />
           </div>
@@ -387,7 +387,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                     <ChevronDown className="w-3 h-3" />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" side="bottom" sideOffset={0} className="w-48 rounded-t-none" container={chatModalRef.current || undefined}>
+                <DropdownMenuContent align="end" side="bottom" sideOffset={6} alignOffset={0} className="w-48 rounded-t-none" container={chatModalRef.current || undefined}>
                   <div className="px-3 py-3 border-b">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
