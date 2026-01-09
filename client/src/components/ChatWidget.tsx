@@ -381,11 +381,9 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                   viewBox="0 0 24 24" 
                   fill="currentColor"
                 >
-                  <circle cx="8" cy="6" r="4" />
-                  <path d="M2 20c0-4 3-6 6-6s6 2 6 6H2z" />
-                  <path d="M16 12h6M19 9l3 3-3 3" strokeWidth="0" />
-                  <rect x="16" y="11" width="6" height="2" rx="0.5" />
-                  <path d="M19 9l3 3-3 3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <circle cx="8" cy="6" r="3.5" />
+                  <path d="M1 21v-1c0-4 2.5-6 7-6s7 2 7 6v1H1z" />
+                  <path d="M17 15h5m-2-2.5l2.5 2.5-2.5 2.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
                 </svg>
               )}
             </button>
