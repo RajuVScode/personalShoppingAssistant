@@ -412,10 +412,9 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                       className="cursor-pointer px-3 py-2 text-red-600 focus:text-red-600"
                       data-testid="menu-logout"
                     >
-                      <svg className="w-4 h-4 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="12" cy="12" r="10" />
-                        <path d="M12 8l4 4-4 4" />
-                        <path d="M8 12h8" />
+                      <svg className="w-4 h-4 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 3v9" />
+                        <path d="M18.36 6.64A9 9 0 1 1 5.64 6.64" />
                       </svg>
                       <span>Logout</span>
                     </DropdownMenuItem>
