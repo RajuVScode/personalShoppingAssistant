@@ -376,12 +376,15 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                   <span className="text-xs max-w-[80px] truncate">{customerName.split(' ')[0]}</span>
                 </>
               ) : (
-                <img 
-                  src="/attached_assets/image_1767939848105.png" 
-                  alt="Login" 
-                  className="w-5 h-5"
-                  style={{ filter: 'brightness(0) invert(1)' }}
-                />
+                <svg 
+                  className="w-5 h-5" 
+                  viewBox="0 0 24 24" 
+                  fill="currentColor"
+                >
+                  <circle cx="8" cy="6" r="3.5" />
+                  <path d="M1 21v-1c0-4 2.5-6 7-6s7 2 7 6v1H1z" />
+                  <path d="M17 15h5m-2-2.5l2.5 2.5-2.5 2.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                </svg>
               )}
             </button>
             <button onClick={handleClose} className="hover:bg-white/10 p-1 rounded" data-testid="btn-close-chat">
