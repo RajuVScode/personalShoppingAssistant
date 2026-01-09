@@ -536,17 +536,12 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                                 )}
                                 <Button
                                   size="sm"
-                                  className={`w-full mt-2 text-xs h-7 ${
-                                    shoppingList.has(product.id)
-                                      ? "text-white"
-                                      : ""
-                                  }`}
-                                  style={
-                                    shoppingList.has(product.id)
-                                      ? { backgroundColor: "rgb(22 163 74)" }
-                                      : undefined
-                                  }
-                                  variant={shoppingList.has(product.id) ? "default" : "outline"}
+                                  className="w-full mt-2 text-xs h-7 text-white"
+                                  style={{
+                                    backgroundColor: shoppingList.has(product.id)
+                                      ? "rgb(22 163 74)"
+                                      : "rgb(13, 110, 253)"
+                                  }}
                                   onClick={() => {
                                     setShoppingList((prev) => {
                                       const newSet = new Set(prev);
