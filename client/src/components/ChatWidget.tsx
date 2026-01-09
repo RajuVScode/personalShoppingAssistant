@@ -131,12 +131,14 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
 
   useEffect(() => {
     if (isOpen) {
+      document.body.style.overflow = 'hidden';
       setShouldRender(true);
       const timer = setTimeout(() => {
         setIsAnimating(true);
       }, 50);
       return () => clearTimeout(timer);
     } else {
+      document.body.style.overflow = '';
       setIsAnimating(false);
       const timer = setTimeout(() => {
         setShouldRender(false);
