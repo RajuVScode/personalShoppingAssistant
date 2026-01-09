@@ -17,8 +17,10 @@ import {
   RefreshCw,
   ShoppingBag,
   LogIn,
+  LogOut,
   Check,
   Plus,
+  ChevronDown,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -31,6 +33,13 @@ import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import Logo from "@/components/Logo";
 
@@ -364,18 +373,54 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
             <button className="hover:bg-white/10 p-1 rounded" data-testid="btn-info">
               <Info className="w-5 h-5" />
             </button>
-            <button 
-              className="hover:bg-white/10 p-1 rounded flex items-center gap-1" 
-              data-testid="btn-user"
-              onClick={() => customerName ? handleLogout() : setShowLoginModal(true)}
-              title={customerName ? `Logout (${customerName})` : "Login"}
-            >
-              {customerName ? (
-                <>
-                  <User className="w-5 h-5" />
-                  <span className="text-xs max-w-[80px] truncate">{customerName.split(' ')[0]}</span>
-                </>
-              ) : (
+            {customerName ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button 
+                    className="hover:bg-white/10 p-1 rounded flex items-center gap-1" 
+                    data-testid="btn-user"
+                  >
+                    <User className="w-5 h-5" />
+                    <span className="text-xs max-w-[80px] truncate">{customerName.split(' ')[0]}</span>
+                    <ChevronDown className="w-3 h-3" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48 mt-2">
+                  <div className="px-3 py-3 border-b">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                        <User className="w-4 h-4 text-gray-600" />
+                      </div>
+                      <span className="font-medium text-gray-800 text-sm">{customerName}</span>
+                    </div>
+                  </div>
+                  <div className="py-1">
+                    <DropdownMenuItem 
+                      className="cursor-pointer px-3 py-2"
+                      data-testid="menu-edit-profile"
+                    >
+                      <User className="w-4 h-4 mr-3 text-gray-500" />
+                      <span>Edit Profile</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem 
+                      onClick={handleLogout}
+                      className="cursor-pointer px-3 py-2 text-red-600 focus:text-red-600"
+                      data-testid="menu-logout"
+                    >
+                      <LogOut className="w-4 h-4 mr-3" />
+                      <span>Logout</span>
+                    </DropdownMenuItem>
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <button 
+                className="hover:bg-white/10 p-1 rounded flex items-center gap-1" 
+                data-testid="btn-user"
+                onClick={() => setShowLoginModal(true)}
+                title="Login"
+              >
                 <svg 
                   className="w-5 h-5" 
                   viewBox="0 0 24 24" 
@@ -385,8 +430,8 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                   <path d="M1 21v-1c0-4 2.5-6 7-6s7 2 7 6v1H1z" />
                   <path d="M17 15h5m-2-2.5l2.5 2.5-2.5 2.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
                 </svg>
-              )}
-            </button>
+              </button>
+            )}
             <button onClick={handleClose} className="hover:bg-white/10 p-1 rounded" data-testid="btn-close-chat">
               <X className="w-5 h-5" />
             </button>
