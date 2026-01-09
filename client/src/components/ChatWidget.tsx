@@ -109,6 +109,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
   const [currentContext, setCurrentContext] = useState<ContextInfo | null>(null);
   const [currentIntent, setCurrentIntent] = useState<Record<string, unknown>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatModalRef = useRef<HTMLDivElement>(null);
   const [customerId, setCustomerId] = useState<string | null>(null);
   const [customerName, setCustomerName] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
@@ -341,6 +342,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
       }}
     >
       <div 
+        ref={chatModalRef}
         className={`bg-white w-[97vw] h-[95vh] rounded-[5px] shadow-2xl flex flex-col overflow-hidden transition-transform duration-500 ease-in-out ${isAnimating ? 'translate-x-0' : 'translate-x-[105%]'}`} 
         data-testid="chat-modal"
       >
@@ -385,7 +387,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                     <ChevronDown className="w-3 h-3" />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" side="bottom" sideOffset={8} className="w-48 z-[9999]">
+                <DropdownMenuContent align="end" side="bottom" sideOffset={8} className="w-48" container={chatModalRef.current || undefined}>
                   <div className="px-3 py-3 border-b">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
