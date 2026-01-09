@@ -385,7 +385,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                     <ChevronDown className="w-3 h-3" />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48 mt-2">
+                <DropdownMenuContent align="end" side="bottom" sideOffset={8} className="w-48 z-[9999]">
                   <div className="px-3 py-3 border-b">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
