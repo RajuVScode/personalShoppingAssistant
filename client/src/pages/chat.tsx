@@ -312,7 +312,7 @@ export default function ChatPage() {
                               data-testid={`card-product-${product.id}`}
                             >
                               {product.image_url && (
-                                <div className="aspect-[4/3] bg-muted overflow-hidden max-h-32">
+                                <div className="w-full aspect-[4/3] bg-muted overflow-hidden">
                                   <img
                                     src={product.image_url}
                                     alt={product.name}
