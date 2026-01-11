@@ -1076,7 +1076,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                     </button>
 
                     <button
-                      className="w-full flex items-center justify-between py-2 px-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-100 hover:border-gray-300 hover:shadow-sm transition-all duration-200"
+                      className="w-full flex items-center justify-between py-2 px-3 bg-white border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-[#1565C0] hover:shadow-md transition-all duration-200"
                       data-testid="btn-click-collect"
                     >
                       <div className="flex items-center gap-2">
@@ -1087,7 +1087,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                     </button>
 
                     <button
-                      className="w-full flex items-center justify-between py-2 px-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-100 hover:border-gray-300 hover:shadow-sm transition-all duration-200"
+                      className="w-full flex items-center justify-between py-2 px-3 bg-white border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-[#1565C0] hover:shadow-md transition-all duration-200"
                       data-testid="btn-book-session"
                     >
                       <div className="flex items-center gap-2">
