@@ -143,17 +143,17 @@ const CartItemRow = memo(function CartItemRow({ item, onUpdateQuantity, onRemove
         <div className="flex items-center border rounded">
           <button
             onClick={() => onUpdateQuantity(item.product.id, -1)}
-            className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 border-r"
+            className="w-7 h-7 flex items-center justify-center text-gray-600 hover:bg-gray-100 border-r text-sm"
             data-testid={`btn-decrease-${item.product.id}`}
           >
             −
           </button>
-          <span className="w-10 h-8 flex items-center justify-center text-sm font-medium bg-gray-50">
+          <span className="w-8 h-7 flex items-center justify-center text-sm font-medium bg-gray-50">
             {item.quantity}
           </span>
           <button
             onClick={() => onUpdateQuantity(item.product.id, 1)}
-            className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 border-l"
+            className="w-7 h-7 flex items-center justify-center text-gray-600 hover:bg-gray-100 border-l text-sm"
             data-testid={`btn-increase-${item.product.id}`}
           >
             +
@@ -167,7 +167,7 @@ const CartItemRow = memo(function CartItemRow({ item, onUpdateQuantity, onRemove
           className="text-red-500 hover:text-red-700 p-2"
           data-testid={`btn-remove-cart-${item.product.id}`}
         >
-          <Trash2 className="w-5 h-5" />
+          <Trash2 className="w-4 h-4" />
         </button>
       </div>
     </div>
@@ -1032,11 +1032,11 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                   </span>
                 </div>
                 <Button 
-                  className="w-full bg-[#1565C0] hover:bg-[#0D47A1] text-white h-11 flex items-center justify-center gap-2"
+                  className="w-full bg-[#1565C0] hover:bg-[#0D47A1] text-white h-9 flex items-center justify-center gap-2 text-sm"
                   data-testid="btn-checkout"
                   onClick={openCheckoutSheet}
                 >
-                  <ShoppingBag className="w-5 h-5" />
+                  <ShoppingBag className="w-4 h-4" />
                   Proceed to Checkout
                 </Button>
               </div>
@@ -1065,36 +1065,36 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
 
                   <div className="space-y-2">
                     <button
-                      className="w-full flex items-center justify-between p-3 bg-[#1565C0] text-white rounded-lg hover:bg-[#0D47A1] transition-colors"
+                      className="w-full flex items-center justify-between py-2 px-3 bg-[#1565C0] text-white rounded-lg hover:bg-[#0D47A1] transition-colors"
                       data-testid="btn-place-order"
                     >
-                      <div className="flex items-center gap-3">
-                        <Package className="w-5 h-5" />
-                        <span className="font-medium">Place Order</span>
+                      <div className="flex items-center gap-2">
+                        <Package className="w-4 h-4" />
+                        <span className="font-medium text-sm">Place Order</span>
                       </div>
-                      <span className="text-sm opacity-80">Select items first</span>
+                      <span className="text-xs opacity-80">Select items first</span>
                     </button>
 
                     <button
-                      className="w-full flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                      className="w-full flex items-center justify-between py-2 px-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                       data-testid="btn-click-collect"
                     >
-                      <div className="flex items-center gap-3">
-                        <Store className="w-5 h-5 text-gray-600" />
-                        <span className="font-medium text-gray-800">Click & Collect</span>
+                      <div className="flex items-center gap-2">
+                        <Store className="w-4 h-4 text-gray-600" />
+                        <span className="font-medium text-sm text-gray-800">Click & Collect</span>
                       </div>
-                      <span className="text-sm text-gray-500">All items to store</span>
+                      <span className="text-xs text-gray-500">All items to store</span>
                     </button>
 
                     <button
-                      className="w-full flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                      className="w-full flex items-center justify-between py-2 px-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                       data-testid="btn-book-session"
                     >
-                      <div className="flex items-center gap-3">
-                        <CalendarDays className="w-5 h-5 text-gray-600" />
-                        <span className="font-medium text-gray-800">Book Style Session</span>
+                      <div className="flex items-center gap-2">
+                        <CalendarDays className="w-4 h-4 text-gray-600" />
+                        <span className="font-medium text-sm text-gray-800">Book Style Session</span>
                       </div>
-                      <span className="text-sm text-gray-500">Meet with stylist</span>
+                      <span className="text-xs text-gray-500">Meet with stylist</span>
                     </button>
                   </div>
 
