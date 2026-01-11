@@ -23,6 +23,10 @@ import {
   Plus,
   ChevronDown,
   Trash2,
+  Package,
+  Store,
+  CalendarDays,
+  ChevronUp,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -181,6 +185,9 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
   const [showCartModal, setShowCartModal] = useState(false);
   const [isCartAnimating, setIsCartAnimating] = useState(false);
   const [shouldRenderCart, setShouldRenderCart] = useState(false);
+  const [showCheckoutSheet, setShowCheckoutSheet] = useState(false);
+  const [isCheckoutAnimating, setIsCheckoutAnimating] = useState(false);
+  const [shouldRenderCheckout, setShouldRenderCheckout] = useState(false);
   const [input, setInput] = useState("");
   const [currentContext, setCurrentContext] = useState<ContextInfo | null>(null);
   const [currentIntent, setCurrentIntent] = useState<Record<string, unknown>>({});
@@ -251,9 +258,28 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
 
   const closeCartModal = () => {
     setIsCartAnimating(false);
+    setIsCheckoutAnimating(false);
     setTimeout(() => {
       setShouldRenderCart(false);
       setShowCartModal(false);
+      setShouldRenderCheckout(false);
+      setShowCheckoutSheet(false);
+    }, 300);
+  };
+
+  const openCheckoutSheet = () => {
+    setShowCheckoutSheet(true);
+    setShouldRenderCheckout(true);
+    setTimeout(() => {
+      setIsCheckoutAnimating(true);
+    }, 50);
+  };
+
+  const closeCheckoutSheet = () => {
+    setIsCheckoutAnimating(false);
+    setTimeout(() => {
+      setShouldRenderCheckout(false);
+      setShowCheckoutSheet(false);
     }, 300);
   };
 
@@ -955,7 +981,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
           data-testid="cart-modal-overlay"
         >
           <div 
-            className={`bg-white w-[400px] h-full shadow-2xl flex flex-col transition-transform duration-300 ease-in-out ${isCartAnimating ? 'translate-x-0' : 'translate-x-full'}`}
+            className={`bg-white w-[400px] h-full shadow-2xl flex flex-col relative transition-transform duration-300 ease-in-out ${isCartAnimating ? 'translate-x-0' : 'translate-x-full'}`}
           >
             <div className="bg-[#1565C0] text-white px-4 py-3 flex justify-between items-center">
               <div className="flex items-center gap-2">
@@ -1008,10 +1034,78 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                 <Button 
                   className="w-full bg-[#1565C0] hover:bg-[#0D47A1] text-white h-11 flex items-center justify-center gap-2"
                   data-testid="btn-checkout"
+                  onClick={openCheckoutSheet}
                 >
                   <ShoppingBag className="w-5 h-5" />
                   Proceed to Checkout
                 </Button>
+              </div>
+            )}
+
+            {shouldRenderCheckout && (
+              <div 
+                className={`absolute bottom-0 left-0 right-0 bg-white border-t shadow-lg transition-transform duration-300 ease-in-out ${isCheckoutAnimating ? 'translate-y-0' : 'translate-y-full'}`}
+                data-testid="checkout-sheet"
+              >
+                <div className="p-4">
+                  <div className="flex justify-between items-center mb-3">
+                    <h3 className="font-bold text-lg text-gray-800">Flexible Fulfillment Options</h3>
+                    <button
+                      onClick={closeCheckoutSheet}
+                      className="text-gray-400 hover:text-gray-600 p-1"
+                      data-testid="btn-toggle-checkout"
+                    >
+                      <ChevronDown className="w-5 h-5" />
+                    </button>
+                  </div>
+                  
+                  <p className="text-sm text-gray-500 mb-4 bg-gray-50 p-3 rounded-lg border-l-4 border-[#1565C0]">
+                    Select items above to customize your order, or choose an option below:
+                  </p>
+
+                  <div className="space-y-2">
+                    <button
+                      className="w-full flex items-center justify-between p-3 bg-[#1565C0] text-white rounded-lg hover:bg-[#0D47A1] transition-colors"
+                      data-testid="btn-place-order"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Package className="w-5 h-5" />
+                        <span className="font-medium">Place Order</span>
+                      </div>
+                      <span className="text-sm opacity-80">Select items first</span>
+                    </button>
+
+                    <button
+                      className="w-full flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                      data-testid="btn-click-collect"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Store className="w-5 h-5 text-gray-600" />
+                        <span className="font-medium text-gray-800">Click & Collect</span>
+                      </div>
+                      <span className="text-sm text-gray-500">All items to store</span>
+                    </button>
+
+                    <button
+                      className="w-full flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                      data-testid="btn-book-session"
+                    >
+                      <div className="flex items-center gap-3">
+                        <CalendarDays className="w-5 h-5 text-gray-600" />
+                        <span className="font-medium text-gray-800">Book Style Session</span>
+                      </div>
+                      <span className="text-sm text-gray-500">Meet with stylist</span>
+                    </button>
+                  </div>
+
+                  <button
+                    onClick={closeCheckoutSheet}
+                    className="w-full mt-4 py-2 text-gray-500 hover:text-gray-700 text-sm font-medium"
+                    data-testid="btn-cancel-checkout"
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
             )}
           </div>
