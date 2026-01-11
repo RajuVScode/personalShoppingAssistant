@@ -157,9 +157,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
       const item = newMap.get(productId);
       if (item) {
         const newQuantity = item.quantity + delta;
-        if (newQuantity <= 0) {
-          newMap.delete(productId);
-        } else {
+        if (newQuantity >= 1) {
           newMap.set(productId, { ...item, quantity: newQuantity });
         }
       }
@@ -885,14 +883,14 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
 
       {shouldRenderCart && (
         <div 
-          className={`fixed inset-0 z-[60] flex items-center justify-start bg-black/50 transition-opacity duration-300 ${isCartAnimating ? 'opacity-100' : 'opacity-0'}`}
+          className={`fixed inset-0 z-[60] flex items-center justify-end bg-black/50 transition-opacity duration-300 ${isCartAnimating ? 'opacity-100' : 'opacity-0'}`}
           onClick={(e) => {
             if (e.target === e.currentTarget) closeCartModal();
           }}
           data-testid="cart-modal-overlay"
         >
           <div 
-            className={`bg-white w-[400px] h-full shadow-2xl flex flex-col transition-transform duration-300 ease-in-out ${isCartAnimating ? 'translate-x-0' : '-translate-x-full'}`}
+            className={`bg-white w-[400px] h-full shadow-2xl flex flex-col transition-transform duration-300 ease-in-out ${isCartAnimating ? 'translate-x-0' : 'translate-x-full'}`}
           >
             <div className="bg-[#1565C0] text-white px-4 py-3 flex justify-between items-center">
               <div className="flex items-center gap-2">
