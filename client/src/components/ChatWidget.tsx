@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo, memo } from "react";
 import { useMutation } from "@tanstack/react-query";
 import {
   Send,
@@ -104,6 +104,72 @@ interface CartItem {
   quantity: number;
 }
 
+interface CartItemRowProps {
+  item: CartItem;
+  onUpdateQuantity: (productId: number, delta: number) => void;
+  onRemove: (productId: number) => void;
+}
+
+const CartItemRow = memo(function CartItemRow({ item, onUpdateQuantity, onRemove }: CartItemRowProps) {
+  return (
+    <div className="p-4 hover:bg-gray-50" data-testid={`cart-item-${item.product.id}`}>
+      <div className="flex gap-3 mb-3">
+        {item.product.image_url && (
+          <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 shrink-0">
+            <img
+              src={item.product.image_url}
+              alt={item.product.name}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.onerror = null;
+                target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Crect fill='%23f3f4f6' width='64' height='64'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='system-ui' font-size='8' fill='%239ca3af'%3ENo image%3C/text%3E%3C/svg%3E";
+              }}
+            />
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <p className="font-medium text-sm text-gray-800 line-clamp-2">{item.product.name}</p>
+          {item.product.brand && (
+            <p className="text-xs text-gray-500 mt-0.5">{item.product.brand}</p>
+          )}
+        </div>
+      </div>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center border rounded">
+          <button
+            onClick={() => onUpdateQuantity(item.product.id, -1)}
+            className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 border-r"
+            data-testid={`btn-decrease-${item.product.id}`}
+          >
+            −
+          </button>
+          <span className="w-10 h-8 flex items-center justify-center text-sm font-medium bg-gray-50">
+            {item.quantity}
+          </span>
+          <button
+            onClick={() => onUpdateQuantity(item.product.id, 1)}
+            className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 border-l"
+            data-testid={`btn-increase-${item.product.id}`}
+          >
+            +
+          </button>
+        </div>
+        <span className="font-semibold text-base text-amber-600">
+          ${((item.product.price || 0) * item.quantity).toFixed(2)}
+        </span>
+        <button
+          onClick={() => onRemove(item.product.id)}
+          className="text-red-500 hover:text-red-700 p-2"
+          data-testid={`btn-remove-cart-${item.product.id}`}
+        >
+          <Trash2 className="w-5 h-5" />
+        </button>
+      </div>
+    </div>
+  );
+});
+
 interface ChatWidgetProps {
   isOpen: boolean;
   onClose: () => void;
@@ -163,16 +229,17 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
     });
   }, []);
 
-  const getTotalItems = () => {
-    return Array.from(cartItems.values()).reduce((sum, item) => sum + item.quantity, 0);
-  };
+  const cartItemsArray = useMemo(() => Array.from(cartItems.values()), [cartItems]);
 
-  const getTotalPrice = () => {
-    return Array.from(cartItems.values()).reduce(
-      (sum, item) => sum + (item.product.price || 0) * item.quantity,
-      0
-    );
-  };
+  const totalItems = useMemo(() => 
+    cartItemsArray.reduce((sum, item) => sum + item.quantity, 0),
+    [cartItemsArray]
+  );
+
+  const totalPrice = useMemo(() => 
+    cartItemsArray.reduce((sum, item) => sum + (item.product.price || 0) * item.quantity, 0),
+    [cartItemsArray]
+  );
 
   const openCartModal = () => {
     setShowCartModal(true);
@@ -452,9 +519,9 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
               onClick={openCartModal}
             >
               <ShoppingCart className="w-5 h-5" />
-              {getTotalItems() > 0 && (
+              {totalItems > 0 && (
                 <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center font-medium">
-                  {getTotalItems()}
+                  {totalItems}
                 </span>
               )}
             </button>
@@ -895,7 +962,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                 <ShoppingCart className="w-5 h-5" />
                 <span className="font-bold text-lg">Shopping Cart</span>
                 <span className="bg-white/20 text-white text-xs rounded-full px-2 py-0.5">
-                  {getTotalItems()} items
+                  {totalItems} items
                 </span>
               </div>
               <button 
@@ -915,62 +982,13 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                 </div>
               ) : (
                 <div className="divide-y">
-                  {Array.from(cartItems.values()).map((item) => (
-                    <div key={item.product.id} className="p-4 hover:bg-gray-50" data-testid={`cart-item-${item.product.id}`}>
-                      <div className="flex gap-3 mb-3">
-                        {item.product.image_url && (
-                          <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 shrink-0">
-                            <img
-                              src={item.product.image_url}
-                              alt={item.product.name}
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                const target = e.target as HTMLImageElement;
-                                target.onerror = null;
-                                target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Crect fill='%23f3f4f6' width='64' height='64'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='system-ui' font-size='8' fill='%239ca3af'%3ENo image%3C/text%3E%3C/svg%3E";
-                              }}
-                            />
-                          </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm text-gray-800 line-clamp-2">{item.product.name}</p>
-                          {item.product.brand && (
-                            <p className="text-xs text-gray-500 mt-0.5">{item.product.brand}</p>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center border rounded">
-                          <button
-                            onClick={() => updateQuantity(item.product.id, -1)}
-                            className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 border-r"
-                            data-testid={`btn-decrease-${item.product.id}`}
-                          >
-                            −
-                          </button>
-                          <span className="w-10 h-8 flex items-center justify-center text-sm font-medium bg-gray-50">
-                            {item.quantity}
-                          </span>
-                          <button
-                            onClick={() => updateQuantity(item.product.id, 1)}
-                            className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 border-l"
-                            data-testid={`btn-increase-${item.product.id}`}
-                          >
-                            +
-                          </button>
-                        </div>
-                        <span className="font-semibold text-base text-amber-600">
-                          ${((item.product.price || 0) * item.quantity).toFixed(2)}
-                        </span>
-                        <button
-                          onClick={() => removeFromCart(item.product.id)}
-                          className="text-red-500 hover:text-red-700 p-2"
-                          data-testid={`btn-remove-cart-${item.product.id}`}
-                        >
-                          <Trash2 className="w-5 h-5" />
-                        </button>
-                      </div>
-                    </div>
+                  {cartItemsArray.map((item) => (
+                    <CartItemRow
+                      key={item.product.id}
+                      item={item}
+                      onUpdateQuantity={updateQuantity}
+                      onRemove={removeFromCart}
+                    />
                   ))}
                 </div>
               )}
@@ -979,12 +997,12 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
               <div className="border-t p-4 bg-gray-50">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm text-gray-600">Total Items:</span>
-                  <span className="text-sm font-medium text-gray-800">{getTotalItems()}</span>
+                  <span className="text-sm font-medium text-gray-800">{totalItems}</span>
                 </div>
                 <div className="flex justify-between items-center mb-4">
                   <span className="text-base font-medium text-gray-800">Total</span>
                   <span className="font-bold text-xl text-gray-800">
-                    ${getTotalPrice().toFixed(2)}
+                    ${totalPrice.toFixed(2)}
                   </span>
                 </div>
                 <Button 
