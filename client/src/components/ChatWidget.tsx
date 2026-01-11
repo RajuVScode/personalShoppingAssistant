@@ -1100,7 +1100,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
 
                   <button
                     onClick={closeCheckoutSheet}
-                    className="w-full mt-4 py-2 text-gray-500 hover:text-gray-700 text-sm font-medium"
+                    className="w-full mt-3 py-1 text-gray-500 hover:text-gray-700 text-sm font-medium"
                     data-testid="btn-cancel-checkout"
                   >
                     Cancel
