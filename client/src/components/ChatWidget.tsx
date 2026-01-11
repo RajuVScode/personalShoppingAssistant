@@ -671,7 +671,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                         handleSend();
                       }
                     }}
-                    placeholder="Ask me anything about style or travel..."
+                    placeholder="What are you looking for today?"
                     className="min-h-[40px] max-h-[120px] resize-none border-none bg-transparent p-[10px] shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:outline-none text-sm"
                     style={{ border: 'none', outline: 'none' }}
                     disabled={chatMutation.isPending}
@@ -683,11 +683,10 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                   onClick={handleSend}
                   disabled={!input.trim() || chatMutation.isPending}
                   size="icon"
-                  className="rounded-full h-9 w-9 shrink-0"
+                  className="rounded-full h-9 w-9 shrink-0 disabled:opacity-100 disabled:pointer-events-auto"
                   style={{ 
-                    backgroundColor: (!input.trim() || chatMutation.isPending) ? '#9ca3af' : '#0d6efd',
-                    cursor: (!input.trim() || chatMutation.isPending) ? 'not-allowed' : 'pointer',
-                    pointerEvents: (!input.trim() || chatMutation.isPending) ? 'none' : 'auto'
+                    backgroundColor: '#0d6efd',
+                    cursor: (!input.trim() || chatMutation.isPending) ? 'not-allowed' : 'pointer'
                   }}
                   data-testid="button-send"
                 >
