@@ -683,7 +683,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                   onClick={handleSend}
                   disabled={!input.trim() || chatMutation.isPending}
                   size="icon"
-                  className="rounded-full h-9 w-9 shrink-0 disabled:opacity-100 disabled:pointer-events-auto"
+                  className="rounded-full h-9 w-9 shrink-0 disabled:opacity-100 disabled:pointer-events-auto no-default-active-elevate"
                   style={{ 
                     backgroundColor: '#0d6efd',
                     cursor: (!input.trim() || chatMutation.isPending) ? 'not-allowed' : 'pointer'
