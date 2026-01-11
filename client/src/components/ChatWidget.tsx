@@ -1006,9 +1006,10 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                   </span>
                 </div>
                 <Button 
-                  className="w-full bg-[#1565C0] hover:bg-[#0D47A1] text-white h-11"
+                  className="w-full bg-[#1565C0] hover:bg-[#0D47A1] text-white h-11 flex items-center justify-center gap-2"
                   data-testid="btn-checkout"
                 >
+                  <ShoppingBag className="w-5 h-5" />
                   Proceed to Checkout
                 </Button>
               </div>
