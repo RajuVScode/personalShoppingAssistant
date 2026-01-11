@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useMutation } from "@tanstack/react-query";
 import {
   Send,
@@ -143,27 +143,25 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
     });
   };
 
-  const removeFromCart = (productId: number) => {
+  const removeFromCart = useCallback((productId: number) => {
     setCartItems((prev) => {
       const newMap = new Map(prev);
       newMap.delete(productId);
       return newMap;
     });
-  };
+  }, []);
 
-  const updateQuantity = (productId: number, delta: number) => {
+  const updateQuantity = useCallback((productId: number, delta: number) => {
     setCartItems((prev) => {
+      const item = prev.get(productId);
+      if (!item) return prev;
+      const newQuantity = item.quantity + delta;
+      if (newQuantity < 1) return prev;
       const newMap = new Map(prev);
-      const item = newMap.get(productId);
-      if (item) {
-        const newQuantity = item.quantity + delta;
-        if (newQuantity >= 1) {
-          newMap.set(productId, { ...item, quantity: newQuantity });
-        }
-      }
+      newMap.set(productId, { ...item, quantity: newQuantity });
       return newMap;
     });
-  };
+  }, []);
 
   const getTotalItems = () => {
     return Array.from(cartItems.values()).reduce((sum, item) => sum + item.quantity, 0);
