@@ -674,6 +674,17 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
 
         <div className="flex flex-1 overflow-hidden">
           <div className="w-48 bg-gray-100 p-4 border-r" data-testid="chat-sidebar">
+            <button
+              onClick={resetConversation}
+              className="flex items-center gap-2 w-full px-3 py-2 mb-4 text-gray-700 hover:bg-white hover:shadow-sm rounded-md border border-gray-200 transition-all"
+              data-testid="button-reset"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+              </svg>
+              <span className="text-sm font-medium">New Chat</span>
+            </button>
             <h3 className="text-xs font-semibold text-gray-600 mb-4">CONVERSATION PROGRESS</h3>
             <div className="space-y-3">
               <div className={`flex items-center gap-2 ${currentStep >= 1 ? 'text-purple-600' : 'text-gray-400'}`}>
@@ -738,19 +749,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
           </div>
 
           <div className="flex-1 flex flex-col">
-            <div className="flex justify-end px-6 pt-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={resetConversation}
-                className="text-gray-600 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600 hover:shadow-md"
-                data-testid="button-reset"
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                New Chat
-              </Button>
-            </div>
-            <ScrollArea className="flex-1 p-6 pt-4" data-testid="chat-messages">
+            <ScrollArea className="flex-1 p-6" data-testid="chat-messages">
               <div className="space-y-6">
                 {messages.map((message, index) => (
                   <div
