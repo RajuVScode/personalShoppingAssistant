@@ -902,9 +902,8 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                                       className="flex-1 text-xs h-7 text-white bg-[#3D4F5F] hover:bg-[#2D3F4F]"
                                       data-testid={`button-show-me-${product.id}`}
                                     >
-                                      <svg className="h-3 w-3 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <circle cx="12" cy="12" r="10" />
-                                        <circle cx="12" cy="12" r="3" />
+                                      <svg className="h-3 w-3 mr-1" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
                                       </svg>
                                       Show Me
                                     </Button>
