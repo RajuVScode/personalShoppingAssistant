@@ -864,7 +864,9 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                                       <svg className="w-3 h-3 text-red-500" viewBox="0 0 24 24" fill="currentColor">
                                         <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
                                       </svg>
-                                      <span>Floor 1, Travel Goods • In Stock</span>
+                                      <span>Floor 1, Travel Goods •</span>
+                                      <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                                      <span className="text-green-600 font-medium">In Stock</span>
                                     </div>
                                   )}
                                 </div>
@@ -874,7 +876,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                                 {shoppingMode === "online" ? (
                                   <Button
                                     size="sm"
-                                    className="text-xs h-7 text-white px-4"
+                                    className="text-xs h-7 text-white px-4 rounded-[6px]"
                                     style={{
                                       backgroundColor: cartItems.has(product.id)
                                         ? "rgb(22 163 74)"
@@ -899,7 +901,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                                   <div className="flex gap-2">
                                     <Button
                                       size="sm"
-                                      className="flex-1 text-xs h-7 text-white bg-[#3D4F5F] hover:bg-[#2D3F4F] border-0"
+                                      className="flex-1 text-xs h-7 text-white bg-[#3D4F5F] hover:bg-[#2D3F4F] border-0 rounded-[6px]"
                                       data-testid={`button-show-me-${product.id}`}
                                     >
                                       <svg className="h-3 w-3 mr-1" viewBox="0 0 24 24" fill="currentColor">
@@ -909,7 +911,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                                     </Button>
                                     <Button
                                       size="sm"
-                                      className="flex-1 text-xs h-7 text-white bg-[#C9A961] hover:bg-[#B89851] border-0"
+                                      className="flex-1 text-xs h-7 text-white bg-[#C9A961] hover:bg-[#B89851] border-0 rounded-[6px]"
                                       data-testid={`button-try-on-${product.id}`}
                                     >
                                       <svg className="h-3 w-3 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -920,7 +922,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                                     </Button>
                                     <Button
                                       size="sm"
-                                      className={`flex-1 text-xs h-7 text-white border-0 ${
+                                      className={`flex-1 text-xs h-7 text-white border-0 rounded-[6px] ${
                                         cartItems.has(product.id)
                                           ? "bg-green-600 hover:bg-green-700"
                                           : "bg-[#0D6EFD] hover:bg-[#0B5ED7]"
