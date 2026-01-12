@@ -587,7 +587,14 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                 }
               }}
             >
-              <Globe className="w-5 h-5" />
+              <div className="relative w-5 h-5">
+                <div className="w-5 h-5 rounded-full border border-white flex items-center justify-center">
+                  <User className="w-3 h-3" />
+                </div>
+                <div className="absolute -bottom-0.5 -right-1 bg-white text-[#1565C0] text-[6px] font-bold px-0.5 rounded leading-tight">
+                  360
+                </div>
+              </div>
             </button>
             <button className="hover:bg-white/10 p-1 rounded" data-testid="btn-settings">
               <Settings className="w-5 h-5" />
@@ -1249,12 +1256,12 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
         >
           <div className="bg-white w-[380px] h-full shadow-2xl flex flex-col overflow-hidden">
             <div className="bg-[#1565C0] text-white px-4 py-3 flex justify-between items-center">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <div className="relative">
-                  <div className="w-10 h-10 rounded-full border-2 border-white flex items-center justify-center">
-                    <User className="w-5 h-5" />
+                  <div className="w-6 h-6 rounded-full border-2 border-white flex items-center justify-center">
+                    <User className="w-3.5 h-3.5" />
                   </div>
-                  <div className="absolute -bottom-1 -right-1 bg-white text-[#1565C0] text-[10px] font-bold px-1 rounded">
+                  <div className="absolute -bottom-0.5 -right-1.5 bg-white text-[#1565C0] text-[7px] font-bold px-0.5 rounded leading-tight">
                     360
                   </div>
                 </div>
