@@ -899,7 +899,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                                   <div className="flex gap-2">
                                     <Button
                                       size="sm"
-                                      className="flex-1 text-xs h-7 text-white bg-[#3D4F5F] hover:bg-[#2D3F4F]"
+                                      className="flex-1 text-xs h-7 text-white bg-[#3D4F5F] hover:bg-[#2D3F4F] border-0"
                                       data-testid={`button-show-me-${product.id}`}
                                     >
                                       <svg className="h-3 w-3 mr-1" viewBox="0 0 24 24" fill="currentColor">
@@ -909,7 +909,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                                     </Button>
                                     <Button
                                       size="sm"
-                                      className="flex-1 text-xs h-7 text-white bg-[#C9A961] hover:bg-[#B89851]"
+                                      className="flex-1 text-xs h-7 text-white bg-[#C9A961] hover:bg-[#B89851] border-0"
                                       data-testid={`button-try-on-${product.id}`}
                                     >
                                       <svg className="h-3 w-3 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -920,7 +920,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                                     </Button>
                                     <Button
                                       size="sm"
-                                      className={`flex-1 text-xs h-7 text-white ${
+                                      className={`flex-1 text-xs h-7 text-white border-0 ${
                                         cartItems.has(product.id)
                                           ? "bg-green-600 hover:bg-green-700"
                                           : "bg-[#0D6EFD] hover:bg-[#0B5ED7]"
