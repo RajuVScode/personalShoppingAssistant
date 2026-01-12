@@ -816,61 +816,65 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                           {message.products.slice(0, 6).map((product) => (
                             <Card
                               key={product.id}
-                              className="overflow-hidden hover:shadow-lg transition-shadow flex flex-row"
+                              className="overflow-hidden hover:shadow-lg transition-shadow flex flex-col"
                               data-testid={`card-product-${product.id}`}
                             >
-                              {product.image_url && (
-                                <div className="w-32 h-32 shrink-0 bg-muted overflow-hidden">
-                                  <img
-                                    src={product.image_url}
-                                    alt={product.name}
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => {
-                                      const target = e.target as HTMLImageElement;
-                                      target.onerror = null;
-                                      target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect fill='%23f3f4f6' width='400' height='300'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='system-ui' font-size='14' fill='%239ca3af'%3EImage unavailable%3C/text%3E%3C/svg%3E";
-                                    }}
-                                  />
-                                </div>
-                              )}
-                              <CardContent className="p-3 flex flex-col flex-1">
-                                <p className="font-medium text-sm line-clamp-1">
-                                  {product.name}
-                                </p>
-                                <span className="text-xs text-muted-foreground mt-1">
-                                  {product.brand}
-                                </span>
-                                <div className="flex items-center gap-2 mt-1">
-                                  {product.price && (
-                                    <span className="font-semibold text-sm">
-                                      ${product.price}
-                                    </span>
-                                  )}
-                                  {product.rating && (
-                                    <div className="flex items-center gap-1">
-                                      <span className="text-yellow-500 text-xs">
-                                        ★
+                              <div className="flex flex-row">
+                                {product.image_url && (
+                                  <div className="w-28 h-28 shrink-0 bg-muted overflow-hidden">
+                                    <img
+                                      src={product.image_url}
+                                      alt={product.name}
+                                      className="w-full h-full object-cover"
+                                      onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        target.onerror = null;
+                                        target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect fill='%23f3f4f6' width='400' height='300'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='system-ui' font-size='14' fill='%239ca3af'%3EImage unavailable%3C/text%3E%3C/svg%3E";
+                                      }}
+                                    />
+                                  </div>
+                                )}
+                                <div className="p-3 flex flex-col flex-1">
+                                  <p className="font-medium text-sm line-clamp-1">
+                                    {product.name}
+                                  </p>
+                                  <span className="text-xs text-muted-foreground mt-1">
+                                    {product.brand}
+                                  </span>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    {product.price && (
+                                      <span className="font-semibold text-sm">
+                                        ${product.price}
                                       </span>
-                                      <span className="text-xs text-muted-foreground">
-                                        {product.rating}
-                                      </span>
+                                    )}
+                                    {product.rating && (
+                                      <div className="flex items-center gap-1">
+                                        <span className="text-yellow-500 text-xs">
+                                          ★
+                                        </span>
+                                        <span className="text-xs text-muted-foreground">
+                                          {product.rating}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                  
+                                  {shoppingMode === "instore" && (
+                                    <div className="flex items-center gap-1 mt-2 text-xs text-gray-600">
+                                      <svg className="w-3 h-3 text-red-500" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                                      </svg>
+                                      <span>Floor 1, Travel Goods • In Stock</span>
                                     </div>
                                   )}
                                 </div>
-                                
-                                {shoppingMode === "instore" && (
-                                  <div className="flex items-center gap-1 mt-2 text-xs text-gray-600">
-                                    <svg className="w-3 h-3 text-red-500" viewBox="0 0 24 24" fill="currentColor">
-                                      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-                                    </svg>
-                                    <span>Floor 1, Travel Goods • In Stock</span>
-                                  </div>
-                                )}
-
+                              </div>
+                              
+                              <div className="px-3 pb-3">
                                 {shoppingMode === "online" ? (
                                   <Button
                                     size="sm"
-                                    className="w-full mt-auto text-xs h-7 text-white"
+                                    className="w-full text-xs h-7 text-white"
                                     style={{
                                       backgroundColor: cartItems.has(product.id)
                                         ? "rgb(22 163 74)"
@@ -892,7 +896,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                                     )}
                                   </Button>
                                 ) : (
-                                  <div className="flex gap-2 mt-auto">
+                                  <div className="flex gap-2">
                                     <Button
                                       size="sm"
                                       className="flex-1 text-xs h-7 text-white bg-[#3D4F5F] hover:bg-[#2D3F4F]"
@@ -932,7 +936,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                                     </Button>
                                   </div>
                                 )}
-                              </CardContent>
+                              </div>
                             </Card>
                           ))}
                         </div>
