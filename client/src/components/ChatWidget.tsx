@@ -563,16 +563,6 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
               <div className="w-2 h-2 bg-green-400 rounded-full"></div>
               <span>Online</span>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={resetConversation}
-              className="text-white hover:bg-white/10"
-              data-testid="button-reset"
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              New Chat
-            </Button>
             <button 
               className="hover:bg-white/10 p-1 rounded" 
               data-testid="btn-globe"
@@ -748,7 +738,19 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
           </div>
 
           <div className="flex-1 flex flex-col">
-            <ScrollArea className="flex-1 p-6" data-testid="chat-messages">
+            <div className="flex justify-end px-6 pt-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={resetConversation}
+                className="text-gray-600 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600 hover:shadow-md"
+                data-testid="button-reset"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                New Chat
+              </Button>
+            </div>
+            <ScrollArea className="flex-1 p-6 pt-4" data-testid="chat-messages">
               <div className="space-y-6">
                 {messages.map((message, index) => (
                   <div
