@@ -108,6 +108,29 @@ interface CartItem {
   quantity: number;
 }
 
+interface Customer360Data {
+  profile: {
+    name: string;
+    age: number;
+    location: string;
+    tier: string;
+  };
+  sizes_fit: {
+    tops: string;
+    bottoms: string;
+    shoes: string;
+    height: string;
+    build: string;
+    skin: string;
+  };
+  style_preferences: {
+    preferred_colors: string[];
+    style: string;
+    budget: string;
+  };
+  favorite_brands: string[];
+}
+
 interface CartItemRowProps {
   item: CartItem;
   onUpdateQuantity: (productId: number, delta: number) => void;
@@ -202,7 +225,21 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
   const [loginCustomerId, setLoginCustomerId] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [customer360Data, setCustomer360Data] = useState<Customer360Data | null>(null);
+  const [showCustomer360Modal, setShowCustomer360Modal] = useState(false);
   const { toast } = useToast();
+
+  const fetchCustomer360 = async (custId: string) => {
+    try {
+      const response = await fetch(`/api/customer360/${custId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setCustomer360Data(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch customer 360 data:", error);
+    }
+  };
 
   const addToCart = (product: Product) => {
     setCartItems((prev) => {
@@ -315,8 +352,13 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
     setCustomerId(storedCustomerId);
     setCustomerName(storedCustomerName);
 
-    if (isOpen && storedCustomerId && messages.length === 0) {
-      loadConversation(storedCustomerId);
+    if (isOpen && storedCustomerId) {
+      if (messages.length === 0) {
+        loadConversation(storedCustomerId);
+      }
+      if (!customer360Data) {
+        fetchCustomer360(storedCustomerId);
+      }
     }
   }, [isOpen]);
 
@@ -454,6 +496,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
         localStorage.setItem("customer_name", `${data.customer.first_name} ${data.customer.last_name}`);
         setCustomerId(data.customer.customer_id);
         setCustomerName(`${data.customer.first_name} ${data.customer.last_name}`);
+        fetchCustomer360(data.customer.customer_id);
         toast({
           title: "Welcome!",
           description: `Logged in as ${data.customer.first_name} ${data.customer.last_name}`,
@@ -530,7 +573,20 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
               <RefreshCw className="h-4 w-4 mr-2" />
               New Chat
             </Button>
-            <button className="hover:bg-white/10 p-1 rounded" data-testid="btn-globe">
+            <button 
+              className="hover:bg-white/10 p-1 rounded" 
+              data-testid="btn-globe"
+              onClick={() => {
+                if (customerId && customer360Data) {
+                  setShowCustomer360Modal(true);
+                } else if (!customerId) {
+                  toast({
+                    title: "Login Required",
+                    description: "Please login to view your profile",
+                  });
+                }
+              }}
+            >
               <Globe className="w-5 h-5" />
             </button>
             <button className="hover:bg-white/10 p-1 rounded" data-testid="btn-settings">
@@ -1180,6 +1236,91 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
               </p>
             </CardContent>
           </Card>
+        </div>
+      )}
+
+      {showCustomer360Modal && customer360Data && (
+        <div 
+          className="fixed inset-0 z-[60] flex items-center justify-end bg-black/50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowCustomer360Modal(false);
+          }}
+          data-testid="customer360-modal-overlay"
+        >
+          <div className="bg-white w-[380px] h-full shadow-2xl flex flex-col overflow-hidden">
+            <div className="bg-[#1565C0] text-white px-4 py-3 flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <User className="w-5 h-5" />
+                <span className="font-bold text-lg">Customer 360</span>
+              </div>
+              <button 
+                onClick={() => setShowCustomer360Modal(false)}
+                className="text-white hover:bg-white/10 p-1 rounded"
+                data-testid="btn-close-customer360"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-4 space-y-5">
+              <div>
+                <h3 className="font-semibold text-gray-800 mb-2">Profile</h3>
+                <div className="space-y-1 text-sm">
+                  <p><span className="font-medium text-gray-600">Name:</span> {customer360Data.profile.name}</p>
+                  <p><span className="font-medium text-gray-600">Age:</span> {customer360Data.profile.age}</p>
+                  <p><span className="font-medium text-gray-600">Location:</span> {customer360Data.profile.location}</p>
+                  <p><span className="font-medium text-gray-600">Tier:</span> {customer360Data.profile.tier}</p>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div>
+                <h3 className="font-semibold text-gray-800 mb-2">Sizes & Fit</h3>
+                <div className="space-y-1 text-sm">
+                  <p><span className="font-medium text-gray-600">Tops:</span> {customer360Data.sizes_fit.tops}</p>
+                  <p><span className="font-medium text-gray-600">Bottoms:</span> {customer360Data.sizes_fit.bottoms}</p>
+                  <p><span className="font-medium text-gray-600">Shoes:</span> {customer360Data.sizes_fit.shoes}</p>
+                  <p><span className="font-medium text-gray-600">Height:</span> {customer360Data.sizes_fit.height}</p>
+                  <p><span className="font-medium text-gray-600">Build:</span> {customer360Data.sizes_fit.build}</p>
+                  <p><span className="font-medium text-gray-600">Skin:</span> {customer360Data.sizes_fit.skin}</p>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div>
+                <h3 className="font-semibold text-gray-800 mb-2">Style Preferences</h3>
+                <div className="space-y-2 text-sm">
+                  <div>
+                    <p className="font-medium text-gray-600 mb-1">Preferred Colors:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {customer360Data.style_preferences.preferred_colors.map((color, i) => (
+                        <Badge key={i} variant="secondary" className="text-xs bg-gray-100">
+                          {color}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                  <p><span className="font-medium text-gray-600">Style:</span> {customer360Data.style_preferences.style}</p>
+                  <p><span className="font-medium text-gray-600">Budget:</span> {customer360Data.style_preferences.budget}</p>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div>
+                <h3 className="font-semibold text-gray-800 mb-2">Favorite Brands</h3>
+                <div className="flex flex-wrap gap-1">
+                  {customer360Data.favorite_brands.map((brand, i) => (
+                    <Badge key={i} variant="outline" className="text-xs">
+                      {brand}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

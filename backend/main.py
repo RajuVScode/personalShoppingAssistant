@@ -153,6 +153,44 @@ def get_greeting(customer_id: str, db: Session = Depends(get_db)):
     full_name = f"{result.first_name} {result.last_name}"
     return {"greeting": f"Good day! {full_name}, How may I assist you with your travel shopping?"}
 
+@app.get("/api/customer360/{customer_id}")
+def get_customer360(customer_id: str, db: Session = Depends(get_db)):
+    from sqlalchemy import text
+    result = db.execute(
+        text("SELECT first_name, last_name FROM customers WHERE customer_id = :cid"),
+        {"cid": customer_id}
+    ).fetchone()
+    
+    if not result:
+        raise HTTPException(status_code=404, detail="Customer not found")
+    
+    full_name = f"{result.first_name} {result.last_name}"
+    
+    customer360_data = {
+        "profile": {
+            "name": full_name,
+            "age": 36,
+            "location": "San Diego, CA",
+            "tier": "NM Insider - Silver"
+        },
+        "sizes_fit": {
+            "tops": "Medium",
+            "bottoms": "32×32",
+            "shoes": "US 11",
+            "height": "6'0\"",
+            "build": "Lean / long-torso",
+            "skin": "Fair - cool undertone"
+        },
+        "style_preferences": {
+            "preferred_colors": ["Navy", "Charcoal", "Muted Olive", "Ice Blue"],
+            "style": "Minimal, Smart-casual, Functional techwear",
+            "budget": "$100 - $500"
+        },
+        "favorite_brands": ["Theory", "Rag & Bone", "Patagonia", "Vince", "Cole Haan"]
+    }
+    
+    return customer360_data
+
 @app.post("/api/chat", response_model=ChatResponse)
 def chat(request: ChatRequest, db: Session = Depends(get_db)):
     orchestrator = ShoppingOrchestrator(db)
