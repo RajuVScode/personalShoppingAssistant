@@ -787,15 +787,15 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                       </div>
 
                       {message.products && message.products.length > 0 && (
-                        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-3">
                           {message.products.slice(0, 6).map((product) => (
                             <Card
                               key={product.id}
-                              className="overflow-hidden hover:shadow-lg transition-shadow"
+                              className="overflow-hidden hover:shadow-lg transition-shadow flex flex-row"
                               data-testid={`card-product-${product.id}`}
                             >
                               {product.image_url && (
-                                <div className="w-full aspect-[4/3] bg-muted overflow-hidden">
+                                <div className="w-32 h-32 shrink-0 bg-muted overflow-hidden">
                                   <img
                                     src={product.image_url}
                                     alt={product.name}
@@ -808,33 +808,33 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                                   />
                                 </div>
                               )}
-                              <CardContent className="p-3">
+                              <CardContent className="p-3 flex flex-col flex-1">
                                 <p className="font-medium text-sm line-clamp-1">
                                   {product.name}
                                 </p>
-                                <div className="flex items-center justify-between mt-1">
-                                  <span className="text-xs text-muted-foreground">
-                                    {product.brand}
-                                  </span>
+                                <span className="text-xs text-muted-foreground mt-1">
+                                  {product.brand}
+                                </span>
+                                <div className="flex items-center gap-2 mt-1">
                                   {product.price && (
                                     <span className="font-semibold text-sm">
                                       ${product.price}
                                     </span>
                                   )}
+                                  {product.rating && (
+                                    <div className="flex items-center gap-1">
+                                      <span className="text-yellow-500 text-xs">
+                                        ★
+                                      </span>
+                                      <span className="text-xs text-muted-foreground">
+                                        {product.rating}
+                                      </span>
+                                    </div>
+                                  )}
                                 </div>
-                                {product.rating && (
-                                  <div className="flex items-center gap-1 mt-1">
-                                    <span className="text-yellow-500 text-xs">
-                                      ★
-                                    </span>
-                                    <span className="text-xs text-muted-foreground">
-                                      {product.rating}
-                                    </span>
-                                  </div>
-                                )}
                                 <Button
                                   size="sm"
-                                  className="w-full mt-2 text-xs h-7 text-white"
+                                  className="w-full mt-auto text-xs h-7 text-white"
                                   style={{
                                     backgroundColor: cartItems.has(product.id)
                                       ? "rgb(22 163 74)"
