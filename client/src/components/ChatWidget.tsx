@@ -676,7 +676,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
           <div className="w-48 bg-gray-100 p-4 border-r" data-testid="chat-sidebar">
             <button
               onClick={resetConversation}
-              className="flex items-center gap-2 w-full px-3 py-2 mb-4 text-gray-700 hover:bg-white hover:shadow-sm rounded-md border border-gray-200 transition-all"
+              className="flex items-center gap-2 w-full px-3 py-1.5 mb-4 text-gray-700 bg-white hover:bg-blue-50 hover:border-blue-300 hover:shadow-md rounded-md border border-gray-300 transition-all"
               data-testid="button-reset"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
