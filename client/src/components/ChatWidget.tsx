@@ -227,6 +227,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [customer360Data, setCustomer360Data] = useState<Customer360Data | null>(null);
   const [showCustomer360Modal, setShowCustomer360Modal] = useState(false);
+  const [shoppingMode, setShoppingMode] = useState<"online" | "instore">("online");
   const { toast } = useToast();
 
   const fetchCustomer360 = async (custId: string) => {
@@ -559,10 +560,34 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 text-sm">
-              <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-              <span>Online</span>
-            </div>
+            <button
+              onClick={() => setShoppingMode(shoppingMode === "online" ? "instore" : "online")}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                shoppingMode === "online" 
+                  ? "bg-green-500 text-white" 
+                  : "bg-[#C9A961] text-white"
+              }`}
+              data-testid="toggle-shopping-mode"
+            >
+              {shoppingMode === "online" ? (
+                <>
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="2" y1="12" x2="22" y2="12" />
+                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                  </svg>
+                  <span>Online</span>
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                    <polyline points="9 22 9 12 15 12 15 22" />
+                  </svg>
+                  <span>In-Store</span>
+                </>
+              )}
+            </button>
             <button 
               className="hover:bg-white/10 p-1 rounded" 
               data-testid="btn-globe"
@@ -832,29 +857,81 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                                     </div>
                                   )}
                                 </div>
-                                <Button
-                                  size="sm"
-                                  className="w-full mt-auto text-xs h-7 text-white"
-                                  style={{
-                                    backgroundColor: cartItems.has(product.id)
-                                      ? "rgb(22 163 74)"
-                                      : "rgb(13, 110, 253)"
-                                  }}
-                                  onClick={() => addToCart(product)}
-                                  data-testid={`button-add-cart-${product.id}`}
-                                >
-                                  {cartItems.has(product.id) ? (
-                                    <>
-                                      <Check className="h-3 w-3 mr-1" />
-                                      Added to Cart
-                                    </>
-                                  ) : (
-                                    <>
+                                
+                                {shoppingMode === "instore" && (
+                                  <div className="flex items-center gap-1 mt-2 text-xs text-gray-600">
+                                    <svg className="w-3 h-3 text-red-500" viewBox="0 0 24 24" fill="currentColor">
+                                      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                                    </svg>
+                                    <span>Floor 1, Travel Goods • In Stock</span>
+                                  </div>
+                                )}
+
+                                {shoppingMode === "online" ? (
+                                  <Button
+                                    size="sm"
+                                    className="w-full mt-auto text-xs h-7 text-white"
+                                    style={{
+                                      backgroundColor: cartItems.has(product.id)
+                                        ? "rgb(22 163 74)"
+                                        : "rgb(13, 110, 253)"
+                                    }}
+                                    onClick={() => addToCart(product)}
+                                    data-testid={`button-add-cart-${product.id}`}
+                                  >
+                                    {cartItems.has(product.id) ? (
+                                      <>
+                                        <Check className="h-3 w-3 mr-1" />
+                                        Added to Cart
+                                      </>
+                                    ) : (
+                                      <>
+                                        <ShoppingCart className="h-3 w-3 mr-1" />
+                                        Add to Cart
+                                      </>
+                                    )}
+                                  </Button>
+                                ) : (
+                                  <div className="flex gap-2 mt-auto">
+                                    <Button
+                                      size="sm"
+                                      className="flex-1 text-xs h-7 text-white bg-[#3D4F5F] hover:bg-[#2D3F4F]"
+                                      data-testid={`button-show-me-${product.id}`}
+                                    >
+                                      <svg className="h-3 w-3 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <circle cx="12" cy="12" r="10" />
+                                        <circle cx="12" cy="12" r="3" />
+                                      </svg>
+                                      Show Me
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="flex-1 text-xs h-7 border-gray-300 text-gray-700 hover:bg-gray-50"
+                                      data-testid={`button-try-on-${product.id}`}
+                                    >
+                                      <svg className="h-3 w-3 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <circle cx="12" cy="12" r="10" />
+                                        <circle cx="12" cy="12" r="3" />
+                                      </svg>
+                                      Try On
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className={`flex-1 text-xs h-7 ${
+                                        cartItems.has(product.id)
+                                          ? "bg-green-600 text-white border-green-600 hover:bg-green-700"
+                                          : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                                      }`}
+                                      onClick={() => addToCart(product)}
+                                      data-testid={`button-basket-${product.id}`}
+                                    >
                                       <ShoppingCart className="h-3 w-3 mr-1" />
-                                      Add to Cart
-                                    </>
-                                  )}
-                                </Button>
+                                      {cartItems.has(product.id) ? "Added" : "Basket"}
+                                    </Button>
+                                  </div>
+                                )}
                               </CardContent>
                             </Card>
                           ))}
