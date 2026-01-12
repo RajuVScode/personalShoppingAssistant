@@ -762,7 +762,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                       </div>
                     )}
                     <div
-                      className={`max-w-[80%] ${message.role === "user" ? "order-first" : ""}`}
+                      className={`max-w-[95%] ${message.role === "user" ? "order-first max-w-[80%]" : ""}`}
                     >
                       <div
                         className={`px-4 ${
