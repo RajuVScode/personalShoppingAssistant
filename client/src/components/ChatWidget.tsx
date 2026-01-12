@@ -1249,8 +1249,15 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
         >
           <div className="bg-white w-[380px] h-full shadow-2xl flex flex-col overflow-hidden">
             <div className="bg-[#1565C0] text-white px-4 py-3 flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <User className="w-5 h-5" />
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <div className="w-10 h-10 rounded-full border-2 border-white flex items-center justify-center">
+                    <User className="w-5 h-5" />
+                  </div>
+                  <div className="absolute -bottom-1 -right-1 bg-white text-[#1565C0] text-[10px] font-bold px-1 rounded">
+                    360
+                  </div>
+                </div>
                 <span className="font-bold text-lg">Customer 360</span>
               </div>
               <button 
