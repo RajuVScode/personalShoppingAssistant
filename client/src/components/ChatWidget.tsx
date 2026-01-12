@@ -870,11 +870,11 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                                 </div>
                               </div>
                               
-                              <div className="px-3 pb-3">
+                              <div className="px-3 pb-3 pt-2">
                                 {shoppingMode === "online" ? (
                                   <Button
                                     size="sm"
-                                    className="w-full text-xs h-7 text-white"
+                                    className="text-xs h-7 text-white px-4"
                                     style={{
                                       backgroundColor: cartItems.has(product.id)
                                         ? "rgb(22 163 74)"
@@ -909,8 +909,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                                     </Button>
                                     <Button
                                       size="sm"
-                                      variant="outline"
-                                      className="flex-1 text-xs h-7 border-gray-300 text-gray-700 hover:bg-gray-50"
+                                      className="flex-1 text-xs h-7 text-white bg-[#C9A961] hover:bg-[#B89851]"
                                       data-testid={`button-try-on-${product.id}`}
                                     >
                                       <svg className="h-3 w-3 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -921,11 +920,10 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                                     </Button>
                                     <Button
                                       size="sm"
-                                      variant="outline"
-                                      className={`flex-1 text-xs h-7 ${
+                                      className={`flex-1 text-xs h-7 text-white ${
                                         cartItems.has(product.id)
-                                          ? "bg-green-600 text-white border-green-600 hover:bg-green-700"
-                                          : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                                          ? "bg-green-600 hover:bg-green-700"
+                                          : "bg-[#0D6EFD] hover:bg-[#0B5ED7]"
                                       }`}
                                       onClick={() => addToCart(product)}
                                       data-testid={`button-basket-${product.id}`}
