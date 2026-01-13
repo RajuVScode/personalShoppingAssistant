@@ -968,7 +968,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
             </ScrollArea>
 
             <div className="border-t px-6 py-4">
-              <div className="relative flex items-end gap-3 bg-muted/30 border border-muted-foreground/10 p-3 pl-[5px] pr-[5px] pt-[5px] pb-[5px]" style={{ borderRadius: '12px' }}>
+              <div className="relative flex items-end gap-3 bg-muted/30 border border-muted-foreground/10 p-3 pl-[5px] pr-[5px] pt-[0px] pb-[0px]" style={{ borderRadius: '12px' }}>
                 <div className="flex-1">
                   <Textarea
                     value={input}
@@ -1115,7 +1115,6 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
           )}
         </div>
       </div>
-
       {shouldRenderCart && (
         <div 
           className={`fixed inset-0 z-[60] flex items-center justify-end bg-black/50 transition-opacity duration-300 ${isCartAnimating ? 'opacity-100' : 'opacity-0'}`}
@@ -1255,7 +1254,6 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
           </div>
         </div>
       )}
-
       {showLoginModal && (
         <div 
           className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50"
@@ -1326,7 +1324,6 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
           </Card>
         </div>
       )}
-
       {showCustomer360Modal && customer360Data && (
         <div 
           className="fixed inset-0 z-[60] flex items-center justify-end bg-black/50"
