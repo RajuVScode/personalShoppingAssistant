@@ -968,7 +968,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
             </ScrollArea>
 
             <div className="border-t px-6 py-4">
-              <div className="relative flex items-end gap-3 bg-muted/30 border border-muted-foreground/10 p-3 pl-[5px] pr-[5px] pt-[0px] pb-[0px]" style={{ borderRadius: '12px' }}>
+              <div className="relative flex items-center gap-3 bg-muted/30 border border-muted-foreground/10 p-3 pl-[5px] pr-[5px] pt-[0px] pb-[0px]" style={{ borderRadius: '12px' }}>
                 <div className="flex-1">
                   <Textarea
                     value={input}
@@ -991,14 +991,14 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                   onClick={handleSend}
                   disabled={!input.trim() || chatMutation.isPending}
                   size="icon"
-                  className="rounded-full h-9 w-9 shrink-0 disabled:opacity-100 disabled:pointer-events-auto"
+                  className="rounded-full h-7 w-7 shrink-0 disabled:opacity-100 disabled:pointer-events-auto"
                   style={{ 
                     backgroundColor: '#0d6efd',
                     cursor: (!input.trim() || chatMutation.isPending) ? 'not-allowed' : 'pointer'
                   }}
                   data-testid="button-send"
                 >
-                  <Send className="h-4 w-4" />
+                  <Send className="h-3.5 w-3.5" />
                 </Button>
               </div>
             </div>
