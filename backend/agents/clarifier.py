@@ -463,7 +463,7 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                                                  current_date)
 
         response = self.invoke(prompt, system_override=system_prompt)
-
+        print(f"[DEBUG] Raw clarifier response: {response}")
         try:
             clean_response = response.strip()
             if clean_response.startswith("```json"):
@@ -477,7 +477,7 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                                                     "{").replace("}}", "}")
 
             result = json.loads(clean_response.strip())
-
+            print(f"[DEBUG] Clarifier response: {result}")
             new_intent = result.get("updated_intent", {})
             merged_intent = self._merge_intent(existing_intent or {},
                                                new_intent)

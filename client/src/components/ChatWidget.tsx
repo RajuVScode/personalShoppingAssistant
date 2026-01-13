@@ -976,6 +976,12 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && !e.shiftKey) {
                         e.preventDefault();
+                        if (!input.trim()) {
+                          toast({
+                            description: "Enter what you're looking for to get started",
+                          });
+                          return;
+                        }
                         handleSend();
                       }
                     }}
