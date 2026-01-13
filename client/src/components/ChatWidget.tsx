@@ -816,7 +816,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                           {message.products.slice(0, 6).map((product) => (
                             <Card
                               key={product.id}
-                              className="overflow-hidden hover:shadow-lg transition-shadow flex flex-col"
+                              className="overflow-hidden hover:shadow-lg transition-shadow flex flex-col rounded-[6px]"
                               data-testid={`card-product-${product.id}`}
                             >
                               <div className="flex flex-row">
