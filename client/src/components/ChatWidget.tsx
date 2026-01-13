@@ -979,6 +979,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                         if (!input.trim()) {
                           toast({
                             description: "Enter what you're looking for to get started",
+                            variant: "destructive",
                           });
                           return;
                         }
