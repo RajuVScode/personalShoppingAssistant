@@ -475,7 +475,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
       };
       setMessages((prev) => [...prev, assistantMessage]);
       if (data.agent_thinking && data.agent_thinking.length > 0) {
-        setAgentThinkingLogs(prev => [...prev, ...data.agent_thinking]);
+        setAgentThinkingLogs(data.agent_thinking);
       }
       if (data.context) {
         setCurrentContext(data.context);
