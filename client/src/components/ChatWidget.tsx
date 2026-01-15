@@ -591,8 +591,8 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
       >
         <div className="bg-white text-gray-800 px-4 py-1.5 flex items-center justify-between rounded-t-[5px] border-b border-gray-200" data-testid="chat-header">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 bg-[#C9A961] rounded-full flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-white">
+            <div className="h-8 w-8 bg-[#C9A961] rounded-full flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-white">
                 <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
                 <circle cx="12" cy="7" r="4"></circle>
               </svg>
