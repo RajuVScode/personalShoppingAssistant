@@ -821,7 +821,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                             >
                               <div className="relative">
                                 {product.image_url && (
-                                  <div className="w-full aspect-[4/5] bg-muted overflow-hidden">
+                                  <div className="w-full aspect-[5/4] bg-muted overflow-hidden">
                                     <img
                                       src={product.image_url}
                                       alt={product.name}
