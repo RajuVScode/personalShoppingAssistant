@@ -514,6 +514,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
     setCurrentContext(null);
     setCurrentIntent({});
     setCurrentStep(1);
+    setAgentThinkingLogs([]);
 
     if (storedId) {
       const res = await fetch(`/api/greeting/${storedId}`);
@@ -523,6 +524,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
       );
     } else {
       setMessages([]);
+      setAgentThinkingLogs([]);
     }
   };
 
@@ -594,6 +596,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
     setCustomerId(null);
     setCustomerName(null);
     setMessages([]);
+    setAgentThinkingLogs([]);
     setCurrentContext(null);
     setCurrentIntent({});
     setCurrentStep(1);
