@@ -1569,40 +1569,33 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
               {agentThinkingLogs.length > 0 ? (
                 <div className="space-y-4">
                   {agentThinkingLogs.map((step, index) => {
-                    const getAgentIcon = (agent: string) => {
+                    const getPhaseId = (agent: string, idx: number) => {
                       const name = agent.toLowerCase();
-                      if (name.includes('discovery')) return '🔍';
-                      if (name.includes('planning')) return '📋';
-                      if (name.includes('profile')) return '👤';
-                      if (name.includes('context')) return '🌤️';
-                      if (name.includes('styling')) return '✨';
-                      if (name.includes('clarifier')) return '💬';
-                      if (name.includes('intent')) return '🎯';
-                      if (name.includes('customer') || name.includes('360')) return '👤';
-                      if (name.includes('product') || name.includes('recommend')) return '🛍️';
-                      return '🤖';
+                      if (name.includes('discovery')) return `#discovery-${idx + 1}`;
+                      if (name.includes('planning')) return `#planning-${idx + 1}`;
+                      if (name.includes('profile')) return `#profile-${idx + 1}`;
+                      if (name.includes('context')) return `#context-${idx + 1}`;
+                      if (name.includes('styling')) return `#styling-${idx + 1}`;
+                      return `#message-${idx + 1}`;
                     };
-                    const getFriendlyAgentName = (agent: string) => {
-                      return agent;
+                    const formatTime = (timestamp: string) => {
+                      const date = new Date(timestamp);
+                      return date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit', hour12: true}).toUpperCase();
                     };
                     return (
-                      <div key={index} className="bg-gray-50 rounded-lg p-3">
-                        <div className="flex items-start gap-3">
-                          <span className="text-xl">{getAgentIcon(step.agent)}</span>
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-sm font-medium text-gray-800">
-                                {getFriendlyAgentName(step.agent)}
-                              </span>
-                              {step.timestamp && (
-                                <span className="text-xs text-gray-400">
-                                  {new Date(step.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-sm text-gray-600">{step.action}</p>
-                          </div>
+                      <div key={index} className="border-b border-gray-100 pb-3 last:border-0">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-sm font-mono font-semibold text-blue-600">
+                            Message {getPhaseId(step.agent, index)}
+                          </span>
+                          <span className="text-xs text-gray-400">-</span>
+                          {step.timestamp && (
+                            <span className="text-xs text-gray-500 font-mono">
+                              {formatTime(step.timestamp)}
+                            </span>
+                          )}
                         </div>
+                        <p className="text-sm text-gray-700 leading-relaxed">{step.action}</p>
                       </div>
                     );
                   })}
