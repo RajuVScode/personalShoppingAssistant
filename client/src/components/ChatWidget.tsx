@@ -228,6 +228,8 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
   const [customer360Data, setCustomer360Data] = useState<Customer360Data | null>(null);
   const [showCustomer360Modal, setShowCustomer360Modal] = useState(false);
   const [showContextInsightsModal, setShowContextInsightsModal] = useState(false);
+  const [isContextInsightsAnimating, setIsContextInsightsAnimating] = useState(false);
+  const [shouldRenderContextInsights, setShouldRenderContextInsights] = useState(false);
   const [shoppingMode, setShoppingMode] = useState<"online" | "instore">("online");
   const { toast } = useToast();
 
@@ -303,6 +305,21 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
       setShowCartModal(false);
       setShouldRenderCheckout(false);
       setShowCheckoutSheet(false);
+    }, 300);
+  };
+
+  const openContextInsightsModal = () => {
+    setShouldRenderContextInsights(true);
+    setTimeout(() => {
+      setIsContextInsightsAnimating(true);
+    }, 50);
+  };
+
+  const closeContextInsightsModal = () => {
+    setIsContextInsightsAnimating(false);
+    setTimeout(() => {
+      setShouldRenderContextInsights(false);
+      setShowContextInsightsModal(false);
     }, 300);
   };
 
@@ -618,7 +635,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
             <button 
               className="hover:bg-white/10 p-1 rounded" 
               data-testid="btn-info"
-              onClick={() => setShowContextInsightsModal(true)}
+              onClick={openContextInsightsModal}
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
                 <circle cx="12" cy="12" r="10"></circle>
@@ -1322,15 +1339,15 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
           </div>
         </div>
       )}
-      {showContextInsightsModal && (
+      {shouldRenderContextInsights && (
         <div 
-          className="fixed inset-0 z-[60] flex items-center justify-end bg-black/50"
+          className={`fixed inset-0 z-[60] flex items-center justify-end bg-black/50 transition-opacity duration-300 ${isContextInsightsAnimating ? 'opacity-100' : 'opacity-0'}`}
           onClick={(e) => {
-            if (e.target === e.currentTarget) setShowContextInsightsModal(false);
+            if (e.target === e.currentTarget) closeContextInsightsModal();
           }}
           data-testid="context-insights-modal-overlay"
         >
-          <div className="bg-white w-[380px] h-full shadow-2xl flex flex-col overflow-hidden">
+          <div className={`bg-white w-[380px] h-full shadow-2xl flex flex-col overflow-hidden transition-transform duration-300 ease-in-out ${isContextInsightsAnimating ? 'translate-x-0' : 'translate-x-full'}`}>
             <div className="bg-[#1565C0] text-white px-4 py-3 flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
@@ -1341,7 +1358,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                 <span className="font-bold text-lg">External Context</span>
               </div>
               <button 
-                onClick={() => setShowContextInsightsModal(false)}
+                onClick={closeContextInsightsModal}
                 className="text-white hover:bg-white/10 p-1 rounded"
                 data-testid="btn-close-context-insights"
               >
