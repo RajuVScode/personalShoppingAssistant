@@ -589,7 +589,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
         className={`bg-white w-[97vw] h-[95vh] rounded-[5px] shadow-2xl flex flex-col overflow-hidden transition-transform duration-500 ease-in-out ${isAnimating ? 'translate-x-0' : 'translate-x-[105%]'}`} 
         data-testid="chat-modal"
       >
-        <div className="bg-[#1565C0] text-white px-4 py-1.5 flex items-center justify-between rounded-t-[5px]" data-testid="chat-header">
+        <div className="bg-white text-gray-800 px-4 py-1.5 flex items-center justify-between rounded-t-[5px] border-b border-gray-200" data-testid="chat-header">
           <div className="flex items-center gap-3">
             <Logo className="h-10" />
           </div>
@@ -624,7 +624,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
               )}
             </button>
             <button 
-              className="hover:bg-white/10 p-1 rounded" 
+              className="hover:bg-gray-100 p-1 rounded text-gray-700" 
               data-testid="btn-globe"
               onClick={() => {
                 if (customerId && customer360Data) {
@@ -638,19 +638,19 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
               }}
             >
               <div className="relative">
-                <div className="w-5 h-5 rounded-full border-[1.5px] border-white flex items-center justify-center">
+                <div className="w-5 h-5 rounded-full border-[1.5px] border-gray-700 flex items-center justify-center">
                   <User className="w-3 h-3" />
                 </div>
-                <div className="absolute -bottom-0.5 -right-1 bg-white text-[#1565C0] text-[5px] font-bold px-0.5 rounded leading-tight">
+                <div className="absolute -bottom-0.5 -right-1 bg-gray-700 text-white text-[5px] font-bold px-0.5 rounded leading-tight">
                   360
                 </div>
               </div>
             </button>
-            <button className="hover:bg-white/10 p-1 rounded" data-testid="btn-settings">
+            <button className="hover:bg-gray-100 p-1 rounded text-gray-700" data-testid="btn-settings">
               <Settings className="w-5 h-5" />
             </button>
             <button 
-              className="hover:bg-white/10 p-1 rounded" 
+              className="hover:bg-gray-100 p-1 rounded text-gray-700" 
               data-testid="btn-info"
               onClick={openContextInsightsModal}
             >
@@ -661,7 +661,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
               </svg>
             </button>
             <button 
-              className="hover:bg-white/10 p-1 rounded relative" 
+              className="hover:bg-gray-100 p-1 rounded relative text-gray-700" 
               data-testid="btn-cart"
               onClick={openCartModal}
             >
@@ -676,7 +676,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button 
-                    className="hover:bg-white/10 p-1 rounded flex items-center gap-1" 
+                    className="hover:bg-gray-100 p-1 rounded flex items-center gap-1 text-gray-700" 
                     data-testid="btn-user"
                   >
                     <User className="w-5 h-5" />
@@ -718,7 +718,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
               </DropdownMenu>
             ) : (
               <button 
-                className="hover:bg-white/10 p-1 rounded flex items-center gap-1" 
+                className="hover:bg-gray-100 p-1 rounded flex items-center gap-1 text-gray-700" 
                 data-testid="btn-user"
                 onClick={() => setShowLoginModal(true)}
                 title="Login"
