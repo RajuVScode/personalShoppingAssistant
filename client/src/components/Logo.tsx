@@ -1,9 +1,7 @@
-import logoImage from '@assets/image_1768456487731.png';
-
 export default function Logo({ className = "h-12" }: { className?: string }) {
   return (
     <img 
-      src={logoImage}
+      src="https://retail-personal-shopping-shreydatta.replit.app/assets/agentverse-logo-CXLdSwax.png"
       alt="tensai AgentVerse for Retail"
       className={className}
     />
