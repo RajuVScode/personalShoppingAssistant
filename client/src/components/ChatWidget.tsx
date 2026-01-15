@@ -615,7 +615,11 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
               <Settings className="w-5 h-5" />
             </button>
             <button className="hover:bg-white/10 p-1 rounded" data-testid="btn-info">
-              <Info className="w-5 h-5" />
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path>
+                <path d="M2 12h20"></path>
+              </svg>
             </button>
             <button 
               className="hover:bg-white/10 p-1 rounded relative" 
