@@ -838,7 +838,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                       </div>
 
                       {message.products && message.products.length > 0 && (
-                        <div className="mt-4 grid grid-cols-2 lg:grid-cols-3 gap-3">
+                        <div className="mt-4 grid grid-cols-2 lg:grid-cols-3 gap-6">
                           {message.products.slice(0, 6).map((product) => (
                             <Card
                               key={product.id}
