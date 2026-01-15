@@ -49,11 +49,19 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import Logo from "@/components/Logo";
 
+interface AgentThinkingStep {
+  agent: string;
+  action: string;
+  details?: Record<string, any>;
+  timestamp?: string;
+}
+
 interface Message {
   role: "user" | "assistant";
   content: string;
   products?: Product[];
   context?: ContextInfo;
+  agentThinking?: AgentThinkingStep[];
 }
 
 interface Product {
@@ -233,6 +241,9 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
   const [isContextInsightsAnimating, setIsContextInsightsAnimating] = useState(false);
   const [shouldRenderContextInsights, setShouldRenderContextInsights] = useState(false);
   const [shoppingMode, setShoppingMode] = useState<"online" | "instore">("online");
+  const [agentThinkingLogs, setAgentThinkingLogs] = useState<AgentThinkingStep[]>([]);
+  const [isAgentThinkingAnimating, setIsAgentThinkingAnimating] = useState(false);
+  const [shouldRenderAgentThinking, setShouldRenderAgentThinking] = useState(false);
   const { toast } = useToast();
 
   const fetchCustomer360 = async (custId: string) => {
@@ -337,6 +348,20 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
     setTimeout(() => {
       setShouldRenderCustomer360(false);
       setShowCustomer360Modal(false);
+    }, 300);
+  };
+
+  const openAgentThinkingModal = () => {
+    setShouldRenderAgentThinking(true);
+    setTimeout(() => {
+      setIsAgentThinkingAnimating(true);
+    }, 50);
+  };
+
+  const closeAgentThinkingModal = () => {
+    setIsAgentThinkingAnimating(false);
+    setTimeout(() => {
+      setShouldRenderAgentThinking(false);
     }, 300);
   };
 
@@ -446,8 +471,12 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
         content: data.response,
         products: data.products,
         context: data.context,
+        agentThinking: data.agent_thinking,
       };
       setMessages((prev) => [...prev, assistantMessage]);
+      if (data.agent_thinking && data.agent_thinking.length > 0) {
+        setAgentThinkingLogs(prev => [...prev, ...data.agent_thinking]);
+      }
       if (data.context) {
         setCurrentContext(data.context);
       }
@@ -652,7 +681,11 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                 </div>
               </div>
             </button>
-            <button className="hover:bg-gray-100 p-1 rounded text-gray-700" data-testid="btn-settings">
+            <button 
+              className="hover:bg-gray-100 p-1 rounded text-gray-700" 
+              data-testid="btn-settings"
+              onClick={openAgentThinkingModal}
+            >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
                 <path fillRule="evenodd" d="M14.269 1.322a3.751 3.751 0 0 1 4.456 3.25 4.753 4.753 0 0 1 3.022 4.62 4.757 4.757 0 0 1-.318 1.522 4.75 4.75 0 0 1-.537 7.055c-.047.036-.096.07-.144.104a4.752 4.752 0 0 1-4.44 4.863A4.753 4.753 0 0 1 12 20.555a4.752 4.752 0 0 1-7.667.459 4.75 4.75 0 0 1-1.082-3.14 4.751 4.751 0 0 1-.682-7.16 4.756 4.756 0 0 1 .079-3.62 4.75 4.75 0 0 1 2.626-2.52A3.752 3.752 0 0 1 12 2.751a3.748 3.748 0 0 1 2.269-1.43Zm-4.83 1.471a2.252 2.252 0 0 0-2.387 3.332.75.75 0 0 1-1.299.75 3.762 3.762 0 0 1-.32-.722 3.25 3.25 0 0 0-1.411 1.543 3.251 3.251 0 0 0-.171 2.108.748.748 0 0 1 .524 1.382A3.252 3.252 0 0 0 2.86 14.84 3.252 3.252 0 0 0 6 17.251a.75.75 0 0 1 0 1.5 4.75 4.75 0 0 1-1.194-.154 3.276 3.276 0 0 0 .685 1.464 3.251 3.251 0 0 0 5.76-2.062v-5.467a4.92 4.92 0 0 1-2.04 1.188.75.75 0 0 1-.42-1.44 3.421 3.421 0 0 0 2.447-3.004L11.25 9V5a2.252 2.252 0 0 0-1.81-2.207Zm6.143.034a2.252 2.252 0 0 0-1.952.388 2.25 2.25 0 0 0-.865 1.527L12.75 5v4l.01.276a3.42 3.42 0 0 0 2.45 3.005.75.75 0 0 1-.42 1.439 4.92 4.92 0 0 1-2.04-1.187V18a3.252 3.252 0 0 0 2.154 3.056 3.253 3.253 0 0 0 3.605-.994 3.251 3.251 0 0 0 .683-1.464A4.75 4.75 0 0 1 18 18.75a.75.75 0 0 1 0-1.5 3.251 3.251 0 0 0 1.625-6.064.747.747 0 0 1 .522-1.382 3.235 3.235 0 0 0-1.581-3.652c-.082.25-.186.494-.319.723a.75.75 0 0 1-1.299-.75 2.252 2.252 0 0 0-.465-2.816 2.251 2.251 0 0 0-.9-.482Z" clipRule="evenodd"></path>
               </svg>
@@ -1498,6 +1531,70 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                   <Sparkles className="w-12 h-12 mb-4 opacity-30" />
                   <p className="text-sm">No context insights yet</p>
                   <p className="text-xs text-gray-400 mt-1">Start a conversation to see insights</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      {shouldRenderAgentThinking && (
+        <div 
+          className={`fixed inset-0 z-[60] flex items-center justify-end bg-black/50 transition-opacity duration-300 ${isAgentThinkingAnimating ? 'opacity-100' : 'opacity-0'}`}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeAgentThinkingModal();
+          }}
+          data-testid="agent-thinking-modal-overlay"
+        >
+          <div className={`bg-white w-[420px] h-full shadow-2xl flex flex-col overflow-hidden transition-transform duration-300 ease-in-out ${isAgentThinkingAnimating ? 'translate-x-0' : 'translate-x-full'}`}>
+            <div className="bg-[#1565C0] text-white px-4 py-3 flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                  <path fillRule="evenodd" d="M14.269 1.322a3.751 3.751 0 0 1 4.456 3.25 4.753 4.753 0 0 1 3.022 4.62 4.757 4.757 0 0 1-.318 1.522 4.75 4.75 0 0 1-.537 7.055c-.047.036-.096.07-.144.104a4.752 4.752 0 0 1-4.44 4.863A4.753 4.753 0 0 1 12 20.555a4.752 4.752 0 0 1-7.667.459 4.75 4.75 0 0 1-1.082-3.14 4.751 4.751 0 0 1-.682-7.16 4.756 4.756 0 0 1 .079-3.62 4.75 4.75 0 0 1 2.626-2.52A3.752 3.752 0 0 1 12 2.751a3.748 3.748 0 0 1 2.269-1.43Zm-4.83 1.471a2.252 2.252 0 0 0-2.387 3.332.75.75 0 0 1-1.299.75 3.762 3.762 0 0 1-.32-.722 3.25 3.25 0 0 0-1.411 1.543 3.251 3.251 0 0 0-.171 2.108.748.748 0 0 1 .524 1.382A3.252 3.252 0 0 0 2.86 14.84 3.252 3.252 0 0 0 6 17.251a.75.75 0 0 1 0 1.5 4.75 4.75 0 0 1-1.194-.154 3.276 3.276 0 0 0 .685 1.464 3.251 3.251 0 0 0 5.76-2.062v-5.467a4.92 4.92 0 0 1-2.04 1.188.75.75 0 0 1-.42-1.44 3.421 3.421 0 0 0 2.447-3.004L11.25 9V5a2.252 2.252 0 0 0-1.81-2.207Zm6.143.034a2.252 2.252 0 0 0-1.952.388 2.25 2.25 0 0 0-.865 1.527L12.75 5v4l.01.276a3.42 3.42 0 0 0 2.45 3.005.75.75 0 0 1-.42 1.439 4.92 4.92 0 0 1-2.04-1.187V18a3.252 3.252 0 0 0 2.154 3.056 3.253 3.253 0 0 0 3.605-.994 3.251 3.251 0 0 0 .683-1.464A4.75 4.75 0 0 1 18 18.75a.75.75 0 0 1 0-1.5 3.251 3.251 0 0 0 1.625-6.064.747.747 0 0 1 .522-1.382 3.235 3.235 0 0 0-1.581-3.652c-.082.25-.186.494-.319.723a.75.75 0 0 1-1.299-.75 2.252 2.252 0 0 0-.465-2.816 2.251 2.251 0 0 0-.9-.482Z" clipRule="evenodd"></path>
+                </svg>
+                <span className="font-bold text-lg">Agent Thinking Log</span>
+              </div>
+              <button 
+                onClick={closeAgentThinkingModal}
+                className="text-white hover:bg-white/10 p-1 rounded"
+                data-testid="btn-close-agent-thinking"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-4">
+              {agentThinkingLogs.length > 0 ? (
+                <div className="space-y-3">
+                  {agentThinkingLogs.map((step, index) => (
+                    <div key={index} className="border-l-2 border-blue-500 pl-3 py-2">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
+                          {step.agent}
+                        </span>
+                        {step.timestamp && (
+                          <span className="text-xs text-gray-400">
+                            {new Date(step.timestamp).toLocaleTimeString()}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm font-medium text-gray-800">{step.action}</p>
+                      {step.details && Object.keys(step.details).length > 0 && (
+                        <div className="mt-2 bg-gray-50 rounded p-2 text-xs">
+                          <pre className="whitespace-pre-wrap text-gray-600 overflow-x-auto">
+                            {JSON.stringify(step.details, null, 2)}
+                          </pre>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor" className="mb-4 opacity-30">
+                    <path fillRule="evenodd" d="M14.269 1.322a3.751 3.751 0 0 1 4.456 3.25 4.753 4.753 0 0 1 3.022 4.62 4.757 4.757 0 0 1-.318 1.522 4.75 4.75 0 0 1-.537 7.055c-.047.036-.096.07-.144.104a4.752 4.752 0 0 1-4.44 4.863A4.753 4.753 0 0 1 12 20.555a4.752 4.752 0 0 1-7.667.459 4.75 4.75 0 0 1-1.082-3.14 4.751 4.751 0 0 1-.682-7.16 4.756 4.756 0 0 1 .079-3.62 4.75 4.75 0 0 1 2.626-2.52A3.752 3.752 0 0 1 12 2.751a3.748 3.748 0 0 1 2.269-1.43Z" clipRule="evenodd"></path>
+                  </svg>
+                  <p className="text-sm">No agent activity yet</p>
+                  <p className="text-xs text-gray-400 mt-1">Start a conversation to see agent thinking</p>
                 </div>
               )}
             </div>
