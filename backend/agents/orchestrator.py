@@ -274,7 +274,7 @@ class ShoppingOrchestrator:
         context = self.customer360.get_customer_context(state["user_id"])
         state["customer_context"] = context.model_dump()
         
-        prefs = context.preferences[:3] if context.preferences else []
+        prefs = list(context.preferences)[:3] if context.preferences else []
         style_profile = context.style_profile or "modern"
         if prefs:
             self._add_thinking_step(state, "Profile", f"Their style leans {style_profile} with preferences for {', '.join(prefs)}. I'll prioritize items that match this aesthetic and feel.")
@@ -294,16 +294,21 @@ class ShoppingOrchestrator:
         state["enriched_context"] = enriched.model_dump()
         state["environmental_context"] = enriched.environmental.model_dump()
         
-        weather = state["environmental_context"].get("weather", {})
+        weather = state["environmental_context"].get("weather") or {}
         temp = weather.get("temperature", "")
         desc = weather.get("description", "")
-        if temp and desc:
+        try:
+            temp_val = float(temp) if temp else None
+        except (ValueError, TypeError):
+            temp_val = None
+        
+        if temp_val is not None and desc:
             if "rain" in desc.lower():
-                self._add_thinking_step(state, "Context", f"Weather shows {temp}°C with {desc}. I'll need to factor in rain protection—perhaps a water-resistant layer or umbrella-friendly outerwear.")
-            elif temp and int(temp) < 15:
-                self._add_thinking_step(state, "Context", f"Temperature is {temp}°C with {desc}. They'll want warm layers and possibly a coat. I'll prioritize cozy fabrics.")
+                self._add_thinking_step(state, "Context", f"Weather shows {temp_val:.0f}°C with {desc}. I'll need to factor in rain protection—perhaps a water-resistant layer or umbrella-friendly outerwear.")
+            elif temp_val < 15:
+                self._add_thinking_step(state, "Context", f"Temperature is {temp_val:.0f}°C with {desc}. They'll want warm layers and possibly a coat. I'll prioritize cozy fabrics.")
             else:
-                self._add_thinking_step(state, "Context", f"Weather looks comfortable at {temp}°C, {desc}. Light layers should work well for their activities.")
+                self._add_thinking_step(state, "Context", f"Weather looks comfortable at {temp_val:.0f}°C, {desc}. Light layers should work well for their activities.")
         else:
             self._add_thinking_step(state, "Context", "Gathered environmental context including local events and trends. This will help inform timely recommendations.")
         
