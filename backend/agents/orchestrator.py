@@ -80,6 +80,9 @@ class GraphState(TypedDict):
     conversation_history: list
     detected_changes: dict
     context_refresh_needed: bool
+    agent_thinking: list
+
+from datetime import datetime
 
 class ShoppingOrchestrator:
     def __init__(self, db: Session):
@@ -90,6 +93,16 @@ class ShoppingOrchestrator:
         self.context_aggregator = ContextAggregator()
         self.recommender = ProductRecommenderAgent()
         self.graph = self._build_graph()
+    
+    def _add_thinking_step(self, state: GraphState, agent: str, action: str, details: dict = None) -> None:
+        if "agent_thinking" not in state or state["agent_thinking"] is None:
+            state["agent_thinking"] = []
+        state["agent_thinking"].append({
+            "agent": agent,
+            "action": action,
+            "details": details or {},
+            "timestamp": datetime.now().isoformat()
+        })
     
     def _build_graph(self) -> StateGraph:
         workflow = StateGraph(GraphState)
@@ -121,6 +134,11 @@ class ShoppingOrchestrator:
     def _clarify_node(self, state: GraphState) -> GraphState:
         existing_intent = state.get("clarifier_intent", {})
         
+        self._add_thinking_step(state, "Clarifier Agent", "Analyzing user query for travel intent", {
+            "query": state["raw_query"],
+            "existing_intent": existing_intent
+        })
+        
         result = self.clarifier.analyze(
             state["raw_query"],
             state.get("conversation_history", []),
@@ -136,6 +154,12 @@ class ShoppingOrchestrator:
         state["detected_changes"] = detected_changes
         state["context_refresh_needed"] = detected_changes.get("has_changes", False)
         
+        self._add_thinking_step(state, "Clarifier Agent", "Extracted travel details", {
+            "needs_clarification": state["is_ambiguous"],
+            "updated_intent": state["clarifier_intent"],
+            "detected_changes": detected_changes
+        })
+        
         if state["is_ambiguous"]:
             state["final_response"] = result.get("assistant_message", "") or state["clarification_question"]
         
@@ -147,6 +171,10 @@ class ShoppingOrchestrator:
         return "proceed"
     
     def _intent_node(self, state: GraphState) -> GraphState:
+        self._add_thinking_step(state, "Intent Processor", "Processing normalized shopping intent", {
+            "query": state["raw_query"]
+        })
+        
         intent = self.intent_processor.process(state["raw_query"])
         intent_dict = intent.model_dump()
         
@@ -230,14 +258,34 @@ class ShoppingOrchestrator:
                 intent_dict["keywords"] = existing_keywords + [clarifier_intent["notes"]]
         
         state["normalized_intent"] = intent_dict
+        
+        self._add_thinking_step(state, "Intent Processor", "Normalized intent extracted", {
+            "normalized_intent": intent_dict
+        })
+        
         return state
     
     def _customer_context_node(self, state: GraphState) -> GraphState:
+        self._add_thinking_step(state, "Customer 360 Agent", "Fetching customer profile and preferences", {
+            "user_id": state["user_id"]
+        })
+        
         context = self.customer360.get_customer_context(state["user_id"])
         state["customer_context"] = context.model_dump()
+        
+        self._add_thinking_step(state, "Customer 360 Agent", "Customer context retrieved", {
+            "customer_name": context.name,
+            "preferences": context.preferences,
+            "style_profile": context.style_profile
+        })
+        
         return state
     
     def _aggregate_context_node(self, state: GraphState) -> GraphState:
+        self._add_thinking_step(state, "Context Aggregator", "Aggregating context with weather and events", {
+            "location": state["normalized_intent"].get("location")
+        })
+        
         intent = NormalizedIntent(**state["normalized_intent"])
         customer = CustomerContext(**state["customer_context"])
         
@@ -245,15 +293,32 @@ class ShoppingOrchestrator:
         state["enriched_context"] = enriched.model_dump()
         state["environmental_context"] = enriched.environmental.model_dump()
         
+        self._add_thinking_step(state, "Context Aggregator", "Environmental context enriched", {
+            "weather": state["environmental_context"].get("weather"),
+            "local_events": state["environmental_context"].get("local_events"),
+            "segments": len(state["environmental_context"].get("segments", []))
+        })
+        
         return state
     
     def _recommend_node(self, state: GraphState) -> GraphState:
+        self._add_thinking_step(state, "Product Recommender", "Searching product catalog with RAG", {
+            "category": state["normalized_intent"].get("category"),
+            "style": state["normalized_intent"].get("style"),
+            "budget_max": state["normalized_intent"].get("budget_max")
+        })
+        
         enriched = EnrichedContext(**state["enriched_context"])
         
         products, explanation = self.recommender.get_recommendations(enriched)
         
         state["products"] = products
         state["final_response"] = explanation
+        
+        self._add_thinking_step(state, "Product Recommender", "Products selected and ranked", {
+            "products_found": len(products),
+            "product_names": [p.get("name", "") for p in products[:3]]
+        })
         
         return state
     
@@ -300,7 +365,8 @@ class ShoppingOrchestrator:
             "final_response": "",
             "conversation_history": conversation_history or [],
             "detected_changes": {},
-            "context_refresh_needed": False
+            "context_refresh_needed": False,
+            "agent_thinking": []
         }
         
         final_state = self.graph.invoke(initial_state)
@@ -324,5 +390,6 @@ class ShoppingOrchestrator:
                 "environmental": final_state.get("environmental_context", {})
             },
             "detected_changes": detected_changes,
-            "context_refresh_needed": final_state.get("context_refresh_needed", False)
+            "context_refresh_needed": final_state.get("context_refresh_needed", False),
+            "agent_thinking": final_state.get("agent_thinking", [])
         }

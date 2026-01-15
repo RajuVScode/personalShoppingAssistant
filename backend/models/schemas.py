@@ -53,6 +53,12 @@ class ChatRequest(BaseModel):
     user_id: int
     conversation_id: Optional[int] = None
 
+class AgentThinkingStep(BaseModel):
+    agent: str
+    action: str
+    details: Optional[Dict[str, Any]] = {}
+    timestamp: Optional[str] = None
+
 class ChatResponse(BaseModel):
     response: str
     products: Optional[List[ProductResponse]] = []
@@ -60,6 +66,7 @@ class ChatResponse(BaseModel):
     clarification_question: Optional[str] = None
     context: Optional[Dict[str, Any]] = {}
     updated_intent: Optional[Dict[str, Any]] = {}
+    agent_thinking: Optional[List[AgentThinkingStep]] = []
 
 class TripSegment(BaseModel):
     destination: str

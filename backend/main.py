@@ -269,13 +269,16 @@ def chat(request: ChatRequest, db: Session = Depends(get_db)):
         rating=p.get("rating", 0)
     ) for p in result.get("products", [])]
     
+    agent_thinking = result.get("agent_thinking", [])
+    
     return ChatResponse(
         response=result["response"],
         products=products,
         clarification_needed=result.get("clarification_needed", False),
         clarification_question=result.get("clarification_question"),
         context=result.get("context", {}),
-        updated_intent=result.get("updated_intent", {})
+        updated_intent=result.get("updated_intent", {}),
+        agent_thinking=agent_thinking
     )
 
 @app.post("/api/customers", response_model=CustomerResponse)
