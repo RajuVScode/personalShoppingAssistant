@@ -1,7 +1,7 @@
 import json
 from datetime import datetime, timedelta
 from backend.agents.base import BaseAgent
-from backend.utils.date_parser import parse_relative_date, parse_relative_weekend
+from backend.utils.date_parser import parse_relative_date
 
 
 def get_current_date():
