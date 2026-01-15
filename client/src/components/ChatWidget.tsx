@@ -1567,37 +1567,51 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
             
             <div className="flex-1 overflow-y-auto p-4">
               {agentThinkingLogs.length > 0 ? (
-                <div className="space-y-3">
-                  {agentThinkingLogs.map((step, index) => (
-                    <div key={index} className="border-l-2 border-blue-500 pl-3 py-2">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
-                          {step.agent}
-                        </span>
-                        {step.timestamp && (
-                          <span className="text-xs text-gray-400">
-                            {new Date(step.timestamp).toLocaleTimeString()}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-sm font-medium text-gray-800">{step.action}</p>
-                      {step.details && Object.keys(step.details).length > 0 && (
-                        <div className="mt-2 bg-gray-50 rounded p-2 text-xs">
-                          <pre className="whitespace-pre-wrap text-gray-600 overflow-x-auto">
-                            {JSON.stringify(step.details, null, 2)}
-                          </pre>
+                <div className="space-y-4">
+                  {agentThinkingLogs.map((step, index) => {
+                    const getAgentIcon = (agent: string) => {
+                      if (agent.toLowerCase().includes('clarifier')) return '💬';
+                      if (agent.toLowerCase().includes('intent')) return '🎯';
+                      if (agent.toLowerCase().includes('customer') || agent.toLowerCase().includes('360')) return '👤';
+                      if (agent.toLowerCase().includes('context')) return '🌍';
+                      if (agent.toLowerCase().includes('product') || agent.toLowerCase().includes('recommend')) return '🛍️';
+                      return '🤖';
+                    };
+                    const getFriendlyAgentName = (agent: string) => {
+                      if (agent.toLowerCase().includes('clarifier')) return 'Conversation Helper';
+                      if (agent.toLowerCase().includes('intent')) return 'Request Analyzer';
+                      if (agent.toLowerCase().includes('customer') || agent.toLowerCase().includes('360')) return 'Profile Lookup';
+                      if (agent.toLowerCase().includes('context')) return 'Context Gatherer';
+                      if (agent.toLowerCase().includes('product') || agent.toLowerCase().includes('recommend')) return 'Product Finder';
+                      return agent;
+                    };
+                    return (
+                      <div key={index} className="bg-gray-50 rounded-lg p-3">
+                        <div className="flex items-start gap-3">
+                          <span className="text-xl">{getAgentIcon(step.agent)}</span>
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-sm font-medium text-gray-800">
+                                {getFriendlyAgentName(step.agent)}
+                              </span>
+                              {step.timestamp && (
+                                <span className="text-xs text-gray-400">
+                                  {new Date(step.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-sm text-gray-600">{step.action}</p>
+                          </div>
                         </div>
-                      )}
-                    </div>
-                  ))}
+                      </div>
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-full text-gray-500">
-                  <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor" className="mb-4 opacity-30">
-                    <path fillRule="evenodd" d="M14.269 1.322a3.751 3.751 0 0 1 4.456 3.25 4.753 4.753 0 0 1 3.022 4.62 4.757 4.757 0 0 1-.318 1.522 4.75 4.75 0 0 1-.537 7.055c-.047.036-.096.07-.144.104a4.752 4.752 0 0 1-4.44 4.863A4.753 4.753 0 0 1 12 20.555a4.752 4.752 0 0 1-7.667.459 4.75 4.75 0 0 1-1.082-3.14 4.751 4.751 0 0 1-.682-7.16 4.756 4.756 0 0 1 .079-3.62 4.75 4.75 0 0 1 2.626-2.52A3.752 3.752 0 0 1 12 2.751a3.748 3.748 0 0 1 2.269-1.43Z" clipRule="evenodd"></path>
-                  </svg>
-                  <p className="text-sm">No agent activity yet</p>
-                  <p className="text-xs text-gray-400 mt-1">Start a conversation to see agent thinking</p>
+                  <span className="text-5xl mb-4 opacity-30">🧠</span>
+                  <p className="text-sm">No activity yet</p>
+                  <p className="text-xs text-gray-400 mt-1">Start a conversation to see what's happening behind the scenes</p>
                 </div>
               )}
             </div>
