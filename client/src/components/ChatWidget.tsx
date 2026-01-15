@@ -227,6 +227,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [customer360Data, setCustomer360Data] = useState<Customer360Data | null>(null);
   const [showCustomer360Modal, setShowCustomer360Modal] = useState(false);
+  const [showContextInsightsModal, setShowContextInsightsModal] = useState(false);
   const [shoppingMode, setShoppingMode] = useState<"online" | "instore">("online");
   const { toast } = useToast();
 
@@ -614,7 +615,11 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
             <button className="hover:bg-white/10 p-1 rounded" data-testid="btn-settings">
               <Settings className="w-5 h-5" />
             </button>
-            <button className="hover:bg-white/10 p-1 rounded" data-testid="btn-info">
+            <button 
+              className="hover:bg-white/10 p-1 rounded" 
+              data-testid="btn-info"
+              onClick={() => setShowContextInsightsModal(true)}
+            >
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
                 <circle cx="12" cy="12" r="10"></circle>
                 <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path>
@@ -1015,116 +1020,6 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
               </div>
             </div>
           </div>
-
-          {currentContext && (
-            <div className="w-56 border-l p-3 hidden lg:block overflow-y-auto">
-              <h3 className="font-medium text-sm mb-4 flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-primary" />
-                Context Insights
-              </h3>
-
-              {currentContext.intent && (
-                <div className="mb-4">
-                  <p className="text-xs text-muted-foreground mb-2">
-                    Understood Intent
-                  </p>
-                  <div className="space-y-1">
-                    {currentContext.intent.category && (
-                      <Badge variant="secondary" className="mr-1">
-                        {currentContext.intent.category}
-                      </Badge>
-                    )}
-                    {currentContext.intent.occasion &&
-                      !currentContext.intent.trip_segments?.length && (
-                        <Badge variant="outline" className="mr-1">
-                          {currentContext.intent.occasion}
-                        </Badge>
-                      )}
-                    {currentContext.intent.style && (
-                      <Badge variant="outline">
-                        {currentContext.intent.style}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {currentContext.intent?.trip_segments &&
-                currentContext.intent.trip_segments.length > 0 && (
-                  <div className="mb-4">
-                    <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
-                      <Calendar className="h-3 w-3" /> Trip Destinations
-                    </p>
-                    <div className="space-y-2">
-                      {currentContext.intent.trip_segments.map((segment, i) => (
-                        <div key={i} className="bg-muted/50 rounded-lg p-2">
-                          <p className="text-sm font-medium">
-                            {segment.destination}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {segment.start_date} to {segment.end_date}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-              <Separator className="my-4" />
-
-              {currentContext.environmental?.segments &&
-              currentContext.environmental.segments.length > 0 ? (
-                <div className="mb-4">
-                  <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
-                    <Cloud className="h-3 w-3" /> Weather by Destination
-                  </p>
-                  <div className="space-y-2">
-                    {currentContext.environmental.segments.map((seg, i) => (
-                      <div key={i} className="bg-muted/50 rounded-lg p-2">
-                        <p className="text-sm font-medium">{seg.destination}</p>
-                        {seg.weather && (
-                          <p className="text-xs text-muted-foreground">
-                            {seg.weather.temperature}°C -{" "}
-                            {seg.weather.description}
-                          </p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                currentContext.environmental?.weather && (
-                  <div className="mb-4">
-                    <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
-                      <Cloud className="h-3 w-3" /> Weather
-                    </p>
-                    <p className="text-sm">
-                      {currentContext.environmental.weather.temperature}°C -{" "}
-                      {currentContext.environmental.weather.description}
-                    </p>
-                  </div>
-                )
-              )}
-
-              {currentContext.environmental?.trends &&
-                currentContext.environmental.trends.length > 0 && (
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
-                      <TrendingUp className="h-3 w-3" /> Trending
-                    </p>
-                    <div className="flex flex-wrap gap-1">
-                      {currentContext.environmental.trends
-                        .slice(0, 3)
-                        .map((trend, i) => (
-                          <Badge key={i} variant="outline" className="text-xs">
-                            {trend}
-                          </Badge>
-                        ))}
-                    </div>
-                  </div>
-                )}
-            </div>
-          )}
         </div>
       </div>
       {shouldRenderCart && (
@@ -1423,6 +1318,142 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                   ))}
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {showContextInsightsModal && (
+        <div 
+          className="fixed inset-0 z-[60] flex items-center justify-end bg-black/50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowContextInsightsModal(false);
+          }}
+          data-testid="context-insights-modal-overlay"
+        >
+          <div className="bg-white w-[380px] h-full shadow-2xl flex flex-col overflow-hidden">
+            <div className="bg-[#1565C0] text-white px-4 py-3 flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5" />
+                <span className="font-bold text-lg">Context Insights</span>
+              </div>
+              <button 
+                onClick={() => setShowContextInsightsModal(false)}
+                className="text-white hover:bg-white/10 p-1 rounded"
+                data-testid="btn-close-context-insights"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-4 space-y-5">
+              {currentContext?.intent && (
+                <div>
+                  <h3 className="font-semibold text-gray-800 mb-2">Understood Intent</h3>
+                  <div className="flex flex-wrap gap-1">
+                    {currentContext.intent.category && (
+                      <Badge variant="secondary" className="text-xs">
+                        {currentContext.intent.category}
+                      </Badge>
+                    )}
+                    {currentContext.intent.occasion &&
+                      !currentContext.intent.trip_segments?.length && (
+                        <Badge variant="outline" className="text-xs">
+                          {currentContext.intent.occasion}
+                        </Badge>
+                      )}
+                    {currentContext.intent.style && (
+                      <Badge variant="outline" className="text-xs">
+                        {currentContext.intent.style}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {currentContext?.intent?.trip_segments &&
+                currentContext.intent.trip_segments.length > 0 && (
+                  <>
+                    <Separator />
+                    <div>
+                      <h3 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                        <Calendar className="h-4 w-4" /> Trip Destinations
+                      </h3>
+                      <div className="space-y-2">
+                        {currentContext.intent.trip_segments.map((segment, i) => (
+                          <div key={i} className="bg-gray-50 rounded-lg p-3">
+                            <p className="text-sm font-medium">{segment.destination}</p>
+                            <p className="text-xs text-gray-500">
+                              {segment.start_date} to {segment.end_date}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+
+              {currentContext?.environmental?.segments &&
+                currentContext.environmental.segments.length > 0 ? (
+                  <>
+                    <Separator />
+                    <div>
+                      <h3 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                        <Cloud className="h-4 w-4" /> Weather by Destination
+                      </h3>
+                      <div className="space-y-2">
+                        {currentContext.environmental.segments.map((seg, i) => (
+                          <div key={i} className="bg-gray-50 rounded-lg p-3">
+                            <p className="text-sm font-medium">{seg.destination}</p>
+                            {seg.weather && (
+                              <p className="text-xs text-gray-500">
+                                {seg.weather.temperature}°C - {seg.weather.description}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                ) : currentContext?.environmental?.weather && (
+                  <>
+                    <Separator />
+                    <div>
+                      <h3 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                        <Cloud className="h-4 w-4" /> Weather
+                      </h3>
+                      <p className="text-sm">
+                        {currentContext.environmental.weather.temperature}°C - {currentContext.environmental.weather.description}
+                      </p>
+                    </div>
+                  </>
+                )}
+
+              {currentContext?.environmental?.trends &&
+                currentContext.environmental.trends.length > 0 && (
+                  <>
+                    <Separator />
+                    <div>
+                      <h3 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                        <TrendingUp className="h-4 w-4" /> Trending
+                      </h3>
+                      <div className="flex flex-wrap gap-1">
+                        {currentContext.environmental.trends.slice(0, 5).map((trend, i) => (
+                          <Badge key={i} variant="outline" className="text-xs">
+                            {trend}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+
+              {!currentContext && (
+                <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                  <Sparkles className="w-12 h-12 mb-4 opacity-30" />
+                  <p className="text-sm">No context insights yet</p>
+                  <p className="text-xs text-gray-400 mt-1">Start a conversation to see insights</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
