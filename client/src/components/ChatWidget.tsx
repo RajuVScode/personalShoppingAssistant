@@ -1338,7 +1338,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                   <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path>
                   <path d="M2 12h20"></path>
                 </svg>
-                <span className="font-bold text-lg">Context Insights</span>
+                <span className="font-bold text-lg">External Context</span>
               </div>
               <button 
                 onClick={() => setShowContextInsightsModal(false)}
