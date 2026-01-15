@@ -2,27 +2,27 @@ export default function Logo({ className = "h-12" }: { className?: string }) {
   return (
     <svg 
       xmlns="http://www.w3.org/2000/svg" 
-      viewBox="0 0 460 110" 
+      viewBox="0 0 380 60" 
       role="img" 
-      aria-label="PSA logo"
+      aria-label="tensai logo"
       className={className}
     >
-      <defs>
-        <filter id="ds" x="-50%" y="-50%" width="200%" height="200%">
-          <feDropShadow dx="0" dy="1" stdDeviation="2" floodColor="#000" floodOpacity="0.35" />
-        </filter>
-      </defs>
-
-      <g filter="url(#ds)">
-        <rect x="10" y="30" width="80" height="70" rx="12" fill="#fff" stroke="#fff" strokeWidth="3"/>
-        <path d="M35,30 V20 A20,20 0 0 1 65,20 V30" fill="none" stroke="#fff" strokeWidth="4" strokeLinecap="round"/>
-        <circle cx="35" cy="55" r="5" fill="#1a65b3"/>
-        <circle cx="65" cy="55" r="5" fill="#1a65b3"/>
-        <path d="M35,75 Q50,88 65,75" stroke="#1a65b3" strokeWidth="3" strokeLinecap="round" fill="none"/>
-      </g>
-
-      <text x="110" y="65" fontFamily="Calibri, Segoe UI, Arial, sans-serif" fontSize="56" fontWeight="700" fill="#fff">PSA</text>
-      <text x="110" y="90" fontFamily="Calibri, Segoe UI, Arial, sans-serif" fontSize="26" fontWeight="400" fill="#fff" opacity="0.9">AI Shopping Assistant</text>
+      <circle cx="30" cy="30" r="24" fill="#C9A961"/>
+      <circle cx="30" cy="22" r="7" fill="none" stroke="#fff" strokeWidth="2"/>
+      <path d="M18 42 Q30 32 42 42" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round"/>
+      
+      <text x="64" y="35" fontFamily="Arial, sans-serif" fontSize="28" fontWeight="300" fill="#fff" letterSpacing="1">
+        tensai
+      </text>
+      <text x="156" y="22" fontFamily="Arial, sans-serif" fontSize="10" fill="#fff">®</text>
+      
+      <text x="64" y="50" fontFamily="Arial, sans-serif" fontSize="12" fill="#fff" opacity="0.85">
+        AgentVerse for Retail
+      </text>
+      
+      <rect x="210" y="12" width="95" height="36" rx="4" fill="#3949AB"/>
+      <text x="257" y="27" fontFamily="Arial, sans-serif" fontSize="10" fontWeight="600" fill="#fff" textAnchor="middle">Personal</text>
+      <text x="257" y="40" fontFamily="Arial, sans-serif" fontSize="10" fontWeight="600" fill="#fff" textAnchor="middle">Shopping</text>
     </svg>
   );
 }
