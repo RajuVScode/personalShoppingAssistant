@@ -134,8 +134,6 @@ class ShoppingOrchestrator:
     def _clarify_node(self, state: GraphState) -> GraphState:
         existing_intent = state.get("clarifier_intent", {})
         
-        self._add_thinking_step(state, "Clarifier", "Understanding what you're looking for...")
-        
         result = self.clarifier.analyze(
             state["raw_query"],
             state.get("conversation_history", []),
@@ -153,8 +151,17 @@ class ShoppingOrchestrator:
         
         destination = state["clarifier_intent"].get("destination", "")
         activities = state["clarifier_intent"].get("activities", "")
-        if destination:
-            self._add_thinking_step(state, "Clarifier", f"Got it! You're planning to visit {destination}" + (f" for {activities}" if activities else ""))
+        travel_date = state["clarifier_intent"].get("travel_date", "")
+        
+        if state["is_ambiguous"]:
+            if not destination:
+                self._add_thinking_step(state, "Discovery", "I need to find out where they're headed so I can pull the right weather, event context, and travel style cues. Starting with a friendly tone to encourage natural sharing.")
+            elif not travel_date:
+                self._add_thinking_step(state, "Discovery", f"Now that I know the destination is {destination}, I need to find out the trip duration. This will help me calculate what they'll need and factor in the weather conditions.")
+            elif not activities:
+                self._add_thinking_step(state, "Discovery", f"With {destination} and dates set, I need to uncover the planned activities. Events like dinners or outdoor outings will influence what categories I recommend.")
+        elif destination:
+            self._add_thinking_step(state, "Discovery", f"I have all the details I need: {destination}" + (f" for {activities}" if activities else "") + ". Now I can organize recommendations by use case and help them visualize solving each segment.")
         
         if state["is_ambiguous"]:
             state["final_response"] = result.get("assistant_message", "") or state["clarification_question"]
@@ -167,7 +174,8 @@ class ShoppingOrchestrator:
         return "proceed"
     
     def _intent_node(self, state: GraphState) -> GraphState:
-        self._add_thinking_step(state, "Intent Processor", "Figuring out what products would be perfect for you...")
+        category = state.get("clarifier_intent", {}).get("notes", "items")
+        self._add_thinking_step(state, "Planning", f"Time to structure the shopping approach. I'll identify the key product categories needed and build a framework to organize recommendations clearly.")
         
         intent = self.intent_processor.process(state["raw_query"])
         intent_dict = intent.model_dump()
@@ -255,24 +263,29 @@ class ShoppingOrchestrator:
         
         category = intent_dict.get("category", "items")
         style = intent_dict.get("style", "")
-        self._add_thinking_step(state, "Intent Processor", f"Looking for {style + ' ' if style else ''}{category}")
+        location = intent_dict.get("location", "their destination")
+        self._add_thinking_step(state, "Planning", f"For {location}, I'll focus on {category.lower() if category else 'versatile pieces'}{' with ' + style + ' style' if style else ''}. This will help ensure everything works together.")
         
         return state
     
     def _customer_context_node(self, state: GraphState) -> GraphState:
-        self._add_thinking_step(state, "Customer 360", "Checking your preferences and past purchases...")
+        self._add_thinking_step(state, "Profile", "Let me review their style preferences and purchase history. Understanding their go-to colors, fabrics, and brands will help me suggest items they'll actually love.")
         
         context = self.customer360.get_customer_context(state["user_id"])
         state["customer_context"] = context.model_dump()
         
-        prefs = context.preferences[:2] if context.preferences else []
-        self._add_thinking_step(state, "Customer 360", f"Found your style: {', '.join(prefs)}" if prefs else "Reviewing your shopping history")
+        prefs = context.preferences[:3] if context.preferences else []
+        style_profile = context.style_profile or "modern"
+        if prefs:
+            self._add_thinking_step(state, "Profile", f"Their style leans {style_profile} with preferences for {', '.join(prefs)}. I'll prioritize items that match this aesthetic and feel.")
+        else:
+            self._add_thinking_step(state, "Profile", f"Based on their history, they prefer a {style_profile} aesthetic. I'll keep this in mind when curating options.")
         
         return state
     
     def _aggregate_context_node(self, state: GraphState) -> GraphState:
-        location = state["normalized_intent"].get("location", "your destination")
-        self._add_thinking_step(state, "Context Aggregator", f"Checking the weather in {location}...")
+        location = state["normalized_intent"].get("location", "the destination")
+        self._add_thinking_step(state, "Context", f"Pulling weather data for {location}. This tells me whether to recommend layers, rain protection, or lighter pieces.")
         
         intent = NormalizedIntent(**state["normalized_intent"])
         customer = CustomerContext(**state["customer_context"])
@@ -285,14 +298,20 @@ class ShoppingOrchestrator:
         temp = weather.get("temperature", "")
         desc = weather.get("description", "")
         if temp and desc:
-            self._add_thinking_step(state, "Context Aggregator", f"Weather looks like {temp}°C and {desc}")
+            if "rain" in desc.lower():
+                self._add_thinking_step(state, "Context", f"Weather shows {temp}°C with {desc}. I'll need to factor in rain protection—perhaps a water-resistant layer or umbrella-friendly outerwear.")
+            elif temp and int(temp) < 15:
+                self._add_thinking_step(state, "Context", f"Temperature is {temp}°C with {desc}. They'll want warm layers and possibly a coat. I'll prioritize cozy fabrics.")
+            else:
+                self._add_thinking_step(state, "Context", f"Weather looks comfortable at {temp}°C, {desc}. Light layers should work well for their activities.")
         else:
-            self._add_thinking_step(state, "Context Aggregator", "Gathered weather and local event info")
+            self._add_thinking_step(state, "Context", "Gathered environmental context including local events and trends. This will help inform timely recommendations.")
         
         return state
     
     def _recommend_node(self, state: GraphState) -> GraphState:
-        self._add_thinking_step(state, "Product Recommender", "Searching our catalog for the best matches...")
+        category = state["normalized_intent"].get("category", "versatile pieces")
+        self._add_thinking_step(state, "Styling", f"Now searching for {category} that match their style profile and trip needs. Looking for items that can mix and match across different occasions.")
         
         enriched = EnrichedContext(**state["enriched_context"])
         
@@ -302,7 +321,11 @@ class ShoppingOrchestrator:
         state["final_response"] = explanation
         
         count = len(products)
-        self._add_thinking_step(state, "Product Recommender", f"Found {count} great options for you!" if count > 0 else "Searching for more options...")
+        if count > 0:
+            top_product = products[0].get("name", "items") if products else "items"
+            self._add_thinking_step(state, "Styling", f"Found {count} excellent matches. Top pick: {top_product}. These selections balance style, practicality, and their personal preferences.")
+        else:
+            self._add_thinking_step(state, "Styling", "Expanding search criteria to find more suitable options that match their needs.")
         
         return state
     

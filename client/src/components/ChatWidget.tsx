@@ -1570,19 +1570,19 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                 <div className="space-y-4">
                   {agentThinkingLogs.map((step, index) => {
                     const getAgentIcon = (agent: string) => {
-                      if (agent.toLowerCase().includes('clarifier')) return '💬';
-                      if (agent.toLowerCase().includes('intent')) return '🎯';
-                      if (agent.toLowerCase().includes('customer') || agent.toLowerCase().includes('360')) return '👤';
-                      if (agent.toLowerCase().includes('context')) return '🌍';
-                      if (agent.toLowerCase().includes('product') || agent.toLowerCase().includes('recommend')) return '🛍️';
+                      const name = agent.toLowerCase();
+                      if (name.includes('discovery')) return '🔍';
+                      if (name.includes('planning')) return '📋';
+                      if (name.includes('profile')) return '👤';
+                      if (name.includes('context')) return '🌤️';
+                      if (name.includes('styling')) return '✨';
+                      if (name.includes('clarifier')) return '💬';
+                      if (name.includes('intent')) return '🎯';
+                      if (name.includes('customer') || name.includes('360')) return '👤';
+                      if (name.includes('product') || name.includes('recommend')) return '🛍️';
                       return '🤖';
                     };
                     const getFriendlyAgentName = (agent: string) => {
-                      if (agent.toLowerCase().includes('clarifier')) return 'Conversation Helper';
-                      if (agent.toLowerCase().includes('intent')) return 'Request Analyzer';
-                      if (agent.toLowerCase().includes('customer') || agent.toLowerCase().includes('360')) return 'Profile Lookup';
-                      if (agent.toLowerCase().includes('context')) return 'Context Gatherer';
-                      if (agent.toLowerCase().includes('product') || agent.toLowerCase().includes('recommend')) return 'Product Finder';
                       return agent;
                     };
                     return (
