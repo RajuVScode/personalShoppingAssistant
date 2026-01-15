@@ -227,6 +227,8 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [customer360Data, setCustomer360Data] = useState<Customer360Data | null>(null);
   const [showCustomer360Modal, setShowCustomer360Modal] = useState(false);
+  const [isCustomer360Animating, setIsCustomer360Animating] = useState(false);
+  const [shouldRenderCustomer360, setShouldRenderCustomer360] = useState(false);
   const [showContextInsightsModal, setShowContextInsightsModal] = useState(false);
   const [isContextInsightsAnimating, setIsContextInsightsAnimating] = useState(false);
   const [shouldRenderContextInsights, setShouldRenderContextInsights] = useState(false);
@@ -320,6 +322,21 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
     setTimeout(() => {
       setShouldRenderContextInsights(false);
       setShowContextInsightsModal(false);
+    }, 300);
+  };
+
+  const openCustomer360Modal = () => {
+    setShouldRenderCustomer360(true);
+    setTimeout(() => {
+      setIsCustomer360Animating(true);
+    }, 50);
+  };
+
+  const closeCustomer360Modal = () => {
+    setIsCustomer360Animating(false);
+    setTimeout(() => {
+      setShouldRenderCustomer360(false);
+      setShowCustomer360Modal(false);
     }, 300);
   };
 
@@ -611,7 +628,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
               data-testid="btn-globe"
               onClick={() => {
                 if (customerId && customer360Data) {
-                  setShowCustomer360Modal(true);
+                  openCustomer360Modal();
                 } else if (!customerId) {
                   toast({
                     title: "Login Required",
@@ -1248,15 +1265,15 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
           </Card>
         </div>
       )}
-      {showCustomer360Modal && customer360Data && (
+      {shouldRenderCustomer360 && customer360Data && (
         <div 
-          className="fixed inset-0 z-[60] flex items-center justify-end bg-black/50"
+          className={`fixed inset-0 z-[60] flex items-center justify-end bg-black/50 transition-opacity duration-300 ${isCustomer360Animating ? 'opacity-100' : 'opacity-0'}`}
           onClick={(e) => {
-            if (e.target === e.currentTarget) setShowCustomer360Modal(false);
+            if (e.target === e.currentTarget) closeCustomer360Modal();
           }}
           data-testid="customer360-modal-overlay"
         >
-          <div className="bg-white w-[380px] h-full shadow-2xl flex flex-col overflow-hidden">
+          <div className={`bg-white w-[380px] h-full shadow-2xl flex flex-col overflow-hidden transition-transform duration-300 ease-in-out ${isCustomer360Animating ? 'translate-x-0' : 'translate-x-full'}`}>
             <div className="bg-[#1565C0] text-white px-4 py-3 flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <div className="relative">
@@ -1270,7 +1287,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                 <span className="font-bold text-lg">Customer 360</span>
               </div>
               <button 
-                onClick={() => setShowCustomer360Modal(false)}
+                onClick={closeCustomer360Modal}
                 className="text-white hover:bg-white/10 p-1 rounded"
                 data-testid="btn-close-customer360"
               >
