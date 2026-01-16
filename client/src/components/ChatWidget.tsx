@@ -143,14 +143,24 @@ interface Customer360Data {
 
 interface CartItemRowProps {
   item: CartItem;
+  isSelected: boolean;
+  onToggleSelect: (productId: number) => void;
   onUpdateQuantity: (productId: number, delta: number) => void;
   onRemove: (productId: number) => void;
 }
 
-const CartItemRow = memo(function CartItemRow({ item, onUpdateQuantity, onRemove }: CartItemRowProps) {
+const CartItemRow = memo(function CartItemRow({ item, isSelected, onToggleSelect, onUpdateQuantity, onRemove }: CartItemRowProps) {
   return (
     <div className="p-4 hover:bg-gray-50" data-testid={`cart-item-${item.product.id}`}>
       <div className="flex gap-3 mb-3">
+        <div className="flex items-center">
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={() => onToggleSelect(item.product.id)}
+            className="w-5 h-5"
+            data-testid={`checkbox-cart-${item.product.id}`}
+          />
+        </div>
         {item.product.image_url && (
           <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 shrink-0">
             <img
@@ -172,7 +182,7 @@ const CartItemRow = memo(function CartItemRow({ item, onUpdateQuantity, onRemove
           )}
         </div>
       </div>
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between pl-8">
         <div className="flex items-center border rounded">
           <button
             onClick={() => onUpdateQuantity(item.product.id, -1)}
@@ -215,6 +225,7 @@ interface ChatWidgetProps {
 export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [cartItems, setCartItems] = useState<Map<number, CartItem>>(new Map());
+  const [selectedCartItems, setSelectedCartItems] = useState<Set<number>>(new Set());
   const [showCartModal, setShowCartModal] = useState(false);
   const [isCartAnimating, setIsCartAnimating] = useState(false);
   const [shouldRenderCart, setShouldRenderCart] = useState(false);
@@ -268,8 +279,18 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
       const newMap = new Map(prev);
       if (newMap.has(product.id)) {
         newMap.delete(product.id);
+        setSelectedCartItems((prevSelected) => {
+          const newSelected = new Set(prevSelected);
+          newSelected.delete(product.id);
+          return newSelected;
+        });
       } else {
         newMap.set(product.id, { product, quantity: 1 });
+        setSelectedCartItems((prevSelected) => {
+          const newSelected = new Set(prevSelected);
+          newSelected.add(product.id);
+          return newSelected;
+        });
       }
       return newMap;
     });
@@ -280,6 +301,23 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
       const newMap = new Map(prev);
       newMap.delete(productId);
       return newMap;
+    });
+    setSelectedCartItems((prev) => {
+      const newSelected = new Set(prev);
+      newSelected.delete(productId);
+      return newSelected;
+    });
+  }, []);
+
+  const toggleCartItemSelection = useCallback((productId: number) => {
+    setSelectedCartItems((prev) => {
+      const newSelected = new Set(prev);
+      if (newSelected.has(productId)) {
+        newSelected.delete(productId);
+      } else {
+        newSelected.add(productId);
+      }
+      return newSelected;
     });
   }, []);
 
@@ -303,8 +341,17 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
   );
 
   const totalPrice = useMemo(() => 
-    cartItemsArray.reduce((sum, item) => sum + (item.product.price || 0) * item.quantity, 0),
-    [cartItemsArray]
+    cartItemsArray
+      .filter(item => selectedCartItems.has(item.product.id))
+      .reduce((sum, item) => sum + (item.product.price || 0) * item.quantity, 0),
+    [cartItemsArray, selectedCartItems]
+  );
+
+  const selectedItemsCount = useMemo(() => 
+    cartItemsArray
+      .filter(item => selectedCartItems.has(item.product.id))
+      .reduce((sum, item) => sum + item.quantity, 0),
+    [cartItemsArray, selectedCartItems]
   );
 
   const openCartModal = () => {
@@ -1082,6 +1129,8 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                     <CartItemRow
                       key={item.product.id}
                       item={item}
+                      isSelected={selectedCartItems.has(item.product.id)}
+                      onToggleSelect={toggleCartItemSelection}
                       onUpdateQuantity={updateQuantity}
                       onRemove={removeFromCart}
                     />
@@ -1092,8 +1141,8 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
             {cartItems.size > 0 && (
               <div className="border-t p-4 bg-gray-50">
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm text-gray-600">Total Items:</span>
-                  <span className="text-sm font-medium text-gray-800">{totalItems}</span>
+                  <span className="text-sm text-gray-600">Selected Items:</span>
+                  <span className="text-sm font-medium text-gray-800">{selectedItemsCount} of {totalItems}</span>
                 </div>
                 <div className="flex justify-between items-center mb-4">
                   <span className="text-base font-medium text-gray-800">Total</span>
@@ -1102,12 +1151,13 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                   </span>
                 </div>
                 <Button 
-                  className="w-full bg-[#1565C0] hover:bg-[#0D47A1] text-white h-9 flex items-center justify-center gap-2 text-sm"
+                  className="w-full bg-[#1565C0] hover:bg-[#0D47A1] text-white h-9 flex items-center justify-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   data-testid="btn-checkout"
                   onClick={openCheckoutSheet}
+                  disabled={selectedItemsCount === 0}
                 >
                   <ShoppingBag className="w-4 h-4" />
-                  Proceed to Checkout
+                  Proceed to Checkout ({selectedItemsCount})
                 </Button>
               </div>
             )}
