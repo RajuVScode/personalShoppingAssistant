@@ -166,7 +166,7 @@ export function ProductDetailPanel({
                 
                 <div className="flex-1 relative">
                   <div
-                    className="w-full aspect-[3/4] bg-gray-100 rounded-lg overflow-hidden cursor-crosshair relative"
+                    className="w-full aspect-[3/4] bg-gray-100 rounded-lg overflow-hidden cursor-none relative"
                     onMouseEnter={() => setIsZooming(true)}
                     onMouseLeave={() => setIsZooming(false)}
                     onMouseMove={handleMouseMove}
@@ -186,6 +186,17 @@ export function ProductDetailPanel({
                         target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='500' viewBox='0 0 400 500'%3E%3Crect fill='%23f3f4f6' width='400' height='500'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='system-ui' font-size='14' fill='%239ca3af'%3EImage unavailable%3C/text%3E%3C/svg%3E";
                       }}
                     />
+                    {isZooming && (
+                      <div
+                        className="absolute pointer-events-none border-2 border-gray-400 bg-white/20"
+                        style={{
+                          width: '80px',
+                          height: '100px',
+                          left: `calc(${zoomPosition.x}% - 40px)`,
+                          top: `calc(${zoomPosition.y}% - 50px)`,
+                        }}
+                      />
+                    )}
                     {isLoading && (
                       <div className="absolute inset-0 flex items-center justify-center bg-white/50">
                         <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
