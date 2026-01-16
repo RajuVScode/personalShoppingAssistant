@@ -157,7 +157,7 @@ const CartItemRow = memo(function CartItemRow({ item, isSelected, onToggleSelect
           <Checkbox
             checked={isSelected}
             onCheckedChange={() => onToggleSelect(item.product.id)}
-            className="w-5 h-5"
+            className="w-5 h-5 rounded-[3px]"
             data-testid={`checkbox-cart-${item.product.id}`}
           />
         </div>
