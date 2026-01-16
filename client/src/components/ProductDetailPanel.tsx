@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { X, ShoppingCart, Check, Zap } from "lucide-react";
+import { X, ShoppingCart, Check, Zap, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SizeChartModal } from "./SizeChartModal";
 import { ProductImageGallery } from "./ProductImageGallery";
@@ -114,7 +114,10 @@ export function ProductDetailPanel({
       >
         <div className={`bg-white w-[400px] h-full shadow-2xl flex flex-col overflow-hidden transition-transform duration-300 ease-in-out ${isAnimating ? 'translate-x-0' : 'translate-x-full'}`}>
           <div className="bg-[#1565C0] text-white px-3 py-2 flex justify-between items-center">
-            <span className="font-semibold text-sm">Product Details</span>
+            <div className="flex items-center gap-2">
+              <Package className="w-4 h-4" />
+              <span className="font-semibold text-sm">Product Details</span>
+            </div>
             <button 
               onClick={onClose}
               className="text-white hover:bg-white/10 p-1 rounded"
