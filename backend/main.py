@@ -308,6 +308,48 @@ def get_products(
     products = query.limit(limit).all()
     return products
 
+@app.get("/api/products/{product_id}")
+def get_product_details(product_id: int, db: Session = Depends(get_db)):
+    product = db.query(Product).filter(Product.id == product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    colors = product.colors if product.colors else ["Default"]
+    if not colors or len(colors) == 0:
+        colors = ["Default"]
+    
+    color_images = {}
+    for idx, color in enumerate(colors):
+        color_key = color.lower().replace(" ", "-").replace("/", "-")
+        images = [
+            f"https://picsum.photos/seed/{product_id}-{color_key}-1/600/800",
+            f"https://picsum.photos/seed/{product_id}-{color_key}-2/600/800",
+            f"https://picsum.photos/seed/{product_id}-{color_key}-3/600/800",
+            f"https://picsum.photos/seed/{product_id}-{color_key}-4/600/800",
+        ]
+        color_images[color] = images
+    
+    return {
+        "id": product.id,
+        "name": product.name,
+        "description": product.description,
+        "category": product.category,
+        "subcategory": product.subcategory,
+        "price": product.price,
+        "brand": product.brand,
+        "gender": product.gender,
+        "sizes_available": product.sizes_available or [],
+        "colors": colors,
+        "color_images": color_images,
+        "tags": product.tags or [],
+        "image_url": product.image_url,
+        "in_stock": product.in_stock,
+        "rating": product.rating,
+        "material": product.material,
+        "season": product.season,
+        "care_instructions": product.care_instructions
+    }
+
 @app.post("/api/reset")
 def reset_conversation(user_id: int, db: Session = Depends(get_db)):
     db.query(Conversation).filter(Conversation.customer_id == user_id).delete()

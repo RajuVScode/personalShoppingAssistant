@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { X, ShoppingCart, Check } from "lucide-react";
+import { X, ShoppingCart, Check, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SizeChartModal } from "./SizeChartModal";
 
@@ -13,6 +13,27 @@ interface Product {
   brand?: string;
   image_url?: string;
   rating?: number;
+}
+
+interface ProductDetails {
+  id: number;
+  name: string;
+  description?: string;
+  category?: string;
+  subcategory?: string;
+  price?: number;
+  brand?: string;
+  gender?: string;
+  sizes_available?: string[];
+  colors: string[];
+  color_images: Record<string, string[]>;
+  tags?: string[];
+  image_url?: string;
+  in_stock?: boolean;
+  rating?: number;
+  material?: string;
+  season?: string;
+  care_instructions?: string;
 }
 
 interface ProductDetailPanelProps {
@@ -34,13 +55,65 @@ export function ProductDetailPanel({
 }: ProductDetailPanelProps) {
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [showSizeChart, setShowSizeChart] = useState(false);
+  const [productDetails, setProductDetails] = useState<ProductDetails | null>(null);
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [currentImages, setCurrentImages] = useState<string[]>([]);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [isZooming, setIsZooming] = useState(false);
+  const [zoomPosition, setZoomPosition] = useState({ x: 50, y: 50 });
+  const [isLoading, setIsLoading] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false);
 
   useEffect(() => {
     setSelectedSize(null);
     setShowSizeChart(false);
+    setSelectedColor(null);
+    setSelectedImageIndex(0);
+    setProductDetails(null);
+    
+    if (product?.id) {
+      fetchProductDetails(product.id);
+    }
   }, [product?.id]);
 
+  useEffect(() => {
+    if (productDetails && selectedColor && productDetails.color_images[selectedColor]) {
+      setCurrentImages(productDetails.color_images[selectedColor]);
+      setSelectedImageIndex(0);
+    }
+  }, [selectedColor, productDetails]);
+
+  const fetchProductDetails = async (productId: number) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/products/${productId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setProductDetails(data);
+        if (data.colors && data.colors.length > 0) {
+          setSelectedColor(data.colors[0]);
+          setCurrentImages(data.color_images[data.colors[0]] || []);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch product details:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    setZoomPosition({ x, y });
+  };
+
   if (!isOpen || !product) return null;
+
+  const displayImages = currentImages.length > 0 ? currentImages : [product.image_url || ""];
+  const mainImage = displayImages[selectedImageIndex] || displayImages[0];
+  const colors = productDetails?.colors || [];
 
   return (
     <>
@@ -51,7 +124,7 @@ export function ProductDetailPanel({
         }}
         data-testid="product-detail-modal-overlay"
       >
-        <div className={`bg-white w-[450px] h-full shadow-2xl flex flex-col overflow-hidden transition-transform duration-300 ease-in-out ${isAnimating ? 'translate-x-0' : 'translate-x-full'}`}>
+        <div className={`bg-white w-[520px] h-full shadow-2xl flex flex-col overflow-hidden transition-transform duration-300 ease-in-out ${isAnimating ? 'translate-x-0' : 'translate-x-full'}`}>
           <div className="bg-[#1565C0] text-white px-4 py-3 flex justify-between items-center">
             <span className="font-bold text-lg">Product Details</span>
             <button 
@@ -64,50 +137,156 @@ export function ProductDetailPanel({
           </div>
           
           <div className="flex-1 overflow-y-auto">
-            <div className="w-full aspect-square bg-gray-100 overflow-hidden">
-              {product.image_url ? (
-                <img
-                  src={product.image_url}
-                  alt={product.name}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.onerror = null;
-                    target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Crect fill='%23f3f4f6' width='400' height='400'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='system-ui' font-size='14' fill='%239ca3af'%3EImage unavailable%3C/text%3E%3C/svg%3E";
-                  }}
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-gray-400">
-                  No image available
+            <div className="p-4">
+              <div className="flex gap-3">
+                <div className="flex flex-col gap-2 w-16">
+                  {displayImages.map((img, idx) => (
+                    <div
+                      key={idx}
+                      onClick={() => setSelectedImageIndex(idx)}
+                      className={`w-16 h-20 border-2 rounded cursor-pointer overflow-hidden ${
+                        selectedImageIndex === idx ? 'border-blue-500' : 'border-gray-200'
+                      }`}
+                      data-testid={`thumbnail-${idx}`}
+                    >
+                      <img
+                        src={img}
+                        alt={`${product.name} view ${idx + 1}`}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.onerror = null;
+                          target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect fill='%23f3f4f6' width='100' height='100'/%3E%3C/svg%3E";
+                        }}
+                      />
+                    </div>
+                  ))}
                 </div>
-              )}
+                
+                <div className="flex-1 relative">
+                  <div
+                    className="w-full aspect-[3/4] bg-gray-100 rounded-lg overflow-hidden cursor-crosshair relative"
+                    onMouseEnter={() => setIsZooming(true)}
+                    onMouseLeave={() => setIsZooming(false)}
+                    onMouseMove={handleMouseMove}
+                  >
+                    <img
+                      src={mainImage}
+                      alt={product.name}
+                      className={`w-full h-full object-cover transition-transform duration-200 ${
+                        isZooming ? 'scale-150' : 'scale-100'
+                      }`}
+                      style={isZooming ? {
+                        transformOrigin: `${zoomPosition.x}% ${zoomPosition.y}%`
+                      } : undefined}
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.onerror = null;
+                        target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='500' viewBox='0 0 400 500'%3E%3Crect fill='%23f3f4f6' width='400' height='500'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='system-ui' font-size='14' fill='%239ca3af'%3EImage unavailable%3C/text%3E%3C/svg%3E";
+                      }}
+                    />
+                    {isLoading && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-white/50">
+                        <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                      </div>
+                    )}
+                  </div>
+                  
+                  <button
+                    onClick={() => setIsFavorite(!isFavorite)}
+                    className="absolute top-3 right-3 w-10 h-10 bg-white rounded-full shadow-md flex items-center justify-center hover:bg-gray-50"
+                    data-testid="btn-favorite"
+                  >
+                    <Heart className={`w-5 h-5 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-400'}`} />
+                  </button>
+                </div>
+              </div>
             </div>
             
-            <div className="p-5 space-y-4">
+            <div className="px-4 pb-4 space-y-4">
               <div>
-                <p className="text-sm text-gray-500 uppercase tracking-wide">{product.brand}</p>
+                <p className="text-sm text-gray-500 uppercase tracking-wide">{productDetails?.brand || product.brand}</p>
                 <h2 className="text-xl font-bold text-gray-900 mt-1">{product.name}</h2>
               </div>
               
-              {product.rating && (
+              {(productDetails?.rating || product.rating) && (
                 <div className="flex items-center gap-2">
                   <div className="flex items-center gap-1">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <span 
                         key={star} 
-                        className={`text-lg ${star <= product.rating! ? 'text-yellow-400' : 'text-gray-300'}`}
+                        className={`text-lg ${star <= (productDetails?.rating || product.rating || 0) ? 'text-yellow-400' : 'text-gray-300'}`}
                       >
                         ★
                       </span>
                     ))}
                   </div>
-                  <span className="text-sm text-gray-500">{product.rating} out of 5</span>
+                  <span className="text-sm text-gray-500">{productDetails?.rating || product.rating} out of 5</span>
                 </div>
               )}
               
-              {product.price && (
+              {(productDetails?.price || product.price) && (
                 <div className="text-2xl font-bold text-gray-900">
-                  ${product.price.toFixed(2)}
+                  ${(productDetails?.price || product.price || 0).toFixed(2)}
+                </div>
+              )}
+              
+              {colors.length > 0 && (
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-semibold text-gray-900">SELECT COLOR</span>
+                    <span className="text-sm text-gray-500">{selectedColor}</span>
+                  </div>
+                  <div className="flex gap-2 flex-wrap">
+                    {colors.map((color) => {
+                      const colorMap: Record<string, string> = {
+                        'black': '#000000',
+                        'white': '#ffffff',
+                        'navy': '#001f3f',
+                        'navy blue': '#001f3f',
+                        'brown': '#8b4513',
+                        'burgundy': '#800020',
+                        'charcoal': '#36454f',
+                        'cream': '#fffdd0',
+                        'camel': '#c19a6b',
+                        'tan': '#d2b48c',
+                        'olive': '#808000',
+                        'forest green': '#228b22',
+                        'yellow': '#ffff00',
+                        'red': '#ff0000',
+                        'khaki': '#f0e68c',
+                        'stone': '#928e85',
+                        'champagne': '#f7e7ce',
+                        'gray': '#808080',
+                        'sage': '#bcb88a',
+                        'gold/green': '#b8860b',
+                        'silver/blue': '#87ceeb',
+                        'black/gray': '#2f2f2f',
+                        'forest': '#228b22',
+                        'default': '#e5e7eb',
+                      };
+                      const bgColor = colorMap[color.toLowerCase()] || '#e5e7eb';
+                      const isSelected = selectedColor === color;
+                      const isLight = ['white', 'cream', 'yellow', 'champagne', 'khaki'].includes(color.toLowerCase());
+                      
+                      return (
+                        <button
+                          key={color}
+                          onClick={() => setSelectedColor(color)}
+                          className={`w-10 h-10 rounded-full border-2 transition-all ${
+                            isSelected ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-300'
+                          }`}
+                          style={{ backgroundColor: bgColor }}
+                          title={color}
+                          data-testid={`color-${color.toLowerCase().replace(/\s+/g, '-')}`}
+                        >
+                          {isSelected && (
+                            <Check className={`w-5 h-5 mx-auto ${isLight ? 'text-gray-800' : 'text-white'}`} />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
               
@@ -122,7 +301,7 @@ export function ProductDetailPanel({
                     Size Chart
                   </button>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   {['S', 'M', 'L', 'XL', 'XXL'].map((size) => (
                     <button
                       key={size}
@@ -140,25 +319,39 @@ export function ProductDetailPanel({
                 </div>
               </div>
               
-              <div className="flex gap-2">
-                {product.category && (
+              <div className="flex gap-2 flex-wrap">
+                {(productDetails?.category || product.category) && (
                   <span className="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full">
-                    {product.category}
+                    {productDetails?.category || product.category}
                   </span>
                 )}
-                {product.subcategory && (
+                {(productDetails?.subcategory || product.subcategory) && (
                   <span className="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full">
-                    {product.subcategory}
+                    {productDetails?.subcategory || product.subcategory}
                   </span>
                 )}
               </div>
               
-              {product.description && (
+              {(productDetails?.description || product.description) && (
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-2">Description</h3>
                   <p className="text-gray-600 text-sm leading-relaxed">
-                    {product.description}
+                    {productDetails?.description || product.description}
                   </p>
+                </div>
+              )}
+              
+              {productDetails?.material && (
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-1">Material</h3>
+                  <p className="text-gray-600 text-sm">{productDetails.material}</p>
+                </div>
+              )}
+              
+              {productDetails?.care_instructions && (
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-1">Care Instructions</h3>
+                  <p className="text-gray-600 text-sm">{productDetails.care_instructions}</p>
                 </div>
               )}
             </div>
