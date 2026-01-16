@@ -1,3 +1,4 @@
+
 from sqlalchemy.orm import Session
 from datetime import date
 from backend.database.models import Customer, Product, CustomerPreferences, CustomerAddress
