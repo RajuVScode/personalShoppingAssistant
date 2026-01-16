@@ -1020,6 +1020,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                                         </svg>
                                         Show Me
                                       </Button>
+                                      {/* Try On button - commented out for future use
                                       <Button
                                         size="sm"
                                         className="flex-1 text-xs h-7 text-white bg-[#C9A961] hover:bg-[#B89851] border-0 rounded-[6px]"
@@ -1031,6 +1032,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                                         </svg>
                                         Try On
                                       </Button>
+                                      */}
                                     </div>
                                     <Button
                                       size="sm"
