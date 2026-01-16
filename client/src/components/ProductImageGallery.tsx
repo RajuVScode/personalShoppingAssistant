@@ -39,14 +39,16 @@ export function ProductImageGallery({
     target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='500' viewBox='0 0 400 500'%3E%3Crect fill='%23f3f4f6' width='400' height='500'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='system-ui' font-size='14' fill='%239ca3af'%3EImage unavailable%3C/text%3E%3C/svg%3E";
   };
 
+  const thumbnailHeight = displayImages.length * 80 + (displayImages.length - 1) * 8;
+
   return (
-    <div className="flex gap-3">
+    <div className="flex gap-3 items-start">
       <div className="flex flex-col gap-2 w-16">
         {displayImages.map((img, idx) => (
           <div
             key={idx}
             onClick={() => setSelectedImageIndex(idx)}
-            className={`w-16 h-20 border-2 rounded cursor-pointer overflow-hidden ${
+            className={`w-16 h-20 border-2 rounded cursor-pointer overflow-hidden flex-shrink-0 ${
               selectedImageIndex === idx ? 'border-blue-500' : 'border-gray-200'
             }`}
             data-testid={`thumbnail-${idx}`}
@@ -63,7 +65,8 @@ export function ProductImageGallery({
       
       <div className="flex-1 relative">
         <div
-          className="w-full aspect-[4/5] max-h-[320px] bg-gray-100 rounded-lg overflow-hidden cursor-none relative"
+          className="w-full bg-gray-100 rounded-lg overflow-hidden cursor-none relative"
+          style={{ height: `${thumbnailHeight}px` }}
           onMouseEnter={() => setIsZooming(true)}
           onMouseLeave={() => setIsZooming(false)}
           onMouseMove={handleMouseMove}
