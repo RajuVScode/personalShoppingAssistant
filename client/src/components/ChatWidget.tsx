@@ -35,6 +35,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { ProductDetailPanel } from "./ProductDetailPanel";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -247,10 +248,6 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isProductDetailAnimating, setIsProductDetailAnimating] = useState(false);
   const [shouldRenderProductDetail, setShouldRenderProductDetail] = useState(false);
-  const [selectedSize, setSelectedSize] = useState<string | null>(null);
-  const [showSizeChart, setShowSizeChart] = useState(false);
-  const [sizeChartTab, setSizeChartTab] = useState<"chart" | "measure">("chart");
-  const [sizeChartUnit, setSizeChartUnit] = useState<"in" | "cm">("in");
   const { toast } = useToast();
 
   const fetchCustomer360 = async (custId: string) => {
@@ -374,7 +371,6 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
 
   const openProductDetail = (product: Product) => {
     setSelectedProduct(product);
-    setSelectedSize(null);
     setShouldRenderProductDetail(true);
     setTimeout(() => {
       setIsProductDetailAnimating(true);
@@ -1639,297 +1635,14 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
           </div>
         </div>
       )}
-      {shouldRenderProductDetail && selectedProduct && (
-        <div 
-          className={`fixed inset-0 z-[60] flex items-center justify-end bg-black/50 transition-opacity duration-300 ${isProductDetailAnimating ? 'opacity-100' : 'opacity-0'}`}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) closeProductDetail();
-          }}
-          data-testid="product-detail-modal-overlay"
-        >
-          <div className={`bg-white w-[450px] h-full shadow-2xl flex flex-col overflow-hidden transition-transform duration-300 ease-in-out ${isProductDetailAnimating ? 'translate-x-0' : 'translate-x-full'}`}>
-            <div className="bg-[#1565C0] text-white px-4 py-3 flex justify-between items-center">
-              <span className="font-bold text-lg">Product Details</span>
-              <button 
-                onClick={closeProductDetail}
-                className="text-white hover:bg-white/10 p-1 rounded"
-                data-testid="btn-close-product-detail"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            
-            <div className="flex-1 overflow-y-auto">
-              <div className="w-full aspect-square bg-gray-100 overflow-hidden">
-                {selectedProduct.image_url ? (
-                  <img
-                    src={selectedProduct.image_url}
-                    alt={selectedProduct.name}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.onerror = null;
-                      target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Crect fill='%23f3f4f6' width='400' height='400'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='system-ui' font-size='14' fill='%239ca3af'%3EImage unavailable%3C/text%3E%3C/svg%3E";
-                    }}
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400">
-                    No image available
-                  </div>
-                )}
-              </div>
-              
-              <div className="p-5 space-y-4">
-                <div>
-                  <p className="text-sm text-gray-500 uppercase tracking-wide">{selectedProduct.brand}</p>
-                  <h2 className="text-xl font-bold text-gray-900 mt-1">{selectedProduct.name}</h2>
-                </div>
-                
-                {selectedProduct.rating && (
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <span 
-                          key={star} 
-                          className={`text-lg ${star <= selectedProduct.rating! ? 'text-yellow-400' : 'text-gray-300'}`}
-                        >
-                          ★
-                        </span>
-                      ))}
-                    </div>
-                    <span className="text-sm text-gray-500">{selectedProduct.rating} out of 5</span>
-                  </div>
-                )}
-                
-                {selectedProduct.price && (
-                  <div className="text-2xl font-bold text-gray-900">
-                    ${selectedProduct.price.toFixed(2)}
-                  </div>
-                )}
-                
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-semibold text-gray-900">SELECT SIZE</span>
-                    <button 
-                      className="text-sm text-pink-500 hover:underline font-medium" 
-                      onClick={() => setShowSizeChart(true)}
-                      data-testid="btn-size-chart"
-                    >
-                      Size Chart
-                    </button>
-                  </div>
-                  <div className="flex gap-2">
-                    {['S', 'M', 'L', 'XL', 'XXL'].map((size) => (
-                      <button
-                        key={size}
-                        onClick={() => setSelectedSize(size)}
-                        className={`w-12 h-10 border rounded-md text-sm font-medium transition-colors ${
-                          selectedSize === size 
-                            ? 'border-pink-500 bg-pink-50 text-pink-600' 
-                            : 'border-gray-300 text-gray-700 hover:border-gray-900 hover:bg-gray-50'
-                        }`}
-                        data-testid={`btn-size-${size}`}
-                      >
-                        {size}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                
-                <div className="flex gap-2">
-                  {selectedProduct.category && (
-                    <span className="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full">
-                      {selectedProduct.category}
-                    </span>
-                  )}
-                  {selectedProduct.subcategory && (
-                    <span className="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full">
-                      {selectedProduct.subcategory}
-                    </span>
-                  )}
-                </div>
-                
-                {selectedProduct.description && (
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-2">Description</h3>
-                    <p className="text-gray-600 text-sm leading-relaxed">
-                      {selectedProduct.description}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-            
-            <div className="p-4 border-t bg-white">
-              <Button
-                className={`w-full h-12 text-white font-semibold rounded-[6px] ${
-                  cartItems.has(selectedProduct.id) 
-                    ? 'bg-green-600 hover:bg-green-700' 
-                    : 'bg-blue-600 hover:bg-blue-700'
-                }`}
-                onClick={() => {
-                  addToCart(selectedProduct);
-                }}
-                data-testid="btn-add-cart-detail"
-              >
-                {cartItems.has(selectedProduct.id) ? (
-                  <>
-                    <Check className="h-5 w-5 mr-2" />
-                    Added to Cart
-                  </>
-                ) : (
-                  <>
-                    <ShoppingCart className="h-5 w-5 mr-2" />
-                    Add to Cart
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-      {showSizeChart && (
-        <div 
-          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setShowSizeChart(false);
-          }}
-          data-testid="size-chart-modal-overlay"
-        >
-          <div className="bg-white w-[600px] h-[500px] rounded-lg shadow-2xl flex flex-col overflow-hidden">
-            <div className="flex border-b">
-              <button
-                onClick={() => setSizeChartTab("chart")}
-                className={`flex-1 py-4 text-center font-semibold transition-colors ${
-                  sizeChartTab === "chart" 
-                    ? 'text-pink-500 border-b-2 border-pink-500' 
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-                data-testid="tab-size-chart"
-              >
-                Size Chart
-              </button>
-              <button
-                onClick={() => setSizeChartTab("measure")}
-                className={`flex-1 py-4 text-center font-semibold transition-colors ${
-                  sizeChartTab === "measure" 
-                    ? 'text-pink-500 border-b-2 border-pink-500' 
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-                data-testid="tab-how-to-measure"
-              >
-                How to measure
-              </button>
-              <button 
-                onClick={() => setShowSizeChart(false)}
-                className="px-4 text-gray-400 hover:text-gray-600"
-                data-testid="btn-close-size-chart"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            
-            {sizeChartTab === "chart" ? (
-              <div className="p-6 flex-1 overflow-auto">
-                <div className="flex justify-end mb-4">
-                  <div className="flex items-center bg-gray-100 rounded-full p-1">
-                    <button
-                      onClick={() => setSizeChartUnit("in")}
-                      className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                        sizeChartUnit === "in" 
-                          ? 'bg-gray-800 text-white' 
-                          : 'text-gray-600 hover:text-gray-800'
-                      }`}
-                      data-testid="btn-unit-in"
-                    >
-                      in
-                    </button>
-                    <button
-                      onClick={() => setSizeChartUnit("cm")}
-                      className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                        sizeChartUnit === "cm" 
-                          ? 'bg-gray-800 text-white' 
-                          : 'text-gray-600 hover:text-gray-800'
-                      }`}
-                      data-testid="btn-unit-cm"
-                    >
-                      cm
-                    </button>
-                  </div>
-                </div>
-                
-                <table className="w-full">
-                  <thead>
-                    <tr className="text-gray-600 text-sm">
-                      <th className="py-3 text-left font-medium w-12"></th>
-                      <th className="py-3 text-left font-medium">Size</th>
-                      <th className="py-3 text-center font-medium">Chest ({sizeChartUnit})</th>
-                      <th className="py-3 text-center font-medium">Front Length ({sizeChartUnit})</th>
-                      <th className="py-3 text-center font-medium">Across Shoulder ({sizeChartUnit})</th>
-                      <th className="py-3 text-center font-medium">Sleeve-Length ({sizeChartUnit})</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {[
-                      { size: 'S', chest: { in: 41.0, cm: 104.1 }, front: { in: 28.5, cm: 72.4 }, shoulder: { in: 21.0, cm: 53.3 }, sleeve: { in: 10.5, cm: 26.7 } },
-                      { size: 'M', chest: { in: 43.0, cm: 109.2 }, front: { in: 29.0, cm: 73.7 }, shoulder: { in: 22.0, cm: 55.9 }, sleeve: { in: 10.8, cm: 27.4 } },
-                      { size: 'L', chest: { in: 45.0, cm: 114.3 }, front: { in: 30.0, cm: 76.2 }, shoulder: { in: 23.0, cm: 58.4 }, sleeve: { in: 11.0, cm: 27.9 } },
-                      { size: 'XL', chest: { in: 47.0, cm: 119.4 }, front: { in: 30.5, cm: 77.5 }, shoulder: { in: 24.0, cm: 61.0 }, sleeve: { in: 11.3, cm: 28.7 } },
-                      { size: 'XXL', chest: { in: 49.0, cm: 124.5 }, front: { in: 31.0, cm: 78.7 }, shoulder: { in: 25.0, cm: 63.5 }, sleeve: { in: 11.5, cm: 29.2 } },
-                    ].map((row) => (
-                      <tr 
-                        key={row.size} 
-                        className={`border-t ${selectedSize === row.size ? 'font-bold' : ''}`}
-                      >
-                        <td className="py-4">
-                          <div 
-                            onClick={() => setSelectedSize(row.size)}
-                            className={`w-5 h-5 rounded-full border-2 cursor-pointer flex items-center justify-center ${
-                              selectedSize === row.size 
-                                ? 'border-pink-500' 
-                                : 'border-gray-300'
-                            }`}
-                          >
-                            {selectedSize === row.size && (
-                              <div className="w-2.5 h-2.5 rounded-full bg-pink-500" />
-                            )}
-                          </div>
-                        </td>
-                        <td className="py-4 font-medium">{row.size}</td>
-                        <td className="py-4 text-center">{row.chest[sizeChartUnit]}</td>
-                        <td className="py-4 text-center">{row.front[sizeChartUnit]}</td>
-                        <td className="py-4 text-center">{row.shoulder[sizeChartUnit]}</td>
-                        <td className="py-4 text-center">{row.sleeve[sizeChartUnit]}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="p-6 flex-1 overflow-auto">
-                <div className="space-y-4 text-gray-600">
-                  <div>
-                    <h4 className="font-semibold text-gray-900 mb-2">Chest</h4>
-                    <p className="text-sm">Measure around the fullest part of your chest, keeping the tape horizontal.</p>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900 mb-2">Front Length</h4>
-                    <p className="text-sm">Measure from the highest point of your shoulder to the desired length.</p>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900 mb-2">Across Shoulder</h4>
-                    <p className="text-sm">Measure from the edge of one shoulder to the edge of the other shoulder.</p>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900 mb-2">Sleeve Length</h4>
-                    <p className="text-sm">Measure from the shoulder seam to the end of the sleeve.</p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      <ProductDetailPanel
+        product={selectedProduct}
+        isOpen={shouldRenderProductDetail}
+        isAnimating={isProductDetailAnimating}
+        onClose={closeProductDetail}
+        onAddToCart={addToCart}
+        isInCart={(id) => cartItems.has(id)}
+      />
     </div>
   );
 }
