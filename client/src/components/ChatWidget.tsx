@@ -36,6 +36,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ProductDetailPanel } from "./ProductDetailPanel";
+import { ProductCard } from "./ProductCard";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -921,66 +922,22 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                       {message.products && message.products.length > 0 && (
                         <div className="mt-4 grid grid-cols-2 lg:grid-cols-3 gap-6">
                           {message.products.slice(0, 6).map((product) => (
-                            <Card
+                            <ProductCard
                               key={product.id}
-                              className="overflow-hidden hover:shadow-lg transition-shadow flex flex-col rounded-[6px]"
-                              data-testid={`card-product-${product.id}`}
+                              product={product}
+                              onProductClick={openProductDetail}
+                              shoppingMode={shoppingMode}
                             >
-                              <div 
-                                className="relative cursor-pointer"
-                                onClick={() => openProductDetail(product)}
-                                data-testid={`product-image-${product.id}`}
-                              >
-                                {product.image_url && (
-                                  <div className="w-full aspect-[4/3] bg-muted overflow-hidden">
-                                    <img
-                                      src={product.image_url}
-                                      alt={product.name}
-                                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                                      onError={(e) => {
-                                        const target = e.target as HTMLImageElement;
-                                        target.onerror = null;
-                                        target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect fill='%23f3f4f6' width='400' height='300'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='system-ui' font-size='14' fill='%239ca3af'%3EImage unavailable%3C/text%3E%3C/svg%3E";
-                                      }}
-                                    />
-                                  </div>
-                                )}
-                                {product.rating && (
-                                  <div className="absolute bottom-2 left-2 bg-white px-2 py-1 rounded-[4px] shadow-sm flex items-center gap-1">
-                                    <span className="text-sm font-medium">{product.rating}</span>
-                                    <span className="text-teal-500 text-sm">★</span>
-                                    <span className="text-gray-400 text-xs">|</span>
-                                    <span className="text-xs text-gray-500">250</span>
-                                  </div>
-                                )}
-                              </div>
-                              
-                              <div className="p-3 flex flex-col flex-1">
-                                <p className="font-semibold text-sm line-clamp-1">
-                                  {product.brand}
-                                </p>
-                                <span className="text-xs text-muted-foreground mt-1 line-clamp-1">
-                                  {product.name}
-                                </span>
-                                <div className="flex items-center gap-2 mt-2">
-                                  {product.price && (
-                                    <span className="font-bold text-sm">
-                                      ${product.price}
-                                    </span>
-                                  )}
+                              {shoppingMode === "instore" && (
+                                <div className="px-3 flex items-center gap-1 text-xs text-gray-600">
+                                  <svg className="w-3 h-3 text-red-500" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                                  </svg>
+                                  <span>Floor 1 •</span>
+                                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                                  <span className="text-green-600 font-medium">In Stock</span>
                                 </div>
-                                
-                                {shoppingMode === "instore" && (
-                                  <div className="flex items-center gap-1 mt-2 text-xs text-gray-600">
-                                    <svg className="w-3 h-3 text-red-500" viewBox="0 0 24 24" fill="currentColor">
-                                      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-                                    </svg>
-                                    <span>Floor 1 •</span>
-                                    <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                                    <span className="text-green-600 font-medium">In Stock</span>
-                                  </div>
-                                )}
-                              </div>
+                              )}
                               
                               <div className="px-3 pb-4">
                                 {shoppingMode === "online" ? (
@@ -1048,7 +1005,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                                   </div>
                                 )}
                               </div>
-                            </Card>
+                            </ProductCard>
                           ))}
                         </div>
                       )}
