@@ -1643,7 +1643,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
           data-testid="product-detail-modal-overlay"
         >
           <div className={`bg-white w-[450px] h-full shadow-2xl flex flex-col overflow-hidden transition-transform duration-300 ease-in-out ${isProductDetailAnimating ? 'translate-x-0' : 'translate-x-full'}`}>
-            <div className="bg-gray-900 text-white px-4 py-3 flex justify-between items-center">
+            <div className="bg-[#1565C0] text-white px-4 py-3 flex justify-between items-center">
               <span className="font-bold text-lg">Product Details</span>
               <button 
                 onClick={closeProductDetail}
@@ -1701,6 +1701,26 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                     ${selectedProduct.price.toFixed(2)}
                   </div>
                 )}
+                
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-semibold text-gray-900">SELECT SIZE</span>
+                    <button className="text-sm text-blue-600 hover:underline" data-testid="btn-size-chart">
+                      Size Chart
+                    </button>
+                  </div>
+                  <div className="flex gap-2">
+                    {['S', 'M', 'L', 'XL', 'XXL'].map((size) => (
+                      <button
+                        key={size}
+                        className="w-12 h-10 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:border-gray-900 hover:bg-gray-50 transition-colors"
+                        data-testid={`btn-size-${size}`}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 
                 <div className="flex gap-2">
                   {selectedProduct.category && (
