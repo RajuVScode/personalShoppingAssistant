@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { Heart, Copy } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { ImageSlider } from "./ImageSlider";
 
 interface Product {
   id: number;
@@ -22,57 +23,8 @@ interface ProductCardProps {
   children?: React.ReactNode;
 }
 
-const IMAGE_COUNT = 4;
-const SLIDE_INTERVAL = 1800;
-
 export function ProductCard({ product, onProductClick, shoppingMode, children }: ProductCardProps) {
-  const [isHovering, setIsHovering] = useState(false);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isWishlisted, setIsWishlisted] = useState(false);
-  const [imagesLoaded, setImagesLoaded] = useState<boolean[]>([true, false, false, false]);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  const productImages = [
-    product.image_url || `https://picsum.photos/seed/${product.id}-1/400/300`,
-    `https://picsum.photos/seed/${product.id}-2/400/300`,
-    `https://picsum.photos/seed/${product.id}-3/400/300`,
-    `https://picsum.photos/seed/${product.id}-4/400/300`,
-  ];
-
-  useEffect(() => {
-    productImages.forEach((src, idx) => {
-      if (idx === 0) return;
-      const img = new Image();
-      img.onload = () => {
-        setImagesLoaded(prev => {
-          const newState = [...prev];
-          newState[idx] = true;
-          return newState;
-        });
-      };
-      img.src = src;
-    });
-  }, [product.id]);
-
-  useEffect(() => {
-    if (isHovering && imagesLoaded.every(Boolean)) {
-      intervalRef.current = setInterval(() => {
-        setCurrentImageIndex((prev) => (prev + 1) % IMAGE_COUNT);
-      }, SLIDE_INTERVAL);
-    } else if (!isHovering) {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-      setCurrentImageIndex(0);
-    }
-
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, [isHovering, imagesLoaded]);
 
   const handleWishlistClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -91,35 +43,12 @@ export function ProductCard({ product, onProductClick, shoppingMode, children }:
       <div 
         className="relative cursor-pointer"
         onClick={() => onProductClick(product)}
-        onMouseEnter={() => setIsHovering(true)}
-        onMouseLeave={() => setIsHovering(false)}
         data-testid={`product-image-${product.id}`}
       >
-        <div className="w-full aspect-[4/3] bg-muted overflow-hidden relative">
-          <img
-            src={productImages[currentImageIndex]}
-            alt={product.name}
-            className="w-full h-full object-cover transition-opacity duration-300"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.onerror = null;
-              target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect fill='%23f3f4f6' width='400' height='300'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='system-ui' font-size='14' fill='%239ca3af'%3EImage unavailable%3C/text%3E%3C/svg%3E";
-            }}
-          />
-          
-          {isHovering && (
-            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-              {productImages.map((_, idx) => (
-                <div
-                  key={idx}
-                  className={`w-1.5 h-1.5 rounded-full transition-colors ${
-                    idx === currentImageIndex ? 'bg-white' : 'bg-white/50'
-                  }`}
-                />
-              ))}
-            </div>
-          )}
-        </div>
+        <ImageSlider 
+          productId={product.id}
+          primaryImageUrl={product.image_url}
+        />
 
         <button
           onClick={handleWishlistClick}
