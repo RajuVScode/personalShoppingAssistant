@@ -1796,7 +1796,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
           }}
           data-testid="size-chart-modal-overlay"
         >
-          <div className="bg-white w-[600px] max-h-[80vh] rounded-lg shadow-2xl flex flex-col overflow-hidden">
+          <div className="bg-white w-[600px] h-[500px] rounded-lg shadow-2xl flex flex-col overflow-hidden">
             <div className="flex border-b">
               <button
                 onClick={() => setSizeChartTab("chart")}
@@ -1830,7 +1830,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
             </div>
             
             {sizeChartTab === "chart" ? (
-              <div className="p-6">
+              <div className="p-6 flex-1 overflow-auto">
                 <div className="flex justify-end mb-4">
                   <div className="flex items-center bg-gray-100 rounded-full p-1">
                     <button
@@ -1906,7 +1906,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                 </table>
               </div>
             ) : (
-              <div className="p-6">
+              <div className="p-6 flex-1 overflow-auto">
                 <div className="space-y-4 text-gray-600">
                   <div>
                     <h4 className="font-semibold text-gray-900 mb-2">Chest</h4>
