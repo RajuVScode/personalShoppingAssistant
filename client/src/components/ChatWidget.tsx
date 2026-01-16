@@ -244,6 +244,9 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
   const [agentThinkingLogs, setAgentThinkingLogs] = useState<AgentThinkingStep[]>([]);
   const [isAgentThinkingAnimating, setIsAgentThinkingAnimating] = useState(false);
   const [shouldRenderAgentThinking, setShouldRenderAgentThinking] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [isProductDetailAnimating, setIsProductDetailAnimating] = useState(false);
+  const [shouldRenderProductDetail, setShouldRenderProductDetail] = useState(false);
   const { toast } = useToast();
 
   const fetchCustomer360 = async (custId: string) => {
@@ -362,6 +365,22 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
     setIsAgentThinkingAnimating(false);
     setTimeout(() => {
       setShouldRenderAgentThinking(false);
+    }, 300);
+  };
+
+  const openProductDetail = (product: Product) => {
+    setSelectedProduct(product);
+    setShouldRenderProductDetail(true);
+    setTimeout(() => {
+      setIsProductDetailAnimating(true);
+    }, 50);
+  };
+
+  const closeProductDetail = () => {
+    setIsProductDetailAnimating(false);
+    setTimeout(() => {
+      setShouldRenderProductDetail(false);
+      setSelectedProduct(null);
     }, 300);
   };
 
@@ -906,13 +925,17 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                               className="overflow-hidden hover:shadow-lg transition-shadow flex flex-col rounded-[6px]"
                               data-testid={`card-product-${product.id}`}
                             >
-                              <div className="relative">
+                              <div 
+                                className="relative cursor-pointer"
+                                onClick={() => openProductDetail(product)}
+                                data-testid={`product-image-${product.id}`}
+                              >
                                 {product.image_url && (
                                   <div className="w-full aspect-[4/3] bg-muted overflow-hidden">
                                     <img
                                       src={product.image_url}
                                       alt={product.name}
-                                      className="w-full h-full object-cover"
+                                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                                       onError={(e) => {
                                         const target = e.target as HTMLImageElement;
                                         target.onerror = null;
@@ -1607,6 +1630,126 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                   <p className="text-xs text-gray-400 mt-1">Start a conversation to see what's happening behind the scenes</p>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+      {shouldRenderProductDetail && selectedProduct && (
+        <div 
+          className={`fixed inset-0 z-[60] flex items-center justify-end bg-black/50 transition-opacity duration-300 ${isProductDetailAnimating ? 'opacity-100' : 'opacity-0'}`}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeProductDetail();
+          }}
+          data-testid="product-detail-modal-overlay"
+        >
+          <div className={`bg-white w-[450px] h-full shadow-2xl flex flex-col overflow-hidden transition-transform duration-300 ease-in-out ${isProductDetailAnimating ? 'translate-x-0' : 'translate-x-full'}`}>
+            <div className="bg-gray-900 text-white px-4 py-3 flex justify-between items-center">
+              <span className="font-bold text-lg">Product Details</span>
+              <button 
+                onClick={closeProductDetail}
+                className="text-white hover:bg-white/10 p-1 rounded"
+                data-testid="btn-close-product-detail"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto">
+              <div className="w-full aspect-square bg-gray-100 overflow-hidden">
+                {selectedProduct.image_url ? (
+                  <img
+                    src={selectedProduct.image_url}
+                    alt={selectedProduct.name}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.onerror = null;
+                      target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Crect fill='%23f3f4f6' width='400' height='400'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='system-ui' font-size='14' fill='%239ca3af'%3EImage unavailable%3C/text%3E%3C/svg%3E";
+                    }}
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-gray-400">
+                    No image available
+                  </div>
+                )}
+              </div>
+              
+              <div className="p-5 space-y-4">
+                <div>
+                  <p className="text-sm text-gray-500 uppercase tracking-wide">{selectedProduct.brand}</p>
+                  <h2 className="text-xl font-bold text-gray-900 mt-1">{selectedProduct.name}</h2>
+                </div>
+                
+                {selectedProduct.rating && (
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <span 
+                          key={star} 
+                          className={`text-lg ${star <= selectedProduct.rating! ? 'text-yellow-400' : 'text-gray-300'}`}
+                        >
+                          ★
+                        </span>
+                      ))}
+                    </div>
+                    <span className="text-sm text-gray-500">{selectedProduct.rating} out of 5</span>
+                  </div>
+                )}
+                
+                {selectedProduct.price && (
+                  <div className="text-2xl font-bold text-gray-900">
+                    ${selectedProduct.price.toFixed(2)}
+                  </div>
+                )}
+                
+                <div className="flex gap-2">
+                  {selectedProduct.category && (
+                    <span className="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full">
+                      {selectedProduct.category}
+                    </span>
+                  )}
+                  {selectedProduct.subcategory && (
+                    <span className="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full">
+                      {selectedProduct.subcategory}
+                    </span>
+                  )}
+                </div>
+                
+                {selectedProduct.description && (
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-2">Description</h3>
+                    <p className="text-gray-600 text-sm leading-relaxed">
+                      {selectedProduct.description}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="p-4 border-t bg-white">
+              <Button
+                className={`w-full h-12 text-white font-semibold rounded-[6px] ${
+                  cartItems.has(selectedProduct.id) 
+                    ? 'bg-green-600 hover:bg-green-700' 
+                    : 'bg-blue-600 hover:bg-blue-700'
+                }`}
+                onClick={() => {
+                  addToCart(selectedProduct);
+                }}
+                data-testid="btn-add-cart-detail"
+              >
+                {cartItems.has(selectedProduct.id) ? (
+                  <>
+                    <Check className="h-5 w-5 mr-2" />
+                    Added to Cart
+                  </>
+                ) : (
+                  <>
+                    <ShoppingCart className="h-5 w-5 mr-2" />
+                    Add to Cart
+                  </>
+                )}
+              </Button>
             </div>
           </div>
         </div>
