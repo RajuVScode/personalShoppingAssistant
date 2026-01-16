@@ -315,7 +315,7 @@ export function ProductDetailPanel({
                 )}
               </Button>
               <Button
-                className="flex-1 h-9 text-white text-xs font-semibold rounded-[6px] hover:opacity-90"
+                className="flex-1 h-9 text-white text-xs font-semibold rounded-[6px] hover:opacity-90 border-0"
                 style={{ backgroundColor: '#C9A961' }}
                 data-testid="btn-buy-now"
               >

@@ -1679,7 +1679,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                 </p>
                 
                 <button
-                  className="w-full flex items-center justify-center gap-2 py-2.5 text-sm text-white font-medium rounded-lg mb-2"
+                  className="w-full flex items-center justify-center gap-2 py-2.5 text-sm text-white font-medium rounded-[6px] mb-2"
                   style={{ backgroundColor: '#C5A572' }}
                   data-testid="btn-start-scanning"
                 >
@@ -1689,7 +1689,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                 
                 <button
                   onClick={() => setShowScanProductModal(false)}
-                  className="w-full py-2.5 text-sm text-gray-700 font-medium border border-gray-300 rounded-lg hover:bg-gray-50"
+                  className="w-full py-2.5 text-sm text-gray-700 font-medium border border-gray-300 rounded-[6px] hover:bg-gray-50"
                   data-testid="btn-cancel-scan"
                 >
                   Cancel
