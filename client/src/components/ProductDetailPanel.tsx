@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { X, ShoppingCart, Check, Heart } from "lucide-react";
+import { X, ShoppingCart, Check, Heart, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SizeChartModal } from "./SizeChartModal";
 
@@ -166,7 +166,7 @@ export function ProductDetailPanel({
                 
                 <div className="flex-1 relative">
                   <div
-                    className="w-full aspect-[3/4] bg-gray-100 rounded-lg overflow-hidden cursor-none relative"
+                    className="w-full aspect-[4/5] max-h-[320px] bg-gray-100 rounded-lg overflow-hidden cursor-none relative"
                     onMouseEnter={() => setIsZooming(true)}
                     onMouseLeave={() => setIsZooming(false)}
                     onMouseMove={handleMouseMove}
@@ -370,27 +370,37 @@ export function ProductDetailPanel({
           </div>
           
           <div className="p-4 border-t bg-white">
-            <Button
-              className={`w-full h-12 text-white font-semibold rounded-[6px] ${
-                isInCart(product.id) 
-                  ? 'bg-green-600 hover:bg-green-700' 
-                  : 'bg-blue-600 hover:bg-blue-700'
-              }`}
-              onClick={() => onAddToCart(product)}
-              data-testid="btn-add-cart-detail"
-            >
-              {isInCart(product.id) ? (
-                <>
-                  <Check className="h-5 w-5 mr-2" />
-                  Added to Cart
-                </>
-              ) : (
-                <>
-                  <ShoppingCart className="h-5 w-5 mr-2" />
-                  Add to Cart
-                </>
-              )}
-            </Button>
+            <div className="flex gap-3">
+              <Button
+                className={`flex-1 h-12 text-white font-semibold rounded-[6px] ${
+                  isInCart(product.id) 
+                    ? 'bg-green-600 hover:bg-green-700' 
+                    : 'bg-blue-600 hover:bg-blue-700'
+                }`}
+                onClick={() => onAddToCart(product)}
+                data-testid="btn-add-cart-detail"
+              >
+                {isInCart(product.id) ? (
+                  <>
+                    <Check className="h-5 w-5 mr-2" />
+                    Added to Cart
+                  </>
+                ) : (
+                  <>
+                    <ShoppingCart className="h-5 w-5 mr-2" />
+                    Add to Cart
+                  </>
+                )}
+              </Button>
+              <Button
+                className="flex-1 h-12 text-white font-semibold rounded-[6px] hover:opacity-90"
+                style={{ backgroundColor: '#C9A961' }}
+                data-testid="btn-buy-now"
+              >
+                <Zap className="h-5 w-5 mr-2" />
+                Buy Now
+              </Button>
+            </div>
           </div>
         </div>
       </div>
