@@ -153,7 +153,7 @@ const CartItemRow = memo(function CartItemRow({ item, isSelected, onToggleSelect
   return (
     <div className="p-4 hover:bg-gray-50" data-testid={`cart-item-${item.product.id}`}>
       <div className="flex gap-3 mb-3">
-        <div className="flex items-center">
+        <div className="flex items-start pt-1">
           <Checkbox
             checked={isSelected}
             onCheckedChange={() => onToggleSelect(item.product.id)}
