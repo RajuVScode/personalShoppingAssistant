@@ -940,70 +940,31 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                               )}
                               
                               <div className="px-3 pb-4">
-                                {shoppingMode === "online" ? (
+                                <div className="flex gap-2">
                                   <Button
                                     size="sm"
-                                    className="w-full text-xs h-7 text-white rounded-[6px]"
-                                    style={{
-                                      backgroundColor: cartItems.has(product.id)
-                                        ? "rgb(22 163 74)"
-                                        : "rgb(13, 110, 253)"
-                                    }}
+                                    className={`flex-1 text-xs h-7 text-white border-0 rounded-[6px] ${
+                                      cartItems.has(product.id)
+                                        ? "bg-green-600 hover:bg-green-700"
+                                        : "bg-[#0D6EFD] hover:bg-[#0B5ED7]"
+                                    }`}
                                     onClick={() => addToCart(product)}
                                     data-testid={`button-add-cart-${product.id}`}
                                   >
-                                    {cartItems.has(product.id) ? (
-                                      <>
-                                        <Check className="h-3 w-3 mr-1" />
-                                        Added to Cart
-                                      </>
-                                    ) : (
-                                      <>
-                                        <ShoppingCart className="h-3 w-3 mr-1" />
-                                        Add to Cart
-                                      </>
-                                    )}
+                                    <ShoppingCart className="h-3 w-3 mr-1" />
+                                    {cartItems.has(product.id) ? "Added" : "Cart"}
                                   </Button>
-                                ) : (
-                                  <div className="flex gap-2">
-                                    <Button
-                                      size="sm"
-                                      className="flex-1 text-xs h-7 text-white bg-[#3D4F5F] hover:bg-[#2D3F4F] border-0 rounded-[6px]"
-                                      data-testid={`button-show-me-${product.id}`}
-                                    >
-                                      <svg className="h-3 w-3 mr-1" viewBox="0 0 24 24" fill="currentColor">
-                                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-                                      </svg>
-                                      Show Me
-                                    </Button>
-                                    {/* Try On button - commented out for future use
-                                    <Button
-                                      size="sm"
-                                      className="flex-1 text-xs h-7 text-white bg-[#C9A961] hover:bg-[#B89851] border-0 rounded-[6px]"
-                                      data-testid={`button-try-on-${product.id}`}
-                                    >
-                                      <svg className="h-3 w-3 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <circle cx="12" cy="12" r="10" />
-                                        <circle cx="12" cy="12" r="3" />
-                                      </svg>
-                                      Try On
-                                    </Button>
-                                    */}
-                                    <Button
-                                      size="sm"
-                                      className={`flex-1 text-xs h-7 text-white border-0 rounded-[6px] ${
-                                        cartItems.has(product.id)
-                                          ? "bg-green-600 hover:bg-green-700"
-                                          : "bg-[#0D6EFD] hover:bg-[#0B5ED7]"
-                                      }`}
-                                      onClick={() => addToCart(product)}
-                                      data-testid={`button-basket-${product.id}`}
-                                    >
-                                      <ShoppingCart className="h-3 w-3 mr-1" />
-                                      {cartItems.has(product.id) ? "Added" : "Basket"}
-                                    </Button>
-                                  </div>
-                                )}
+                                  <Button
+                                    size="sm"
+                                    className="flex-1 text-xs h-7 text-white bg-[#C9A961] hover:bg-[#B89851] border-0 rounded-[6px]"
+                                    data-testid={`button-buy-now-${product.id}`}
+                                  >
+                                    <svg className="h-3 w-3 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                                    </svg>
+                                    Buy Now
+                                  </Button>
+                                </div>
                               </div>
                             </ProductCard>
                           ))}
