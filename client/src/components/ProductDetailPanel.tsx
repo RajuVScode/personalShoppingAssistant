@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, ShoppingCart, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SizeChartModal } from "./SizeChartModal";
@@ -34,6 +34,11 @@ export function ProductDetailPanel({
 }: ProductDetailPanelProps) {
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [showSizeChart, setShowSizeChart] = useState(false);
+
+  useEffect(() => {
+    setSelectedSize(null);
+    setShowSizeChart(false);
+  }, [product?.id]);
 
   if (!isOpen || !product) return null;
 
