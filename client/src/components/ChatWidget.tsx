@@ -27,6 +27,9 @@ import {
   Store,
   CalendarDays,
   ChevronUp,
+  QrCode,
+  Phone,
+  Camera,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -262,6 +265,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isProductDetailAnimating, setIsProductDetailAnimating] = useState(false);
   const [shouldRenderProductDetail, setShouldRenderProductDetail] = useState(false);
+  const [showScanProductModal, setShowScanProductModal] = useState(false);
   const { toast } = useToast();
 
   const fetchCustomer360 = async (custId: string) => {
@@ -1047,6 +1051,26 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
             </ScrollArea>
 
             <div className="border-t px-6 py-4">
+              {shoppingMode === "instore" && (
+                <div className="flex gap-2 mb-3">
+                  <button
+                    onClick={() => setShowScanProductModal(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white rounded"
+                    style={{ backgroundColor: '#C5A572' }}
+                    data-testid="btn-scan-product"
+                  >
+                    <QrCode className="w-3.5 h-3.5" />
+                    <span>Scan Product</span>
+                  </button>
+                  <button
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-gray-600 rounded"
+                    data-testid="btn-get-help"
+                  >
+                    <Phone className="w-3.5 h-3.5" />
+                    <span>Get Help</span>
+                  </button>
+                </div>
+              )}
               <div className="relative flex items-center gap-3 bg-muted/30 border border-muted-foreground/10 p-3 pl-[5px] pr-[5px] pt-[0px] pb-[0px]" style={{ borderRadius: '12px' }}>
                 <div className="flex-1">
                   <Textarea
@@ -1601,6 +1625,76 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                   <p className="text-xs text-gray-400 mt-1">Start a conversation to see what's happening behind the scenes</p>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+      {showScanProductModal && (
+        <div 
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowScanProductModal(false);
+          }}
+          data-testid="scan-product-modal-overlay"
+        >
+          <div className="bg-white rounded-lg w-[400px] shadow-2xl overflow-hidden">
+            <div className="p-6">
+              <div className="flex items-center gap-2 mb-6">
+                <QrCode className="w-5 h-5 text-gray-600" />
+                <h2 className="text-lg font-semibold text-gray-900">Scan Product QR Code</h2>
+              </div>
+              
+              <div className="flex flex-col items-center">
+                <div className="w-32 h-32 border-2 border-gray-300 rounded-lg flex items-center justify-center mb-6 bg-gray-50">
+                  <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="8" y="8" width="24" height="24" rx="2" fill="#666"/>
+                    <rect x="48" y="8" width="24" height="24" rx="2" fill="#666"/>
+                    <rect x="8" y="48" width="24" height="24" rx="2" fill="#666"/>
+                    <rect x="14" y="14" width="12" height="12" fill="white"/>
+                    <rect x="54" y="14" width="12" height="12" fill="white"/>
+                    <rect x="14" y="54" width="12" height="12" fill="white"/>
+                    <rect x="17" y="17" width="6" height="6" fill="#666"/>
+                    <rect x="57" y="17" width="6" height="6" fill="#666"/>
+                    <rect x="17" y="57" width="6" height="6" fill="#666"/>
+                    <rect x="36" y="8" width="4" height="4" fill="#666"/>
+                    <rect x="36" y="16" width="4" height="4" fill="#666"/>
+                    <rect x="36" y="28" width="4" height="4" fill="#666"/>
+                    <rect x="8" y="36" width="4" height="4" fill="#666"/>
+                    <rect x="16" y="36" width="4" height="4" fill="#666"/>
+                    <rect x="28" y="36" width="4" height="4" fill="#666"/>
+                    <rect x="48" y="40" width="8" height="8" fill="#666"/>
+                    <rect x="60" y="40" width="8" height="8" fill="#666"/>
+                    <rect x="48" y="52" width="8" height="8" fill="#666"/>
+                    <rect x="60" y="52" width="8" height="8" fill="#666"/>
+                    <rect x="48" y="64" width="8" height="8" fill="#666"/>
+                    <rect x="60" y="64" width="8" height="8" fill="#666"/>
+                    <rect x="36" y="48" width="8" height="8" fill="#666"/>
+                    <rect x="36" y="64" width="8" height="8" fill="#666"/>
+                  </svg>
+                </div>
+                
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Ready to Scan</h3>
+                <p className="text-sm text-gray-500 text-center mb-6">
+                  Find the QR code on any product tag and scan to get instant information
+                </p>
+                
+                <button
+                  className="w-full flex items-center justify-center gap-2 py-3 text-white font-medium rounded-lg mb-3"
+                  style={{ backgroundColor: '#C5A572' }}
+                  data-testid="btn-start-scanning"
+                >
+                  <Camera className="w-4 h-4" />
+                  <span>Start Scanning</span>
+                </button>
+                
+                <button
+                  onClick={() => setShowScanProductModal(false)}
+                  className="w-full py-3 text-gray-700 font-medium border border-gray-300 rounded-lg hover:bg-gray-50"
+                  data-testid="btn-cancel-scan"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
         </div>
