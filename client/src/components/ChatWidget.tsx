@@ -982,7 +982,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                                 )}
                               </div>
                               
-                              <div className="px-3 pb-3">
+                              <div className="px-3 pb-4">
                                 {shoppingMode === "online" ? (
                                   <Button
                                     size="sm"
