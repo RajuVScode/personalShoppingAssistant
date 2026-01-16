@@ -22,6 +22,9 @@ interface ProductCardProps {
   children?: React.ReactNode;
 }
 
+const IMAGE_COUNT = 4;
+const SLIDE_INTERVAL = 1500;
+
 export function ProductCard({ product, onProductClick, shoppingMode, children }: ProductCardProps) {
   const [isHovering, setIsHovering] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -38,8 +41,8 @@ export function ProductCard({ product, onProductClick, shoppingMode, children }:
   useEffect(() => {
     if (isHovering) {
       intervalRef.current = setInterval(() => {
-        setCurrentImageIndex((prev) => (prev + 1) % productImages.length);
-      }, 1200);
+        setCurrentImageIndex((prev) => (prev + 1) % IMAGE_COUNT);
+      }, SLIDE_INTERVAL);
     } else {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
@@ -53,7 +56,7 @@ export function ProductCard({ product, onProductClick, shoppingMode, children }:
         clearInterval(intervalRef.current);
       }
     };
-  }, [isHovering, productImages.length]);
+  }, [isHovering]);
 
   const handleWishlistClick = (e: React.MouseEvent) => {
     e.stopPropagation();
