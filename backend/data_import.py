@@ -77,7 +77,7 @@ def import_product_data():
                 sizes_available=sizes,
                 colors=colors,
                 tags=tags,
-                image_url=f"https://images.unsplash.com/photo-1558171813-4c088753af8f?w=400",
+                image_url=f"https://picsum.photos/seed/{row.get('variant_sku', products_added)}/400/300",
                 in_stock=in_stock,
                 rating=4.0 + (hash(row.get('variant_sku', '')) % 10) / 10,
                 material=str(material_val),

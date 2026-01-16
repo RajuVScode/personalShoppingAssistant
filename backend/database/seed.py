@@ -140,7 +140,7 @@ def seed_database(db: Session):
             colors=["Black", "Brown", "Burgundy"],
             tags=["formal", "leather", "classic", "office", "wedding"],
             image_url=
-            "https://images.unsplash.com/photo-1533867617858-e7b97e060509?w=400",
+            "https://picsum.photos/seed/oxford-shoes/400/300",
             in_stock=True,
             rating=4.7,
             material="Leather",
@@ -159,7 +159,7 @@ def seed_database(db: Session):
             colors=["White", "Black", "Navy Blue"],
             tags=["running", "athletic", "comfortable", "sports", "gym"],
             image_url=
-            "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400",
+            "https://picsum.photos/seed/running-shoes/400/300",
             in_stock=True,
             rating=4.8,
             material="Mesh/Synthetic",
@@ -178,7 +178,7 @@ def seed_database(db: Session):
             colors=["Navy", "Charcoal", "Black"],
             tags=["professional", "wool", "office", "meeting", "elegant"],
             image_url=
-            "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=400",
+            "https://picsum.photos/seed/wool-blazer/400/300",
             in_stock=True,
             rating=4.6,
             material="Merino Wool",
@@ -197,7 +197,7 @@ def seed_database(db: Session):
             colors=["Cream", "Black", "Camel", "Burgundy"],
             tags=["cashmere", "luxury", "winter", "cozy", "elegant"],
             image_url=
-            "https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=400",
+            "https://picsum.photos/seed/cashmere-sweater/400/300",
             in_stock=True,
             rating=4.9,
             material="100% Cashmere",
@@ -216,7 +216,7 @@ def seed_database(db: Session):
             colors=["Black", "Tan", "Burgundy"],
             tags=["leather", "everyday", "minimalist", "practical"],
             image_url=
-            "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=400",
+            "https://picsum.photos/seed/crossbody-bag/400/300",
             in_stock=True,
             rating=4.5,
             material="Italian Leather",
@@ -235,7 +235,7 @@ def seed_database(db: Session):
             colors=["Navy", "Forest Green", "Yellow", "Black"],
             tags=["rain", "waterproof", "outdoor", "travel", "sustainable"],
             image_url=
-            "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=400",
+            "https://picsum.photos/seed/rain-jacket/400/300",
             in_stock=True,
             rating=4.7,
             material="Recycled Nylon",
@@ -254,7 +254,7 @@ def seed_database(db: Session):
             colors=["Khaki", "Navy", "Olive", "Stone"],
             tags=["casual", "office", "cotton", "versatile"],
             image_url=
-            "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=400",
+            "https://picsum.photos/seed/slim-chinos/400/300",
             in_stock=True,
             rating=4.4,
             material="Cotton Twill",
@@ -273,7 +273,7 @@ def seed_database(db: Session):
             colors=["Champagne", "Forest Green", "Navy", "Black"],
             tags=["silk", "elegant", "event", "wedding", "special occasion"],
             image_url=
-            "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400",
+            "https://picsum.photos/seed/silk-dress/400/300",
             in_stock=True,
             rating=4.8,
             material="100% Silk",
@@ -292,7 +292,7 @@ def seed_database(db: Session):
             colors=["White", "White/Navy", "White/Green"],
             tags=["trendy", "casual", "comfortable", "street style"],
             image_url=
-            "https://images.unsplash.com/photo-1460353581641-37baddab0fa2?w=400",
+            "https://picsum.photos/seed/chunky-sneakers/400/300",
             in_stock=True,
             rating=4.6,
             material="Leather/Synthetic",
@@ -311,7 +311,7 @@ def seed_database(db: Session):
             colors=["White", "Black", "Gray", "Navy", "Sage"],
             tags=["sustainable", "organic", "casual", "basic", "everyday"],
             image_url=
-            "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400",
+            "https://picsum.photos/seed/cotton-tshirt/400/300",
             in_stock=True,
             rating=4.5,
             material="100% Organic Cotton",
@@ -330,7 +330,7 @@ def seed_database(db: Session):
             colors=["Black", "Brown", "Tan"],
             tags=["leather", "classic", "formal", "casual", "essential"],
             image_url=
-            "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400",
+            "https://picsum.photos/seed/leather-belt/400/300",
             in_stock=True,
             rating=4.7,
             material="Full-Grain Leather",
@@ -349,7 +349,7 @@ def seed_database(db: Session):
             colors=["Black", "Navy", "Red", "Olive"],
             tags=["winter", "warm", "down", "packable", "outdoor"],
             image_url=
-            "https://images.unsplash.com/photo-1544923246-77307dd628b8?w=400",
+            "https://picsum.photos/seed/puffer-jacket/400/300",
             in_stock=True,
             rating=4.8,
             material="Down/Nylon",
@@ -368,7 +368,7 @@ def seed_database(db: Session):
             colors=["Gold/Green", "Silver/Blue", "Black/Gray"],
             tags=["classic", "sunglasses", "summer", "travel", "timeless"],
             image_url=
-            "https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=400",
+            "https://picsum.photos/seed/aviator-sunglasses/400/300",
             in_stock=True,
             rating=4.9,
             material="Metal/Glass",
@@ -387,7 +387,7 @@ def seed_database(db: Session):
             colors=["Black", "Navy", "Burgundy", "Forest"],
             tags=["yoga", "gym", "athletic", "comfortable", "stretchy"],
             image_url=
-            "https://images.unsplash.com/photo-1506629082955-511b1aa562c8?w=400",
+            "https://picsum.photos/seed/yoga-pants/400/300",
             in_stock=True,
             rating=4.8,
             material="Nylon/Lycra",
@@ -406,7 +406,7 @@ def seed_database(db: Session):
             colors=["Navy", "Gray", "Olive", "Black"],
             tags=["travel", "weekend", "canvas", "carry-on", "durable"],
             image_url=
-            "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400",
+            "https://picsum.photos/seed/leather-belt/400/300",
             in_stock=True,
             rating=4.6,
             material="Canvas/Leather",
