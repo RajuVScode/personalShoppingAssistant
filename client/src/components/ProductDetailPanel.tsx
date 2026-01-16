@@ -70,6 +70,7 @@ export function ProductDetailPanel({
     setSelectedColor(null);
     setSelectedImageIndex(0);
     setProductDetails(null);
+    setCurrentImages([]);
     
     if (product?.id) {
       fetchProductDetails(product.id);
