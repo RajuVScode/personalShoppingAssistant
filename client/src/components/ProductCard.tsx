@@ -23,12 +23,13 @@ interface ProductCardProps {
 }
 
 const IMAGE_COUNT = 4;
-const SLIDE_INTERVAL = 1500;
+const SLIDE_INTERVAL = 1800;
 
 export function ProductCard({ product, onProductClick, shoppingMode, children }: ProductCardProps) {
   const [isHovering, setIsHovering] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [imagesLoaded, setImagesLoaded] = useState<boolean[]>([true, false, false, false]);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const productImages = [
@@ -39,11 +40,26 @@ export function ProductCard({ product, onProductClick, shoppingMode, children }:
   ];
 
   useEffect(() => {
-    if (isHovering) {
+    productImages.forEach((src, idx) => {
+      if (idx === 0) return;
+      const img = new Image();
+      img.onload = () => {
+        setImagesLoaded(prev => {
+          const newState = [...prev];
+          newState[idx] = true;
+          return newState;
+        });
+      };
+      img.src = src;
+    });
+  }, [product.id]);
+
+  useEffect(() => {
+    if (isHovering && imagesLoaded.every(Boolean)) {
       intervalRef.current = setInterval(() => {
         setCurrentImageIndex((prev) => (prev + 1) % IMAGE_COUNT);
       }, SLIDE_INTERVAL);
-    } else {
+    } else if (!isHovering) {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
@@ -56,7 +72,7 @@ export function ProductCard({ product, onProductClick, shoppingMode, children }:
         clearInterval(intervalRef.current);
       }
     };
-  }, [isHovering]);
+  }, [isHovering, imagesLoaded]);
 
   const handleWishlistClick = (e: React.MouseEvent) => {
     e.stopPropagation();
