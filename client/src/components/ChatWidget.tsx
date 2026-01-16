@@ -152,7 +152,7 @@ interface CartItemRowProps {
 const CartItemRow = memo(function CartItemRow({ item, isSelected, onToggleSelect, onUpdateQuantity, onRemove }: CartItemRowProps) {
   return (
     <div className="p-4 hover:bg-gray-50" data-testid={`cart-item-${item.product.id}`}>
-      <div className="flex gap-3 mb-3">
+      <div className="flex gap-3">
         <div className="flex items-start pt-1">
           <Checkbox
             checked={isSelected}
@@ -162,7 +162,7 @@ const CartItemRow = memo(function CartItemRow({ item, isSelected, onToggleSelect
           />
         </div>
         {item.product.image_url && (
-          <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 shrink-0">
+          <div className="w-14 h-14 rounded-lg overflow-hidden bg-gray-100 shrink-0">
             <img
               src={item.product.image_url}
               alt={item.product.name}
@@ -175,43 +175,45 @@ const CartItemRow = memo(function CartItemRow({ item, isSelected, onToggleSelect
             />
           </div>
         )}
-        <div className="flex-1 min-w-0">
-          <p className="font-medium text-sm text-gray-800 line-clamp-2">{item.product.name}</p>
-          {item.product.brand && (
-            <p className="text-xs text-gray-500 mt-0.5">{item.product.brand}</p>
-          )}
+        <div className="flex-1 min-w-0 flex flex-col justify-between h-14">
+          <div>
+            <p className="font-medium text-sm text-gray-800 line-clamp-1">{item.product.name}</p>
+            {item.product.brand && (
+              <p className="text-xs text-gray-500">{item.product.brand}</p>
+            )}
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center border rounded">
+              <button
+                onClick={() => onUpdateQuantity(item.product.id, -1)}
+                className="w-6 h-6 flex items-center justify-center text-gray-600 hover:bg-gray-100 border-r text-xs"
+                data-testid={`btn-decrease-${item.product.id}`}
+              >
+                −
+              </button>
+              <span className="w-6 h-6 flex items-center justify-center text-xs font-medium bg-gray-50">
+                {item.quantity}
+              </span>
+              <button
+                onClick={() => onUpdateQuantity(item.product.id, 1)}
+                className="w-6 h-6 flex items-center justify-center text-gray-600 hover:bg-gray-100 border-l text-xs"
+                data-testid={`btn-increase-${item.product.id}`}
+              >
+                +
+              </button>
+            </div>
+            <span className="font-semibold text-sm text-amber-600">
+              ${((item.product.price || 0) * item.quantity).toFixed(2)}
+            </span>
+            <button
+              onClick={() => onRemove(item.product.id)}
+              className="text-red-500 hover:text-red-700 p-1"
+              data-testid={`btn-remove-cart-${item.product.id}`}
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
         </div>
-      </div>
-      <div className="flex items-center justify-between pl-8">
-        <div className="flex items-center border rounded">
-          <button
-            onClick={() => onUpdateQuantity(item.product.id, -1)}
-            className="w-7 h-7 flex items-center justify-center text-gray-600 hover:bg-gray-100 border-r text-sm"
-            data-testid={`btn-decrease-${item.product.id}`}
-          >
-            −
-          </button>
-          <span className="w-8 h-7 flex items-center justify-center text-sm font-medium bg-gray-50">
-            {item.quantity}
-          </span>
-          <button
-            onClick={() => onUpdateQuantity(item.product.id, 1)}
-            className="w-7 h-7 flex items-center justify-center text-gray-600 hover:bg-gray-100 border-l text-sm"
-            data-testid={`btn-increase-${item.product.id}`}
-          >
-            +
-          </button>
-        </div>
-        <span className="font-semibold text-base text-amber-600">
-          ${((item.product.price || 0) * item.quantity).toFixed(2)}
-        </span>
-        <button
-          onClick={() => onRemove(item.product.id)}
-          className="text-red-500 hover:text-red-700 p-2"
-          data-testid={`btn-remove-cart-${item.product.id}`}
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
       </div>
     </div>
   );
