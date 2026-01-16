@@ -1135,10 +1135,10 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
           <div 
             className={`bg-white w-[400px] h-full shadow-2xl flex flex-col relative transition-transform duration-300 ease-in-out ${isCartAnimating ? 'translate-x-0' : 'translate-x-full'}`}
           >
-            <div className="bg-[#1565C0] text-white px-4 py-3 flex justify-between items-center">
+            <div className="bg-[#1565C0] text-white px-3 py-2 flex justify-between items-center">
               <div className="flex items-center gap-2">
-                <ShoppingCart className="w-5 h-5" />
-                <span className="font-bold text-lg">Shopping Cart</span>
+                <ShoppingCart className="w-4 h-4" />
+                <span className="font-semibold text-sm">Shopping Cart</span>
                 <span className="bg-white/20 text-white text-xs rounded-full px-2 py-0.5">
                   {totalItems} items
                 </span>
@@ -1342,17 +1342,17 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
           data-testid="customer360-modal-overlay"
         >
           <div className={`bg-white w-[380px] h-full shadow-2xl flex flex-col overflow-hidden transition-transform duration-300 ease-in-out ${isCustomer360Animating ? 'translate-x-0' : 'translate-x-full'}`}>
-            <div className="bg-[#1565C0] text-white px-4 py-3 flex justify-between items-center">
+            <div className="bg-[#1565C0] text-white px-3 py-2 flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <div className="relative">
-                  <div className="w-6 h-6 rounded-full border-2 border-white flex items-center justify-center">
-                    <User className="w-3.5 h-3.5" />
+                  <div className="w-5 h-5 rounded-full border-2 border-white flex items-center justify-center">
+                    <User className="w-3 h-3" />
                   </div>
-                  <div className="absolute -bottom-0.5 -right-1.5 bg-white text-[#1565C0] text-[7px] font-bold px-0.5 rounded leading-tight">
+                  <div className="absolute -bottom-0.5 -right-1.5 bg-white text-[#1565C0] text-[6px] font-bold px-0.5 rounded leading-tight">
                     360
                   </div>
                 </div>
-                <span className="font-bold text-lg">Customer 360</span>
+                <span className="font-semibold text-sm">Customer 360</span>
               </div>
               <button 
                 onClick={closeCustomer360Modal}
@@ -1433,14 +1433,14 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
           data-testid="context-insights-modal-overlay"
         >
           <div className={`bg-white w-[380px] h-full shadow-2xl flex flex-col overflow-hidden transition-transform duration-300 ease-in-out ${isContextInsightsAnimating ? 'translate-x-0' : 'translate-x-full'}`}>
-            <div className="bg-[#1565C0] text-white px-4 py-3 flex justify-between items-center">
+            <div className="bg-[#1565C0] text-white px-3 py-2 flex justify-between items-center">
               <div className="flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
                   <circle cx="12" cy="12" r="10"></circle>
                   <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path>
                   <path d="M2 12h20"></path>
                 </svg>
-                <span className="font-bold text-lg">External Context</span>
+                <span className="font-semibold text-sm">External Context</span>
               </div>
               <button 
                 onClick={closeContextInsightsModal}
@@ -1573,12 +1573,12 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
           data-testid="agent-thinking-modal-overlay"
         >
           <div className={`bg-white w-[420px] h-full shadow-2xl flex flex-col overflow-hidden transition-transform duration-300 ease-in-out ${isAgentThinkingAnimating ? 'translate-x-0' : 'translate-x-full'}`}>
-            <div className="bg-[#1565C0] text-white px-4 py-3 flex justify-between items-center">
+            <div className="bg-[#1565C0] text-white px-3 py-2 flex justify-between items-center">
               <div className="flex items-center gap-2">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
                   <path fillRule="evenodd" d="M14.269 1.322a3.751 3.751 0 0 1 4.456 3.25 4.753 4.753 0 0 1 3.022 4.62 4.757 4.757 0 0 1-.318 1.522 4.75 4.75 0 0 1-.537 7.055c-.047.036-.096.07-.144.104a4.752 4.752 0 0 1-4.44 4.863A4.753 4.753 0 0 1 12 20.555a4.752 4.752 0 0 1-7.667.459 4.75 4.75 0 0 1-1.082-3.14 4.751 4.751 0 0 1-.682-7.16 4.756 4.756 0 0 1 .079-3.62 4.75 4.75 0 0 1 2.626-2.52A3.752 3.752 0 0 1 12 2.751a3.748 3.748 0 0 1 2.269-1.43Zm-4.83 1.471a2.252 2.252 0 0 0-2.387 3.332.75.75 0 0 1-1.299.75 3.762 3.762 0 0 1-.32-.722 3.25 3.25 0 0 0-1.411 1.543 3.251 3.251 0 0 0-.171 2.108.748.748 0 0 1 .524 1.382A3.252 3.252 0 0 0 2.86 14.84 3.252 3.252 0 0 0 6 17.251a.75.75 0 0 1 0 1.5 4.75 4.75 0 0 1-1.194-.154 3.276 3.276 0 0 0 .685 1.464 3.251 3.251 0 0 0 5.76-2.062v-5.467a4.92 4.92 0 0 1-2.04 1.188.75.75 0 0 1-.42-1.44 3.421 3.421 0 0 0 2.447-3.004L11.25 9V5a2.252 2.252 0 0 0-1.81-2.207Zm6.143.034a2.252 2.252 0 0 0-1.952.388 2.25 2.25 0 0 0-.865 1.527L12.75 5v4l.01.276a3.42 3.42 0 0 0 2.45 3.005.75.75 0 0 1-.42 1.439 4.92 4.92 0 0 1-2.04-1.187V18a3.252 3.252 0 0 0 2.154 3.056 3.253 3.253 0 0 0 3.605-.994 3.251 3.251 0 0 0 .683-1.464A4.75 4.75 0 0 1 18 18.75a.75.75 0 0 1 0-1.5 3.251 3.251 0 0 0 1.625-6.064.747.747 0 0 1 .522-1.382 3.235 3.235 0 0 0-1.581-3.652c-.082.25-.186.494-.319.723a.75.75 0 0 1-1.299-.75 2.252 2.252 0 0 0-.465-2.816 2.251 2.251 0 0 0-.9-.482Z" clipRule="evenodd"></path>
                 </svg>
-                <span className="font-bold text-lg">Agent Thinking Log</span>
+                <span className="font-semibold text-sm">Agent Thinking Log</span>
               </div>
               <button 
                 onClick={closeAgentThinkingModal}

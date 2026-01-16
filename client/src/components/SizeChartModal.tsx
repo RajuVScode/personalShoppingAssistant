@@ -34,7 +34,7 @@ export function SizeChartModal({ isOpen, onClose, selectedSize, onSelectSize }: 
         <div className="flex border-b">
           <button
             onClick={() => setActiveTab("chart")}
-            className={`flex-1 py-4 text-center font-semibold transition-colors ${
+            className={`flex-1 py-2.5 text-center text-sm font-semibold transition-colors ${
               activeTab === "chart" 
                 ? 'text-pink-500 border-b-2 border-pink-500' 
                 : 'text-gray-500 hover:text-gray-700'
@@ -45,7 +45,7 @@ export function SizeChartModal({ isOpen, onClose, selectedSize, onSelectSize }: 
           </button>
           <button
             onClick={() => setActiveTab("measure")}
-            className={`flex-1 py-4 text-center font-semibold transition-colors ${
+            className={`flex-1 py-2.5 text-center text-sm font-semibold transition-colors ${
               activeTab === "measure" 
                 ? 'text-pink-500 border-b-2 border-pink-500' 
                 : 'text-gray-500 hover:text-gray-700'
@@ -56,10 +56,10 @@ export function SizeChartModal({ isOpen, onClose, selectedSize, onSelectSize }: 
           </button>
           <button 
             onClick={onClose}
-            className="px-4 text-gray-400 hover:text-gray-600"
+            className="px-3 text-gray-400 hover:text-gray-600"
             data-testid="btn-close-size-chart"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
         

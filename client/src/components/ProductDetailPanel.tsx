@@ -125,9 +125,9 @@ export function ProductDetailPanel({
         }}
         data-testid="product-detail-modal-overlay"
       >
-        <div className={`bg-white w-[520px] h-full shadow-2xl flex flex-col overflow-hidden transition-transform duration-300 ease-in-out ${isAnimating ? 'translate-x-0' : 'translate-x-full'}`}>
-          <div className="bg-[#1565C0] text-white px-4 py-3 flex justify-between items-center">
-            <span className="font-bold text-lg">Product Details</span>
+        <div className={`bg-white w-[400px] h-full shadow-2xl flex flex-col overflow-hidden transition-transform duration-300 ease-in-out ${isAnimating ? 'translate-x-0' : 'translate-x-full'}`}>
+          <div className="bg-[#1565C0] text-white px-3 py-2 flex justify-between items-center">
+            <span className="font-semibold text-sm">Product Details</span>
             <button 
               onClick={onClose}
               className="text-white hover:bg-white/10 p-1 rounded"
@@ -217,8 +217,8 @@ export function ProductDetailPanel({
             
             <div className="px-4 pb-4 space-y-4">
               <div>
-                <p className="text-sm text-gray-500 uppercase tracking-wide">{productDetails?.brand || product.brand}</p>
-                <h2 className="text-xl font-bold text-gray-900 mt-1">{product.name}</h2>
+                <p className="text-xs text-gray-500 uppercase tracking-wide">{productDetails?.brand || product.brand}</p>
+                <h2 className="text-sm font-bold text-gray-900 mt-0.5">{product.name}</h2>
               </div>
               
               {(productDetails?.rating || product.rating) && (
@@ -238,18 +238,18 @@ export function ProductDetailPanel({
               )}
               
               {(productDetails?.price || product.price) && (
-                <div className="text-2xl font-bold text-gray-900">
+                <div className="text-base font-bold text-gray-900">
                   ${(productDetails?.price || product.price || 0).toFixed(2)}
                 </div>
               )}
               
               {colors.length > 0 && (
                 <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-semibold text-gray-900">SELECT COLOR</span>
-                    <span className="text-sm text-gray-500">{selectedColor}</span>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="font-semibold text-xs text-gray-900">SELECT COLOR</span>
+                    <span className="text-xs text-gray-500">{selectedColor}</span>
                   </div>
-                  <div className="flex gap-2 flex-wrap">
+                  <div className="flex gap-1.5 flex-wrap">
                     {colors.map((color) => {
                       const colorMap: Record<string, string> = {
                         'black': '#000000',
@@ -285,7 +285,7 @@ export function ProductDetailPanel({
                         <button
                           key={color}
                           onClick={() => setSelectedColor(color)}
-                          className={`w-10 h-10 rounded-full border-2 transition-all ${
+                          className={`w-7 h-7 rounded-full border-2 transition-all ${
                             isSelected ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-300'
                           }`}
                           style={{ backgroundColor: bgColor }}
@@ -293,7 +293,7 @@ export function ProductDetailPanel({
                           data-testid={`color-${color.toLowerCase().replace(/\s+/g, '-')}`}
                         >
                           {isSelected && (
-                            <Check className={`w-5 h-5 mx-auto ${isLight ? 'text-gray-800' : 'text-white'}`} />
+                            <Check className={`w-3.5 h-3.5 mx-auto ${isLight ? 'text-gray-800' : 'text-white'}`} />
                           )}
                         </button>
                       );
@@ -303,22 +303,22 @@ export function ProductDetailPanel({
               )}
               
               <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-semibold text-gray-900">SELECT SIZE</span>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="font-semibold text-xs text-gray-900">SELECT SIZE</span>
                   <button 
-                    className="text-sm text-pink-500 hover:underline font-medium" 
+                    className="text-xs text-pink-500 hover:underline font-medium" 
                     onClick={() => setShowSizeChart(true)}
                     data-testid="btn-size-chart"
                   >
                     Size Chart
                   </button>
                 </div>
-                <div className="flex gap-2 flex-wrap">
+                <div className="flex gap-1.5 flex-wrap">
                   {['S', 'M', 'L', 'XL', 'XXL'].map((size) => (
                     <button
                       key={size}
                       onClick={() => setSelectedSize(size)}
-                      className={`w-12 h-10 border rounded-md text-sm font-medium transition-colors ${
+                      className={`w-10 h-8 border rounded-md text-xs font-medium transition-colors ${
                         selectedSize === size 
                           ? 'border-pink-500 bg-pink-50 text-pink-600' 
                           : 'border-gray-300 text-gray-700 hover:border-gray-900 hover:bg-gray-50'
@@ -369,10 +369,10 @@ export function ProductDetailPanel({
             </div>
           </div>
           
-          <div className="p-4 border-t bg-white">
-            <div className="flex gap-3">
+          <div className="p-3 border-t bg-white">
+            <div className="flex gap-2">
               <Button
-                className={`flex-1 h-12 text-white font-semibold rounded-[6px] ${
+                className={`flex-1 h-9 text-white text-xs font-semibold rounded-[6px] ${
                   isInCart(product.id) 
                     ? 'bg-green-600 hover:bg-green-700' 
                     : 'bg-blue-600 hover:bg-blue-700'
@@ -382,22 +382,22 @@ export function ProductDetailPanel({
               >
                 {isInCart(product.id) ? (
                   <>
-                    <Check className="h-5 w-5 mr-2" />
+                    <Check className="h-4 w-4 mr-1.5" />
                     Added to Cart
                   </>
                 ) : (
                   <>
-                    <ShoppingCart className="h-5 w-5 mr-2" />
+                    <ShoppingCart className="h-4 w-4 mr-1.5" />
                     Add to Cart
                   </>
                 )}
               </Button>
               <Button
-                className="flex-1 h-12 text-white font-semibold rounded-[6px] hover:opacity-90"
+                className="flex-1 h-9 text-white text-xs font-semibold rounded-[6px] hover:opacity-90"
                 style={{ backgroundColor: '#C9A961' }}
                 data-testid="btn-buy-now"
               >
-                <Zap className="h-5 w-5 mr-2" />
+                <Zap className="h-4 w-4 mr-1.5" />
                 Buy Now
               </Button>
             </div>
