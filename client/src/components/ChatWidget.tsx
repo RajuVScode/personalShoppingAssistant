@@ -460,6 +460,35 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const extractProductId = (text: string): number | null => {
+    console.log("QR Code decoded text:", text);
+    
+    if (text.startsWith("PRODUCT:")) {
+      return parseInt(text.replace("PRODUCT:", ""), 10);
+    }
+    
+    if (/^\d+$/.test(text.trim())) {
+      return parseInt(text.trim(), 10);
+    }
+    
+    const patterns = [
+      /product[\/=](\d+)/i,
+      /productId[=:](\d+)/i,
+      /id[=:](\d+)/i,
+      /\/(\d+)$/,
+      /[?&]id=(\d+)/i,
+    ];
+    
+    for (const pattern of patterns) {
+      const match = text.match(pattern);
+      if (match) {
+        return parseInt(match[1], 10);
+      }
+    }
+    
+    return null;
+  };
+
   const handleQrUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -470,18 +499,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
       const html5QrCode = new Html5Qrcode("qr-upload-reader");
       const decodedText = await html5QrCode.scanFile(file, true);
       
-      let productId: number | null = null;
-      
-      if (decodedText.startsWith("PRODUCT:")) {
-        productId = parseInt(decodedText.replace("PRODUCT:", ""), 10);
-      } else if (/^\d+$/.test(decodedText)) {
-        productId = parseInt(decodedText, 10);
-      } else {
-        const match = decodedText.match(/product[\/=](\d+)/i);
-        if (match) {
-          productId = parseInt(match[1], 10);
-        }
-      }
+      const productId = extractProductId(decodedText);
       
       if (productId && !isNaN(productId)) {
         setScannedProductId(productId);
@@ -546,18 +564,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
             await html5QrCode.stop();
             scannerRef.current = null;
             
-            let productId: number | null = null;
-            
-            if (decodedText.startsWith("PRODUCT:")) {
-              productId = parseInt(decodedText.replace("PRODUCT:", ""), 10);
-            } else if (/^\d+$/.test(decodedText)) {
-              productId = parseInt(decodedText, 10);
-            } else {
-              const match = decodedText.match(/product[\/=](\d+)/i);
-              if (match) {
-                productId = parseInt(match[1], 10);
-              }
-            }
+            const productId = extractProductId(decodedText);
             
             if (productId && !isNaN(productId)) {
               setScanningState("loading");
