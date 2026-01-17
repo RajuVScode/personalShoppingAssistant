@@ -53,6 +53,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import Logo from "@/components/Logo";
+import { Html5Qrcode } from "html5-qrcode";
 
 interface AgentThinkingStep {
   agent: string;
@@ -266,6 +267,9 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
   const [isProductDetailAnimating, setIsProductDetailAnimating] = useState(false);
   const [shouldRenderProductDetail, setShouldRenderProductDetail] = useState(false);
   const [showScanProductModal, setShowScanProductModal] = useState(false);
+  const [scanningState, setScanningState] = useState<"ready" | "scanning" | "loading" | "not_found">("ready");
+  const [scannedProductId, setScannedProductId] = useState<number | null>(null);
+  const scannerRef = useRef<any>(null);
   const { toast } = useToast();
 
   const fetchCustomer360 = async (custId: string) => {
@@ -438,6 +442,106 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
       setSelectedProduct(null);
     }, 300);
   };
+
+  const closeScanModal = useCallback(() => {
+    if (scannerRef.current) {
+      scannerRef.current.stop().catch(() => {});
+      scannerRef.current = null;
+    }
+    setShowScanProductModal(false);
+    setScanningState("ready");
+    setScannedProductId(null);
+  }, []);
+
+  const startScanning = useCallback(() => {
+    setScanningState("scanning");
+  }, []);
+
+  useEffect(() => {
+    if (scanningState !== "scanning") return;
+    
+    const initScanner = async () => {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      const element = document.getElementById("qr-reader");
+      if (!element) {
+        console.error("QR reader element not found");
+        setScanningState("ready");
+        return;
+      }
+      
+      try {
+        const html5QrCode = new Html5Qrcode("qr-reader");
+        scannerRef.current = html5QrCode;
+        
+        await html5QrCode.start(
+          { facingMode: "environment" },
+          {
+            fps: 10,
+            qrbox: { width: 200, height: 200 },
+          },
+          async (decodedText) => {
+            await html5QrCode.stop();
+            scannerRef.current = null;
+            
+            let productId: number | null = null;
+            
+            if (decodedText.startsWith("PRODUCT:")) {
+              productId = parseInt(decodedText.replace("PRODUCT:", ""), 10);
+            } else if (/^\d+$/.test(decodedText)) {
+              productId = parseInt(decodedText, 10);
+            } else {
+              const match = decodedText.match(/product[\/=](\d+)/i);
+              if (match) {
+                productId = parseInt(match[1], 10);
+              }
+            }
+            
+            if (productId && !isNaN(productId)) {
+              setScanningState("loading");
+              setScannedProductId(productId);
+              
+              try {
+                const response = await fetch(`/api/products/${productId}`);
+                if (response.ok) {
+                  const productData = await response.json();
+                  setShowScanProductModal(false);
+                  setScanningState("ready");
+                  setScannedProductId(null);
+                  setSelectedProduct(productData);
+                  setShouldRenderProductDetail(true);
+                  setTimeout(() => setIsProductDetailAnimating(true), 50);
+                } else {
+                  setScanningState("not_found");
+                }
+              } catch {
+                setScanningState("not_found");
+              }
+            } else {
+              setScanningState("not_found");
+            }
+          },
+          () => {}
+        );
+      } catch (err) {
+        console.error("Failed to start scanner:", err);
+        toast({
+          description: "Could not access camera. Please check permissions.",
+          variant: "destructive",
+        });
+        setScanningState("ready");
+      }
+    };
+    
+    initScanner();
+    
+    return () => {
+      if (scannerRef.current) {
+        scannerRef.current.stop().catch(() => {});
+        scannerRef.current = null;
+      }
+    };
+  }, [scanningState, toast]);
 
   const openCheckoutSheet = () => {
     setShowCheckoutSheet(true);
@@ -1633,7 +1737,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
         <div 
           className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50"
           onClick={(e) => {
-            if (e.target === e.currentTarget) setShowScanProductModal(false);
+            if (e.target === e.currentTarget) closeScanModal();
           }}
           data-testid="scan-product-modal-overlay"
         >
@@ -1645,50 +1749,99 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
               </div>
               
               <div className="flex flex-col items-center">
-                <div className="w-28 h-28 border-2 border-gray-300 rounded-lg flex items-center justify-center mb-4 bg-gray-50">
-                  <svg width="70" height="70" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="8" y="8" width="24" height="24" rx="2" fill="#666"/>
-                    <rect x="48" y="8" width="24" height="24" rx="2" fill="#666"/>
-                    <rect x="8" y="48" width="24" height="24" rx="2" fill="#666"/>
-                    <rect x="14" y="14" width="12" height="12" fill="white"/>
-                    <rect x="54" y="14" width="12" height="12" fill="white"/>
-                    <rect x="14" y="54" width="12" height="12" fill="white"/>
-                    <rect x="17" y="17" width="6" height="6" fill="#666"/>
-                    <rect x="57" y="17" width="6" height="6" fill="#666"/>
-                    <rect x="17" y="57" width="6" height="6" fill="#666"/>
-                    <rect x="36" y="8" width="4" height="4" fill="#666"/>
-                    <rect x="36" y="16" width="4" height="4" fill="#666"/>
-                    <rect x="36" y="28" width="4" height="4" fill="#666"/>
-                    <rect x="8" y="36" width="4" height="4" fill="#666"/>
-                    <rect x="16" y="36" width="4" height="4" fill="#666"/>
-                    <rect x="28" y="36" width="4" height="4" fill="#666"/>
-                    <rect x="48" y="40" width="8" height="8" fill="#666"/>
-                    <rect x="60" y="40" width="8" height="8" fill="#666"/>
-                    <rect x="48" y="52" width="8" height="8" fill="#666"/>
-                    <rect x="60" y="52" width="8" height="8" fill="#666"/>
-                    <rect x="48" y="64" width="8" height="8" fill="#666"/>
-                    <rect x="60" y="64" width="8" height="8" fill="#666"/>
-                    <rect x="36" y="48" width="8" height="8" fill="#666"/>
-                    <rect x="36" y="64" width="8" height="8" fill="#666"/>
-                  </svg>
-                </div>
-                
-                <h3 className="text-base font-semibold text-gray-900 mb-1">Ready to Scan</h3>
-                <p className="text-xs text-gray-500 text-center mb-4">
-                  Find the QR code on any product tag and scan to get instant information
-                </p>
+                {scanningState === "ready" && (
+                  <>
+                    <div className="w-28 h-28 border-2 border-gray-300 rounded-lg flex items-center justify-center mb-4 bg-gray-50">
+                      <svg width="70" height="70" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="8" y="8" width="24" height="24" rx="2" fill="#666"/>
+                        <rect x="48" y="8" width="24" height="24" rx="2" fill="#666"/>
+                        <rect x="8" y="48" width="24" height="24" rx="2" fill="#666"/>
+                        <rect x="14" y="14" width="12" height="12" fill="white"/>
+                        <rect x="54" y="14" width="12" height="12" fill="white"/>
+                        <rect x="14" y="54" width="12" height="12" fill="white"/>
+                        <rect x="17" y="17" width="6" height="6" fill="#666"/>
+                        <rect x="57" y="17" width="6" height="6" fill="#666"/>
+                        <rect x="17" y="57" width="6" height="6" fill="#666"/>
+                        <rect x="36" y="8" width="4" height="4" fill="#666"/>
+                        <rect x="36" y="16" width="4" height="4" fill="#666"/>
+                        <rect x="36" y="28" width="4" height="4" fill="#666"/>
+                        <rect x="8" y="36" width="4" height="4" fill="#666"/>
+                        <rect x="16" y="36" width="4" height="4" fill="#666"/>
+                        <rect x="28" y="36" width="4" height="4" fill="#666"/>
+                        <rect x="48" y="40" width="8" height="8" fill="#666"/>
+                        <rect x="60" y="40" width="8" height="8" fill="#666"/>
+                        <rect x="48" y="52" width="8" height="8" fill="#666"/>
+                        <rect x="60" y="52" width="8" height="8" fill="#666"/>
+                        <rect x="48" y="64" width="8" height="8" fill="#666"/>
+                        <rect x="60" y="64" width="8" height="8" fill="#666"/>
+                        <rect x="36" y="48" width="8" height="8" fill="#666"/>
+                        <rect x="36" y="64" width="8" height="8" fill="#666"/>
+                      </svg>
+                    </div>
+                    
+                    <h3 className="text-base font-semibold text-gray-900 mb-1">Ready to Scan</h3>
+                    <p className="text-xs text-gray-500 text-center mb-4">
+                      Find the QR code on any product tag and scan to get instant information
+                    </p>
+                    
+                    <button
+                      onClick={startScanning}
+                      className="w-full h-9 flex items-center justify-center gap-2 text-sm text-white font-medium rounded-[6px] mb-2"
+                      style={{ backgroundColor: '#C5A572' }}
+                      data-testid="btn-start-scanning"
+                    >
+                      <Camera className="w-4 h-4" />
+                      <span>Start Scanning</span>
+                    </button>
+                  </>
+                )}
+
+                {scanningState === "scanning" && (
+                  <>
+                    <div id="qr-reader" className="w-full h-48 rounded-lg overflow-hidden mb-4" />
+                    <p className="text-xs text-gray-500 text-center mb-4">
+                      Point your camera at a product QR code
+                    </p>
+                  </>
+                )}
+
+                {scanningState === "loading" && (
+                  <>
+                    <div className="w-28 h-28 flex items-center justify-center mb-4">
+                      <RefreshCw className="w-10 h-10 text-gray-400 animate-spin" />
+                    </div>
+                    <h3 className="text-base font-semibold text-gray-900 mb-1">Loading Product...</h3>
+                    <p className="text-xs text-gray-500 text-center mb-4">
+                      Fetching product details
+                    </p>
+                  </>
+                )}
+
+                {scanningState === "not_found" && (
+                  <>
+                    <div className="w-28 h-28 flex items-center justify-center mb-4 bg-red-50 rounded-lg">
+                      <X className="w-12 h-12 text-red-400" />
+                    </div>
+                    <h3 className="text-base font-semibold text-gray-900 mb-1">Product Not Found</h3>
+                    <p className="text-xs text-gray-500 text-center mb-4">
+                      {scannedProductId 
+                        ? `No product found with ID: ${scannedProductId}` 
+                        : "The scanned code doesn't contain valid product information"}
+                    </p>
+                    <button
+                      onClick={() => setScanningState("ready")}
+                      className="w-full h-9 flex items-center justify-center gap-2 text-sm text-white font-medium rounded-[6px] mb-2"
+                      style={{ backgroundColor: '#C5A572' }}
+                      data-testid="btn-try-again"
+                    >
+                      <Camera className="w-4 h-4" />
+                      <span>Try Again</span>
+                    </button>
+                  </>
+                )}
                 
                 <button
-                  className="w-full h-9 flex items-center justify-center gap-2 text-sm text-white font-medium rounded-[6px] mb-2"
-                  style={{ backgroundColor: '#C5A572' }}
-                  data-testid="btn-start-scanning"
-                >
-                  <Camera className="w-4 h-4" />
-                  <span>Start Scanning</span>
-                </button>
-                
-                <button
-                  onClick={() => setShowScanProductModal(false)}
+                  onClick={closeScanModal}
                   className="w-full h-9 flex items-center justify-center text-sm text-gray-700 font-medium border border-gray-300 rounded-[6px] hover:bg-gray-50"
                   data-testid="btn-cancel-scan"
                 >
