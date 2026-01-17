@@ -30,6 +30,7 @@ import {
   QrCode,
   Phone,
   Camera,
+  Upload,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -456,6 +457,67 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
   const startScanning = useCallback(() => {
     setScanningState("scanning");
   }, []);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleQrUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
+    setScanningState("loading");
+    
+    try {
+      const html5QrCode = new Html5Qrcode("qr-upload-reader");
+      const decodedText = await html5QrCode.scanFile(file, true);
+      
+      let productId: number | null = null;
+      
+      if (decodedText.startsWith("PRODUCT:")) {
+        productId = parseInt(decodedText.replace("PRODUCT:", ""), 10);
+      } else if (/^\d+$/.test(decodedText)) {
+        productId = parseInt(decodedText, 10);
+      } else {
+        const match = decodedText.match(/product[\/=](\d+)/i);
+        if (match) {
+          productId = parseInt(match[1], 10);
+        }
+      }
+      
+      if (productId && !isNaN(productId)) {
+        setScannedProductId(productId);
+        
+        try {
+          const response = await fetch(`/api/products/${productId}`);
+          if (response.ok) {
+            const productData = await response.json();
+            setShowScanProductModal(false);
+            setScanningState("ready");
+            setScannedProductId(null);
+            setSelectedProduct(productData);
+            setShouldRenderProductDetail(true);
+            setTimeout(() => setIsProductDetailAnimating(true), 50);
+          } else {
+            setScanningState("not_found");
+          }
+        } catch {
+          setScanningState("not_found");
+        }
+      } else {
+        setScanningState("not_found");
+      }
+    } catch (err) {
+      console.error("Failed to scan QR from image:", err);
+      toast({
+        description: "Could not read QR code from the image. Please try a clearer image.",
+        variant: "destructive",
+      });
+      setScanningState("ready");
+    }
+    
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }, [toast]);
 
   useEffect(() => {
     if (scanningState !== "scanning") return;
@@ -1793,8 +1855,27 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                       <Camera className="w-4 h-4" />
                       <span>Start Scanning</span>
                     </button>
+                    
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleQrUpload}
+                      className="hidden"
+                      data-testid="input-qr-upload"
+                    />
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-full h-9 flex items-center justify-center gap-2 text-sm text-gray-700 font-medium border border-gray-300 rounded-[6px] mb-2 hover:bg-gray-50"
+                      data-testid="btn-upload-qr"
+                    >
+                      <Upload className="w-4 h-4" />
+                      <span>Upload QR Image</span>
+                    </button>
                   </>
                 )}
+                
+                <div id="qr-upload-reader" className="hidden" />
 
                 {scanningState === "scanning" && (
                   <>
