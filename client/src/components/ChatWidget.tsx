@@ -180,14 +180,19 @@ const CartItemRow = memo(function CartItemRow({ item, isSelected, onToggleSelect
             />
           </div>
         )}
-        <div className="flex-1 min-w-0 flex flex-col justify-between h-14">
+        <div className="flex-1 min-w-0">
           <div>
             <p className="font-medium text-sm text-gray-800 line-clamp-1">{item.product.name}</p>
             {item.product.brand && (
               <p className="text-xs text-gray-500">{item.product.brand}</p>
             )}
           </div>
-          <div className="flex items-center justify-between">
+          <div className="mt-1">
+            <span className="font-semibold text-sm text-amber-600">
+              ${((item.product.price || 0) * item.quantity).toFixed(2)}
+            </span>
+          </div>
+          <div className="flex items-center justify-between mt-2 pt-1">
             <div className="flex items-center border rounded">
               <button
                 onClick={() => onUpdateQuantity(item.product.id, -1)}
@@ -207,9 +212,6 @@ const CartItemRow = memo(function CartItemRow({ item, isSelected, onToggleSelect
                 +
               </button>
             </div>
-            <span className="font-semibold text-sm text-amber-600">
-              ${((item.product.price || 0) * item.quantity).toFixed(2)}
-            </span>
             <button
               onClick={() => onRemove(item.product.id)}
               className="text-red-500 hover:text-red-700 p-1"

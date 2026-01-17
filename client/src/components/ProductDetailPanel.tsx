@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { X, ShoppingCart, Check, Zap, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
