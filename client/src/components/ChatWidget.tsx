@@ -2032,23 +2032,11 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                 style={{ backgroundColor: '#C5A572' }}
                 data-testid="btn-start-navigation"
               >
-                {isStartingNavigation ? (
-                  <>
-                    <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="10" />
-                      <path d="M12 2a10 10 0 0 1 10 10" />
-                    </svg>
-                    <span>Starting Navigation...</span>
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="22" y1="2" x2="11" y2="13" />
-                      <polygon points="22 2 15 22 11 13 2 9 22 2" />
-                    </svg>
-                    <span>Start In-Store Navigation</span>
-                  </>
-                )}
+                <svg className={`w-3.5 h-3.5 ${isStartingNavigation ? 'animate-spin' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="22" y1="2" x2="11" y2="13" />
+                  <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                </svg>
+                <span>{isStartingNavigation ? 'Starting Navigation...' : 'Start In-Store Navigation'}</span>
               </button>
               
               <button
