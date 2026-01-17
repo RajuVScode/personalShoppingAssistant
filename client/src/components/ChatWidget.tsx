@@ -1835,7 +1835,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
           data-testid="scan-product-modal-overlay"
         >
           <div className="bg-white rounded-lg w-[360px] shadow-2xl overflow-hidden">
-            <div className="p-5">
+            <div className="p-4">
               <div className="flex items-center gap-2 mb-4">
                 <QrCode className="w-4 h-4 text-gray-600" />
                 <h2 className="text-sm font-semibold text-gray-900">Scan Product QR Code</h2>
@@ -1844,8 +1844,8 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
               <div className="flex flex-col items-center">
                 {scanningState === "ready" && (
                   <>
-                    <div className="w-28 h-28 border-2 border-gray-300 rounded-lg flex items-center justify-center mb-4 bg-gray-50">
-                      <svg width="70" height="70" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <div className="w-24 h-24 border-2 border-gray-300 rounded-lg flex items-center justify-center mb-3 bg-gray-50">
+                      <svg width="60" height="60" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <rect x="8" y="8" width="24" height="24" rx="2" fill="#666"/>
                         <rect x="48" y="8" width="24" height="24" rx="2" fill="#666"/>
                         <rect x="8" y="48" width="24" height="24" rx="2" fill="#666"/>
@@ -1872,8 +1872,8 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                       </svg>
                     </div>
                     
-                    <h3 className="text-base font-semibold text-gray-900 mb-1">Ready to Scan</h3>
-                    <p className="text-xs text-gray-500 text-center mb-4">
+                    <h3 className="text-sm font-semibold text-gray-900 mb-1">Ready to Scan</h3>
+                    <p className="text-xs text-gray-500 text-center mb-3">
                       Find the QR code on any product tag and scan to get instant information
                     </p>
                     
@@ -1883,7 +1883,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                       style={{ backgroundColor: '#C5A572' }}
                       data-testid="btn-start-scanning"
                     >
-                      <Camera className="w-4 h-4" />
+                      <Camera className="w-3.5 h-3.5" />
                       <span>Start Scanning</span>
                     </button>
                     
@@ -1900,7 +1900,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                       className="w-full h-9 flex items-center justify-center gap-2 text-sm text-gray-700 font-medium border border-gray-300 rounded-[6px] mb-2 hover:bg-gray-50"
                       data-testid="btn-upload-qr"
                     >
-                      <Upload className="w-4 h-4" />
+                      <Upload className="w-3.5 h-3.5" />
                       <span>Upload QR Image</span>
                     </button>
                   </>
@@ -1910,8 +1910,8 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
 
                 {scanningState === "scanning" && (
                   <>
-                    <div id="qr-reader" className="w-full h-48 rounded-lg overflow-hidden mb-4" />
-                    <p className="text-xs text-gray-500 text-center mb-4">
+                    <div id="qr-reader" className="w-full h-44 rounded-lg overflow-hidden mb-3" />
+                    <p className="text-xs text-gray-500 text-center mb-3">
                       Point your camera at a product QR code
                     </p>
                   </>
@@ -1919,11 +1919,11 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
 
                 {scanningState === "loading" && (
                   <>
-                    <div className="w-28 h-28 flex items-center justify-center mb-4">
-                      <RefreshCw className="w-10 h-10 text-gray-400 animate-spin" />
+                    <div className="w-24 h-24 flex items-center justify-center mb-3">
+                      <RefreshCw className="w-8 h-8 text-gray-400 animate-spin" />
                     </div>
-                    <h3 className="text-base font-semibold text-gray-900 mb-1">Loading Product...</h3>
-                    <p className="text-xs text-gray-500 text-center mb-4">
+                    <h3 className="text-sm font-semibold text-gray-900 mb-1">Loading Product...</h3>
+                    <p className="text-xs text-gray-500 text-center mb-3">
                       Fetching product details
                     </p>
                   </>
@@ -1931,11 +1931,11 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
 
                 {scanningState === "not_found" && (
                   <>
-                    <div className="w-28 h-28 flex items-center justify-center mb-4 bg-red-50 rounded-lg">
-                      <X className="w-12 h-12 text-red-400" />
+                    <div className="w-24 h-24 flex items-center justify-center mb-3 bg-red-50 rounded-lg">
+                      <X className="w-10 h-10 text-red-400" />
                     </div>
-                    <h3 className="text-base font-semibold text-gray-900 mb-1">Product Not Found</h3>
-                    <p className="text-xs text-gray-500 text-center mb-4">
+                    <h3 className="text-sm font-semibold text-gray-900 mb-1">Product Not Found</h3>
+                    <p className="text-xs text-gray-500 text-center mb-3">
                       {scannedProductId 
                         ? `No product found with ID: ${scannedProductId}` 
                         : "The scanned code doesn't contain valid product information"}
@@ -1946,7 +1946,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                       style={{ backgroundColor: '#C5A572' }}
                       data-testid="btn-try-again"
                     >
-                      <Camera className="w-4 h-4" />
+                      <Camera className="w-3.5 h-3.5" />
                       <span>Try Again</span>
                     </button>
                   </>
