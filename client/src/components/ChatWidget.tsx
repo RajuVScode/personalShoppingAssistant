@@ -1196,25 +1196,25 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                                     </svg>
                                     Buy Now
                                   </Button>
+                                  {shoppingMode === "instore" && (
+                                    <Button
+                                      size="sm"
+                                      className="flex-1 text-xs h-7 text-white bg-[#6B7280] hover:bg-[#4B5563] border-0 rounded-[6px]"
+                                      onClick={() => {
+                                        toast({
+                                          title: "Locate Product",
+                                          description: `${product.name} is located on Floor 1, Section A3`,
+                                        });
+                                      }}
+                                      data-testid={`button-show-me-${product.id}`}
+                                    >
+                                      <svg className="h-3 w-3 mr-1" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                                      </svg>
+                                      Show me
+                                    </Button>
+                                  )}
                                 </div>
-                                {shoppingMode === "instore" && (
-                                  <Button
-                                    size="sm"
-                                    className="w-full text-xs h-7 mt-2 text-white bg-[#6B7280] hover:bg-[#4B5563] border-0 rounded-[6px]"
-                                    onClick={() => {
-                                      toast({
-                                        title: "Locate Product",
-                                        description: `${product.name} is located on Floor 1, Section A3`,
-                                      });
-                                    }}
-                                    data-testid={`button-show-me-${product.id}`}
-                                  >
-                                    <svg className="h-3 w-3 mr-1" viewBox="0 0 24 24" fill="currentColor">
-                                      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-                                    </svg>
-                                    Show me
-                                  </Button>
-                                )}
                               </div>
                             </ProductCard>
                           ))}
