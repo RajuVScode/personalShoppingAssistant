@@ -273,6 +273,8 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
   const [scanningState, setScanningState] = useState<"ready" | "scanning" | "loading" | "not_found">("ready");
   const [scannedProductId, setScannedProductId] = useState<number | null>(null);
   const scannerRef = useRef<any>(null);
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [locationProduct, setLocationProduct] = useState<Product | null>(null);
   const { toast } = useToast();
 
   const fetchCustomer360 = async (custId: string) => {
@@ -1201,10 +1203,8 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                                       size="sm"
                                       className="flex-1 text-xs h-7 text-white bg-[#6B7280] hover:bg-[#4B5563] border-0 rounded-[6px]"
                                       onClick={() => {
-                                        toast({
-                                          title: "Locate Product",
-                                          description: `${product.name} is located on Floor 1, Section A3`,
-                                        });
+                                        setLocationProduct(product);
+                                        setShowLocationModal(true);
                                       }}
                                       data-testid={`button-show-me-${product.id}`}
                                     >
@@ -1960,6 +1960,86 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                   Cancel
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {showLocationModal && locationProduct && (
+        <div 
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowLocationModal(false);
+          }}
+          data-testid="location-modal-overlay"
+        >
+          <div className="bg-white rounded-lg w-[400px] shadow-2xl overflow-hidden">
+            <div className="p-6">
+              <div className="flex items-center gap-2 mb-6">
+                <svg className="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                </svg>
+                <h2 className="text-lg font-semibold text-gray-900">Find {locationProduct.name}</h2>
+              </div>
+              
+              <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                <h3 className="text-sm font-semibold text-gray-900 mb-3">Location Details</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Floor:</span>
+                    <span className="font-medium text-gray-900">1</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Zone:</span>
+                    <span className="font-medium text-gray-900">{locationProduct.category || "General"}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Aisle:</span>
+                    <span className="font-medium text-gray-900">1B</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">In Stock:</span>
+                    <span className="font-medium text-green-600">Yes</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-amber-50 rounded-lg p-4 mb-6">
+                <div className="flex items-center gap-2 mb-1">
+                  <svg className="w-4 h-4 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
+                  </svg>
+                  <span className="text-sm font-semibold text-gray-900">Estimated Walk Time</span>
+                </div>
+                <p className="text-sm text-gray-600">2-3 minutes from your current location</p>
+              </div>
+
+              <button
+                onClick={() => {
+                  toast({
+                    title: "Navigation Started",
+                    description: `Follow the in-store directions to find ${locationProduct.name}`,
+                  });
+                  setShowLocationModal(false);
+                }}
+                className="w-full flex items-center justify-center gap-2 py-3 text-white font-medium rounded-lg mb-3"
+                style={{ backgroundColor: '#C5A572' }}
+                data-testid="btn-start-navigation"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="22" y1="2" x2="11" y2="13" />
+                  <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                </svg>
+                <span>Start In-Store Navigation</span>
+              </button>
+              
+              <button
+                onClick={() => setShowLocationModal(false)}
+                className="w-full py-3 text-gray-700 font-medium border border-gray-300 rounded-lg hover:bg-gray-50"
+                data-testid="btn-cancel-location"
+              >
+                Cancel
+              </button>
             </div>
           </div>
         </div>
