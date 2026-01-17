@@ -1834,7 +1834,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
           }}
           data-testid="scan-product-modal-overlay"
         >
-          <div className="bg-white rounded-lg w-[360px] shadow-2xl overflow-hidden">
+          <div className="bg-white rounded-[6px] w-[360px] shadow-2xl overflow-hidden">
             <div className="p-4">
               <div className="flex items-center gap-2 mb-4">
                 <QrCode className="w-4 h-4 text-gray-600" />
@@ -1844,7 +1844,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
               <div className="flex flex-col items-center">
                 {scanningState === "ready" && (
                   <>
-                    <div className="w-24 h-24 border-2 border-gray-300 rounded-lg flex items-center justify-center mb-3 bg-gray-50">
+                    <div className="w-24 h-24 border-2 border-gray-300 rounded-[6px] flex items-center justify-center mb-3 bg-gray-50">
                       <svg width="60" height="60" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <rect x="8" y="8" width="24" height="24" rx="2" fill="#666"/>
                         <rect x="48" y="8" width="24" height="24" rx="2" fill="#666"/>
@@ -1910,7 +1910,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
 
                 {scanningState === "scanning" && (
                   <>
-                    <div id="qr-reader" className="w-full h-44 rounded-lg overflow-hidden mb-3" />
+                    <div id="qr-reader" className="w-full h-44 rounded-[6px] overflow-hidden mb-3" />
                     <p className="text-xs text-gray-500 text-center mb-3">
                       Point your camera at a product QR code
                     </p>
@@ -1931,7 +1931,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
 
                 {scanningState === "not_found" && (
                   <>
-                    <div className="w-24 h-24 flex items-center justify-center mb-3 bg-red-50 rounded-lg">
+                    <div className="w-24 h-24 flex items-center justify-center mb-3 bg-red-50 rounded-[6px]">
                       <X className="w-10 h-10 text-red-400" />
                     </div>
                     <h3 className="text-sm font-semibold text-gray-900 mb-1">Product Not Found</h3>
@@ -1972,7 +1972,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
           }}
           data-testid="location-modal-overlay"
         >
-          <div className="bg-white rounded-lg w-[400px] shadow-2xl overflow-hidden">
+          <div className="bg-white rounded-[6px] w-[400px] shadow-2xl overflow-hidden">
             <div className="p-4">
               <div className="flex items-center gap-2 mb-4">
                 <svg className="w-4 h-4 text-gray-600" viewBox="0 0 24 24" fill="currentColor">
@@ -1981,7 +1981,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                 <h2 className="text-sm font-semibold text-gray-900">Find {locationProduct.name}</h2>
               </div>
               
-              <div className="bg-gray-50 rounded-lg p-3 mb-3">
+              <div className="bg-gray-50 rounded-[6px] p-3 mb-3">
                 <h3 className="text-xs font-semibold text-gray-900 mb-2">Location Details</h3>
                 <div className="space-y-1.5">
                   <div className="flex justify-between text-xs">
@@ -2003,7 +2003,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                 </div>
               </div>
 
-              <div className="bg-amber-50 rounded-lg p-3 mb-4">
+              <div className="bg-amber-50 rounded-[6px] p-3 mb-4">
                 <div className="flex items-center gap-2 mb-0.5">
                   <svg className="w-3.5 h-3.5 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="10" />
