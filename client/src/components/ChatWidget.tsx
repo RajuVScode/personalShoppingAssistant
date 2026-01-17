@@ -1836,13 +1836,13 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
           data-testid="scan-product-modal-overlay"
         >
           <div className="bg-white rounded-[6px] w-[360px] shadow-2xl overflow-hidden">
-            <div className="p-4">
+            <div className="p-4 h-[380px] flex flex-col">
               <div className="flex items-center gap-2 mb-4">
                 <QrCode className="w-4 h-4 text-gray-600" />
                 <h2 className="text-sm font-semibold text-gray-900">Scan Product QR Code</h2>
               </div>
               
-              <div className="flex flex-col items-center">
+              <div className="flex flex-col items-center flex-1 justify-center">
                 {scanningState === "ready" && (
                   <>
                     <div className="w-24 h-24 border-2 border-gray-300 rounded-[6px] flex items-center justify-center mb-3 bg-gray-50">
