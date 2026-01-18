@@ -74,19 +74,67 @@ class ProductRecommenderAgent(BaseAgent):
         """
         MANDATORY filter to ensure only products in the user's exact size are returned.
         This is a final safeguard - no products in different sizes should ever pass through.
+        
+        Product names often include the variant (e.g., "Montclair Dresses — Black / L").
+        We must filter to match ONLY the user's specified size in the variant.
         """
         if not user_size:
             return products
         
         filtered = []
         for product in products:
-            sizes = product.get("sizes_available", []) or []
-            if not sizes:
-                # Skip products without size information when user specified a size
-                continue
-            available_sizes = [s.upper().strip() for s in sizes if s]
-            if user_size in available_sizes:
-                filtered.append(product)
+            name = product.get("name", "")
+            
+            # Check if product name contains a size variant (e.g., "/ L", "/ XL", "/ M")
+            # Common patterns: "— Color / Size" or "- Size"
+            name_upper = name.upper()
+            
+            # Extract size from product name variant
+            has_size_variant = False
+            matches_user_size = False
+            
+            # Pattern: "/ SIZE" at the end or in the name
+            if " / " in name:
+                parts = name.split(" / ")
+                if len(parts) >= 2:
+                    variant_size = parts[-1].strip().upper()
+                    has_size_variant = True
+                    # Check if variant size matches user's requested size
+                    if variant_size == user_size or variant_size == user_size.replace(" ", ""):
+                        matches_user_size = True
+            
+            # Pattern: "- Size X" or "(Size X)"
+            if not has_size_variant:
+                import re
+                size_patterns = [
+                    r'- Size\s*(\w+)',
+                    r'\(Size\s*(\w+)\)',
+                    r'Size\s*(\w+)$'
+                ]
+                for pattern in size_patterns:
+                    match = re.search(pattern, name, re.IGNORECASE)
+                    if match:
+                        variant_size = match.group(1).upper()
+                        has_size_variant = True
+                        if variant_size == user_size or variant_size == user_size.replace(" ", ""):
+                            matches_user_size = True
+                        break
+            
+            # If product has a size variant, only include if it matches user's size
+            if has_size_variant:
+                if matches_user_size:
+                    filtered.append(product)
+                    print(f"[DEBUG] Size match: {name} matches {user_size}")
+                else:
+                    print(f"[DEBUG] Size mismatch: {name} does NOT match {user_size}")
+            else:
+                # Product doesn't have size variant in name - check sizes_available
+                sizes = product.get("sizes_available", []) or []
+                if sizes:
+                    available_sizes = [s.upper().strip() for s in sizes if s]
+                    if user_size in available_sizes:
+                        filtered.append(product)
+                # Products without any size info are excluded when user specified a size
         
         return filtered
     
