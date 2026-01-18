@@ -60,9 +60,35 @@ class ProductRecommenderAgent(BaseAgent):
         if not products:
             products = self._db_fallback_search(context, num_results)
         
+        # MANDATORY: Final size filter to guarantee no wrong-sized products
+        if context.intent.size:
+            user_size = context.intent.size.upper().strip()
+            products = self._strict_size_filter(products, user_size)
+            print(f"[DEBUG] Final strict size filter applied: {len(products)} products after filtering for size {user_size}")
+        
         explanation = self._generate_explanation(context, products)
         
         return products, explanation
+    
+    def _strict_size_filter(self, products: List[Dict[str, Any]], user_size: str) -> List[Dict[str, Any]]:
+        """
+        MANDATORY filter to ensure only products in the user's exact size are returned.
+        This is a final safeguard - no products in different sizes should ever pass through.
+        """
+        if not user_size:
+            return products
+        
+        filtered = []
+        for product in products:
+            sizes = product.get("sizes_available", []) or []
+            if not sizes:
+                # Skip products without size information when user specified a size
+                continue
+            available_sizes = [s.upper().strip() for s in sizes if s]
+            if user_size in available_sizes:
+                filtered.append(product)
+        
+        return filtered
     
     def _diversify_by_category(self, products: List[Dict[str, Any]], num_results: int) -> List[Dict[str, Any]]:
         if not products:
