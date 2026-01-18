@@ -19,15 +19,27 @@ def get_weekend_dates(current_date: datetime, next_week: bool = False):
     return saturday.strftime("%Y-%m-%d"), sunday.strftime("%Y-%m-%d")
 
 
-CLARIFIER_PROMPT = """You are a Clarifier Agent for travel planning. Your task:
+CLARIFIER_PROMPT = """You are a Clarifier Agent for a travel guide and product suggestion application. Your task:
 - Extract or confirm the user's intent across these fields:
   destination, travel_date, activities, preferred_brand, clothes, budget_amount, budget_currency, notes.
 - SUPPORT MULTI-DESTINATION TRIPS: If user mentions multiple destinations with dates (e.g., "Paris Jan 5-8, then Rome Jan 9-12"), extract ALL of them into trip_segments.
+
+CRITICAL - INTENT INFERENCE FROM CONTEXT:
+- NEVER ask "Are you looking to buy something, or are you asking about an activity?" when the user mentions a SPECIFIC PRODUCT.
+- If user mentions products (shoes, jacket, backpack, etc.), INFER they want product recommendations. Respond directly and helpfully.
+- If user says "waterproof hiking shoes", they want PRODUCT RECOMMENDATIONS for hiking shoes. Don't ask if they're shopping.
+- If user mentions an activity context (e.g., "shoes for trekking in Himachal"), infer the use case and provide immediate guidance.
+
+PRODUCT MENTIONS - TREAT AS SHOPPING INTENT:
+- shoes, sneakers, boots, sandals, jacket, coat, backpack, bag, luggage, shirt, pants, dress, etc.
+- When products are mentioned, set mentions_product: true and skip generic intent questions.
+- Provide immediate value: suggest features, ask targeted follow-ups (budget, climate, specific use case).
 
 CRITICAL - EXTRACT EVERYTHING FROM USER MESSAGE:
 - ACTIVITIES: If user says "travelling to Miami for hiking" or "going to Paris for shopping", IMMEDIATELY extract "hiking" or "shopping" into the activities array. Do NOT wait to ask - capture it NOW.
 - DATES: If user mentions ANY date reference (next weekend, tomorrow, January 5, etc.), set has_date_info: true
 - NEW TRIP: If user is starting a new trip (travelling to, going to, trip to, etc.), set is_new_trip: true
+- PRODUCTS: If user mentions specific products, capture them in notes and proceed to recommendations.
 
 LOCATION EXTRACTION - CRITICAL:
 - You MUST extract and normalize locations using your world knowledge.
@@ -218,6 +230,34 @@ SHOPPING_KEYWORDS = {
     "want some",
     "get some",
 }
+
+PRODUCT_KEYWORDS = {
+    "shoes", "shoe", "sneakers", "boots", "sandals", "loafers", "heels", "flats",
+    "jacket", "jackets", "coat", "coats", "blazer", "blazers", "parka", "windbreaker",
+    "backpack", "backpacks", "bag", "bags", "luggage", "suitcase", "duffel", "tote",
+    "shirt", "shirts", "t-shirt", "t-shirts", "blouse", "top", "tops",
+    "pants", "trousers", "jeans", "shorts", "leggings", "chinos",
+    "dress", "dresses", "skirt", "skirts", "gown",
+    "sweater", "sweaters", "hoodie", "hoodies", "cardigan", "pullover",
+    "hat", "hats", "cap", "caps", "beanie", "sunglasses", "glasses",
+    "watch", "watches", "jewelry", "accessories", "scarf", "scarves", "gloves",
+    "umbrella", "raincoat", "poncho", "waterproof",
+    "swimsuit", "swimwear", "bikini", "trunks",
+    "suit", "suits", "tuxedo", "formal wear",
+    "activewear", "sportswear", "athleisure", "workout clothes",
+    "hiking gear", "camping gear", "travel gear", "outdoor gear",
+    "thermal", "thermals", "base layer", "fleece",
+    "down jacket", "puffer", "insulated",
+}
+
+
+def detect_product_mention(query: str) -> str:
+    """Check if the query mentions a specific product. Returns the product type or None."""
+    query_lower = query.lower()
+    for product in PRODUCT_KEYWORDS:
+        if product in query_lower:
+            return product
+    return None
 
 NON_SHOPPING_ACTIVITIES = {
     "hiking",
@@ -723,6 +763,15 @@ Extract travel intent and respond with the JSON structure. If key details are mi
 
             # Handle ambiguous intent - neither shopping nor activity detected
             # Only ask if we haven't already asked and user hasn't provided clear context
+            # IMPORTANT: Check for specific product mentions first - this implies shopping intent
+            product_mention = detect_product_mention(query)
+            if product_mention:
+                # User mentioned a specific product - treat as shopping intent, don't ask generic question
+                direct_shopping_intent = True
+                merged_intent["_shopping_flow_complete"] = True
+                merged_intent["notes"] = f"Looking for {product_mention}" if not merged_intent.get("notes") else f"{merged_intent.get('notes')}; Looking for {product_mention}"
+                print(f"[DEBUG] Detected product mention: {product_mention} - treating as shopping intent")
+            
             if not direct_shopping_intent and not direct_non_shopping_activity:
                 if not existing_intent.get("_asked_ambiguous_intent", False):
                     # Check if we have enough context already (destination, activities, etc.)
@@ -731,7 +780,8 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                         or existing_intent.get("_asked_activities", False) or
                         existing_intent.get("_shopping_flow_complete", False)
                         or existing_intent.get("_declined_shopping", False)
-                        or is_skip or result.get("is_confirmation", False))
+                        or is_skip or result.get("is_confirmation", False)
+                        or product_mention)  # Product mention counts as context
 
                     if not has_any_context and len(query.strip()) > 3:
                         merged_intent["_asked_ambiguous_intent"] = True

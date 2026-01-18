@@ -1,0 +1,55 @@
+Here’s a more formal and precise version of your Replit prompt:
+
+***
+
+### Prompt (Formal Version)
+
+**Objective:**  
+Design the system to infer user intent from their input and respond accordingly, without relying on hardcoded generic prompts.
+
+**Requirement:**  
+If the user mentions a specific product (e.g., *shoes*, *jacket*, *backpack*), the system **must not** ask the question:
+
+> “Are you looking to buy something, or are you asking about an activity?”
+
+Instead, the system should:
+
+1.  **Interpret intent from context** (e.g., “waterproof hiking shoes” implies product recommendations for hiking).
+2.  **Respond directly and helpfully** based on the detected intent (e.g., recommend suitable products or provide travel/activity guidance).
+3.  **Ask targeted follow-up questions** only when necessary to clarify relevant details (e.g., budget, destination climate, trip duration), avoiding generic or redundant questions.
+
+**Scope:**  
+This is a **travel guide and product suggestion application**. The system should:
+
+*   Provide travel advice (itineraries, climate considerations, packing tips) when the user’s input suggests activities or destinations.
+*   Provide product suggestions (features, comparisons, pros/cons, shortlists with rationale) when the user mentions products explicitly or implicitly.
+
+**Behavioral Guidelines:**
+
+*   **No hardcoded generic intent questions.** Derive intent from the user’s wording and context.
+*   **Be concise and context-aware.** Offer immediate value (e.g., “For monsoon travel in Kerala, a lightweight waterproof jacket with sealed seams is ideal…”).
+*   **Ask only relevant follow-ups** that advance the recommendation or guidance (e.g., “Which month are you traveling?” “What’s your budget range?” “Urban walking or mountain trails?”).
+*   **Acknowledge uncertainty gracefully** and request specific clarifications if the input is ambiguous.
+*   **Maintain a helpful, professional tone** consistent with a travel assistant and gear advisor.
+
+**Examples:**
+
+*   **User:** “Need shoes for trekking in Himachal in March.”  
+    **System:** “For early-spring trekking in Himachal, look for mid-ankle waterproof hiking shoes with good insulation and Vibram soles for traction on mixed terrain. What’s your budget and do you prefer lighter shoes or extra ankle support?”
+
+*   **User:** “Is a down jacket okay for Tokyo in December?”  
+    **System:** “Yes, a lightweight down jacket is suitable for Tokyo in December (avg 5–12°C). Consider a water-resistant shell for rain and wind. Do you plan to spend extended time outdoors or mostly in the city? I can suggest specific models accordingly.”
+
+*   **User:** “Going to Bali for 6 days—what should I pack?”  
+    **System:** “For Bali’s tropical climate, pack breathable clothing, quick-dry layers, sun protection, and lightweight footwear (sandals plus walking shoes). Will you be doing water activities or temple visits? I can tailor a list and suggest gear.”
+
+**Acceptance Criteria:**
+
+*   The system never displays the generic question about buying vs. activity when a product is mentioned.
+*   Responses demonstrate intent inference and provide immediate, context-specific guidance.
+*   Follow-up questions, when asked, are purposeful and directly relevant to travel context or product selection.
+*   No hardcoded decision trees that ignore user context; logic must be input-driven and adaptive.
+
+***
+
+If you want, I can tailor this further for your exact stack (e.g., prompt structure for a Replit chatbot, function signatures for intent detection, or sample classification rules).
