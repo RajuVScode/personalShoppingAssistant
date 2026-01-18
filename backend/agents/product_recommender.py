@@ -113,6 +113,11 @@ class ProductRecommenderAgent(BaseAgent):
         if context.intent.gender:
             filters["gender"] = context.intent.gender
         
+        # Size filter - mandatory when specified by user
+        if context.intent.size:
+            filters["size"] = context.intent.size
+            print(f"[DEBUG] Size filter applied: {context.intent.size}")
+        
         # User-specified brand takes priority
         if context.intent.brand:
             filters["brand"] = context.intent.brand
@@ -212,6 +217,20 @@ class ProductRecommenderAgent(BaseAgent):
                             query = query.filter(Product.price <= context.intent.budget_max)
                         products = query.order_by(Product.rating.desc()).limit(num_results).all()
             
+            # Apply mandatory size filter if user specified a size
+            user_size = context.intent.size
+            if user_size:
+                user_size_upper = user_size.upper().strip()
+                print(f"[DEBUG] Filtering DB products by size: {user_size_upper}")
+                filtered_products = []
+                for p in products:
+                    sizes = p.sizes_available or []
+                    available_sizes = [s.upper().strip() for s in sizes if s]
+                    if user_size_upper in available_sizes:
+                        filtered_products.append(p)
+                products = filtered_products
+                print(f"[DEBUG] After size filter: {len(products)} products remain")
+            
             raw_products = [{
                 "id": p.id,
                 "name": p.name,
@@ -225,6 +244,7 @@ class ProductRecommenderAgent(BaseAgent):
                 "in_stock": p.in_stock,
                 "rating": p.rating,
                 "colors": p.colors,
+                "sizes_available": p.sizes_available,
                 "tags": p.tags
             } for p in products]
             

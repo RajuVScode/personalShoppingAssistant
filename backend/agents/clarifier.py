@@ -35,6 +35,12 @@ PRODUCT MENTIONS - TREAT AS SHOPPING INTENT:
 - When products are mentioned, set mentions_product: true and skip generic intent questions.
 - Provide immediate value: suggest features, ask targeted follow-ups (budget, climate, specific use case).
 
+SIZE PREFERENCE HANDLING:
+- If user specifies a size (e.g., "size UK 9", "size M", "32 inch waist", "size 10"), capture it in "preferred_size" field.
+- Size formats to recognize: UK sizes (UK 9), US sizes (US 10), EU sizes (EU 42), letter sizes (S, M, L, XL, XXL), numeric sizes (32, 34, 36), waist/inseam (32x30).
+- The system will filter recommendations to show ONLY products available in the specified size.
+- Do NOT assume size flexibility - the user's size is a mandatory filter.
+
 CRITICAL - EXTRACT EVERYTHING FROM USER MESSAGE:
 - ACTIVITIES: If user says "travelling to Miami for hiking" or "going to Paris for shopping", IMMEDIATELY extract "hiking" or "shopping" into the activities array. Do NOT wait to ask - capture it NOW.
 - DATES: If user mentions ANY date reference (next weekend, tomorrow, January 5, etc.), set has_date_info: true
@@ -148,6 +154,7 @@ OUTPUT STRICTLY AS A JSON OBJECT with this shape:
       ]|null,
       "activities": ["string", ...]|null,
       "preferred_brand": "string|null",
+      "preferred_size": "string|null - user's size preference (e.g., 'UK 9', 'M', 'L', '32', 'EU 42')",
       "clothes": "string|null",
       "budget_amount": number|null,
       "budget_currency": "string|null",

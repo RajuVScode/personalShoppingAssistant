@@ -71,6 +71,7 @@ class ProductVectorStore:
                     "in_stock": product.get("in_stock", True),
                     "rating": product.get("rating", 0),
                     "colors": product.get("colors", []),
+                    "sizes_available": product.get("sizes_available", []),
                     "material": product.get("material", ""),
                     "season": product.get("season", "")
                 }
@@ -155,6 +156,13 @@ class ProductVectorStore:
                         for pb in filters["preferred_brands"]
                     )
                     if not brand_match:
+                        continue
+                
+                # MANDATORY size filter - only show products in user's specified size
+                if filters.get("size") and metadata.get("sizes_available"):
+                    user_size = filters["size"].upper().strip()
+                    available_sizes = [s.upper().strip() for s in metadata["sizes_available"]]
+                    if user_size not in available_sizes:
                         continue
             
             candidates.append({
