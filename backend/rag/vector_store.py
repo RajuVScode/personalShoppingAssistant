@@ -158,12 +158,16 @@ class ProductVectorStore:
                     if not brand_match:
                         continue
                 
-                # MANDATORY size filter - only show products in user's specified size
-                if filters.get("size") and metadata.get("sizes_available"):
+                # MANDATORY size filter - check size variant in product name
+                if filters.get("size"):
                     user_size = filters["size"].upper().strip()
-                    available_sizes = [s.upper().strip() for s in metadata["sizes_available"]]
-                    if user_size not in available_sizes:
-                        continue
+                    name = metadata.get("name", "")
+                    if " / " in name:
+                        parts = name.split(" / ")
+                        if len(parts) >= 2:
+                            variant_size = parts[-1].strip().upper()
+                            if variant_size != user_size:
+                                continue
             
             candidates.append({
                 **metadata,
