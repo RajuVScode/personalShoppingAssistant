@@ -85,23 +85,24 @@ Rules:
 - If only one date is mentioned, set start_date = end_date.
 - Parse various date formats:
 - Parse ranges like "from 5 March to 8 March", "10-12 Jan 2025", "2025-01-10 to 2025-01-12".
-- Support relative dates and ACCEPT THEM as valid travel dates:
-- "today" => {CURRENT_DATE}
-- "tomorrow" => {CURRENT_DATE} + 1 day
-- "this week" => current week dates
-- "next week" => the following week dates (Monday-Sunday)
-- "this weekend" / "upcoming weekend" => the upcoming Saturday-Sunday
-- "next weekend" => the weekend AFTER the upcoming one (NOT the immediate upcoming weekend!)
-  - Example: If today is Friday Jan 2, upcoming weekend is Jan 3-4, so "next weekend" is Jan 10-11
-- "1 week from next weekend" => next weekend + 1 week
-  - Example: If "next weekend" is Jan 10-11, then "1 week from next weekend" is Jan 17-18
-- "2 weeks from next weekend" => next weekend + 2 weeks
-- "1 week" / "a week" / "one week" => 1 week (7 days) from today
-- "2 weeks" / "in 2 weeks" => 2 weeks (14 days) from today
-- "next month" => dates in the following calendar month
-- IMPORTANT: "next week", "this weekend", "1 week from next weekend", "1 week", etc. are VALID date inputs - do NOT ask for more specific dates!
-- CRITICAL: All dates MUST be in the FUTURE relative to {CURRENT_DATE}. If today is late December 2025, "next week" means early January 2026, NOT January 2025.
-- If month/day is given without year, always use the NEXT occurrence of that date in the future. If "January 5" is mentioned and today is December 27, 2025, it means January 5, 2026.
+
+AMBIGUOUS DATE HANDLING - ALWAYS ASK FOR CLARIFICATION:
+- When user provides AMBIGUOUS or RELATIVE date expressions, DO NOT auto-interpret them.
+- Instead, set "has_ambiguous_date": true and ask for specific calendar dates.
+- AMBIGUOUS DATE PHRASES that REQUIRE clarification:
+  - "next week", "this week", "a week", "one week", "two weeks", "in 2 weeks"
+  - "next month", "this month", "a month"
+  - "soon", "in a few days", "sometime next week"
+  - Any phrase without specific calendar dates (day, month, or date range)
+- Ask: "Could you please specify the exact start and end dates for your trip (for example, 22 Jan–28 Jan)?"
+
+UNAMBIGUOUS DATES - Process without clarification:
+- Specific dates: "January 15", "March 12-15", "2026-01-22 to 2026-01-28"
+- Specific weekends with dates implied: "this weekend" (Saturday-Sunday only - 2 days is acceptable)
+- Explicit date ranges: "from 5 March to 8 March", "10-12 Jan 2025"
+
+- CRITICAL: All dates MUST be in the FUTURE relative to {CURRENT_DATE}.
+- If month/day is given without year, always use the NEXT occurrence of that date in the future.
 - Date format: "YYYY-MM-DD" (single date) or "YYYY-MM-DD to YYYY-MM-DD" (range).
 
 MULTI-DESTINATION HANDLING:
@@ -113,9 +114,9 @@ MULTI-DESTINATION HANDLING:
 
 DECISION LOGIC:
 - If destination is missing → next_question asks for destination
-- If travel_date is missing (and no relative date like "next week" given) → next_question asks for travel dates  
-- If destination AND travel_date are present → Set next_question to null AND ready_for_recommendations to true
-- Once you have destination + any date reference → PROCEED to recommendations (set next_question: null, ready_for_recommendations: true)
+- If travel_date is missing → next_question asks for travel dates  
+- If user provides AMBIGUOUS date (next week, one week, etc.) → ask for specific calendar dates
+- If destination AND specific travel_date are present → Set next_question to null AND ready_for_recommendations to true
 - DO NOT ask for activities/budget/clothes individually - these are optional extras
 
 USER RESPONSE DETECTION - Use your language understanding to detect:
@@ -258,6 +259,75 @@ def detect_product_mention(query: str) -> str:
         if product in query_lower:
             return product
     return None
+
+
+AMBIGUOUS_DATE_PHRASES = {
+    "next week", "this week", "a week", "one week", "two weeks", "2 weeks",
+    "in 2 weeks", "in two weeks", "few weeks", "couple weeks", "couple of weeks",
+    "next month", "this month", "a month", "one month", "two months",
+    "soon", "in a few days", "few days", "couple days", "couple of days",
+    "sometime", "around", "roughly", "approximately",
+    "end of month", "beginning of month", "mid month",
+    "end of january", "end of february", "end of march", "end of april",
+    "end of may", "end of june", "end of july", "end of august",
+    "end of september", "end of october", "end of november", "end of december",
+}
+
+
+def detect_ambiguous_date(query: str) -> bool:
+    """Check if the query contains an ambiguous date phrase that needs clarification."""
+    query_lower = query.lower()
+    
+    # Check for ambiguous phrases
+    for phrase in AMBIGUOUS_DATE_PHRASES:
+        if phrase in query_lower:
+            return True
+    
+    # Check for patterns like "1 week", "2 weeks", etc.
+    import re
+    ambiguous_patterns = [
+        r'\b\d+\s*weeks?\b',  # "1 week", "2 weeks"
+        r'\b\d+\s*months?\b',  # "1 month", "2 months"
+        r'\bnext\s+week\b',
+        r'\bthis\s+week\b',
+        r'\bin\s+\d+\s+days?\b',  # "in 3 days"
+    ]
+    
+    for pattern in ambiguous_patterns:
+        if re.search(pattern, query_lower):
+            return True
+    
+    return False
+
+
+def has_specific_date(query: str) -> bool:
+    """Check if the query contains specific calendar dates."""
+    import re
+    query_lower = query.lower()
+    
+    # Patterns for specific dates
+    specific_patterns = [
+        r'\b\d{1,2}\s*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)',  # "15 Jan", "5 March"
+        r'\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\s*\d{1,2}',  # "Jan 15", "March 5"
+        r'\b\d{4}-\d{2}-\d{2}\b',  # ISO format "2026-01-15"
+        r'\b\d{1,2}/\d{1,2}/\d{2,4}\b',  # "01/15/2026"
+        r'\b\d{1,2}-\d{1,2}\s*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)',  # "15-18 Jan"
+        r'\bjanuary\s+\d{1,2}', r'\bfebruary\s+\d{1,2}', r'\bmarch\s+\d{1,2}',
+        r'\bapril\s+\d{1,2}', r'\bmay\s+\d{1,2}', r'\bjune\s+\d{1,2}',
+        r'\bjuly\s+\d{1,2}', r'\baugust\s+\d{1,2}', r'\bseptember\s+\d{1,2}',
+        r'\boctober\s+\d{1,2}', r'\bnovember\s+\d{1,2}', r'\bdecember\s+\d{1,2}',
+        r'\b\d{1,2}(st|nd|rd|th)\s+(of\s+)?(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)',  # "15th of January"
+    ]
+    
+    for pattern in specific_patterns:
+        if re.search(pattern, query_lower):
+            return True
+    
+    # Check for "this weekend" which is acceptable (specific 2-day period)
+    if "this weekend" in query_lower or "upcoming weekend" in query_lower:
+        return True
+    
+    return False
 
 NON_SHOPPING_ACTIVITIES = {
     "hiking",
@@ -535,13 +605,36 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                 print(
                     f"[DEBUG] Detected changes: {detected_changes['changes']}")
 
-            if not merged_intent.get("travel_date"):
+            # Check for ambiguous dates BEFORE auto-parsing
+            # If user provides ambiguous date and no specific date, ask for clarification
+            has_ambiguous = detect_ambiguous_date(query)
+            has_specific = has_specific_date(query)
+            already_asked_date_clarification = existing_intent.get("_asked_date_clarification", False)
+            
+            if has_ambiguous and not has_specific and not already_asked_date_clarification and not merged_intent.get("travel_date"):
+                # User provided ambiguous date like "next week" - ask for specific dates
+                merged_intent["_asked_date_clarification"] = True
+                destination = merged_intent.get("destination", "your destination")
+                date_clarification = f"Could you please specify the exact start and end dates for your trip to {destination}? (for example, 22 Jan - 28 Jan)"
+                print(f"[DEBUG] Detected ambiguous date in query, asking for clarification")
+                return {
+                    "needs_clarification": True,
+                    "clarification_question": date_clarification,
+                    "assistant_message": change_acknowledgment + date_clarification if change_acknowledgment else date_clarification,
+                    "updated_intent": merged_intent,
+                    "clarified_query": query,
+                    "ready_for_recommendations": False,
+                    "detected_changes": detected_changes
+                }
+            
+            # Only auto-parse dates if they are specific (not ambiguous)
+            if not merged_intent.get("travel_date") and has_specific:
                 parsed_date = parse_relative_date(query, datetime.now())
                 if parsed_date:
                     merged_intent["travel_date"] = parsed_date
                     result["has_date_info"] = True
                     print(
-                        f"[DEBUG] Parsed relative date from query: {parsed_date}"
+                        f"[DEBUG] Parsed specific date from query: {parsed_date}"
                     )
 
             country_only = new_intent.get("country_only", False)
