@@ -240,22 +240,95 @@ SHOPPING_KEYWORDS = {
 }
 
 PRODUCT_KEYWORDS = {
-    "shoes", "shoe", "sneakers", "boots", "sandals", "loafers", "heels", "flats",
-    "jacket", "jackets", "coat", "coats", "blazer", "blazers", "parka", "windbreaker",
-    "backpack", "backpacks", "bag", "bags", "luggage", "suitcase", "duffel", "tote",
-    "shirt", "shirts", "t-shirt", "t-shirts", "blouse", "top", "tops",
-    "pants", "trousers", "jeans", "shorts", "leggings", "chinos",
-    "dress", "dresses", "skirt", "skirts", "gown",
-    "sweater", "sweaters", "hoodie", "hoodies", "cardigan", "pullover",
-    "hat", "hats", "cap", "caps", "beanie", "sunglasses", "glasses",
-    "watch", "watches", "jewelry", "accessories", "scarf", "scarves", "gloves",
-    "umbrella", "raincoat", "poncho", "waterproof",
-    "swimsuit", "swimwear", "bikini", "trunks",
-    "suit", "suits", "tuxedo", "formal wear",
-    "activewear", "sportswear", "athleisure", "workout clothes",
-    "hiking gear", "camping gear", "travel gear", "outdoor gear",
-    "thermal", "thermals", "base layer", "fleece",
-    "down jacket", "puffer", "insulated",
+    "shoes",
+    "shoe",
+    "sneakers",
+    "boots",
+    "sandals",
+    "loafers",
+    "heels",
+    "flats",
+    "jacket",
+    "jackets",
+    "coat",
+    "coats",
+    "blazer",
+    "blazers",
+    "parka",
+    "windbreaker",
+    "backpack",
+    "backpacks",
+    "bag",
+    "bags",
+    "luggage",
+    "suitcase",
+    "duffel",
+    "tote",
+    "shirt",
+    "shirts",
+    "t-shirt",
+    "t-shirts",
+    "blouse",
+    "top",
+    "tops",
+    "pants",
+    "trousers",
+    "jeans",
+    "shorts",
+    "leggings",
+    "chinos",
+    "dress",
+    "dresses",
+    "skirt",
+    "skirts",
+    "gown",
+    "sweater",
+    "sweaters",
+    "hoodie",
+    "hoodies",
+    "cardigan",
+    "pullover",
+    "hat",
+    "hats",
+    "cap",
+    "caps",
+    "beanie",
+    "sunglasses",
+    "glasses",
+    "watch",
+    "watches",
+    "jewelry",
+    "accessories",
+    "scarf",
+    "scarves",
+    "gloves",
+    "umbrella",
+    "raincoat",
+    "poncho",
+    "waterproof",
+    "swimsuit",
+    "swimwear",
+    "bikini",
+    "trunks",
+    "suit",
+    "suits",
+    "tuxedo",
+    "formal wear",
+    "activewear",
+    "sportswear",
+    "athleisure",
+    "workout clothes",
+    "hiking gear",
+    "camping gear",
+    "travel gear",
+    "outdoor gear",
+    "thermal",
+    "thermals",
+    "base layer",
+    "fleece",
+    "down jacket",
+    "puffer",
+    "insulated",
 }
 
 
@@ -269,27 +342,58 @@ def detect_product_mention(query: str) -> str:
 
 
 AMBIGUOUS_DATE_PHRASES = {
-    "next week", "this week", "a week", "one week", "two weeks", "2 weeks",
-    "in 2 weeks", "in two weeks", "few weeks", "couple weeks", "couple of weeks",
-    "next month", "this month", "a month", "one month", "two months",
-    "soon", "in a few days", "few days", "couple days", "couple of days",
-    "sometime", "around", "roughly", "approximately",
-    "end of month", "beginning of month", "mid month",
-    "end of january", "end of february", "end of march", "end of april",
-    "end of may", "end of june", "end of july", "end of august",
-    "end of september", "end of october", "end of november", "end of december",
+    "next week",
+    "this week",
+    "a week",
+    "one week",
+    "two weeks",
+    "2 weeks",
+    "in 2 weeks",
+    "in two weeks",
+    "few weeks",
+    "couple weeks",
+    "couple of weeks",
+    "next month",
+    "this month",
+    "a month",
+    "one month",
+    "two months",
+    "soon",
+    "in a few days",
+    "few days",
+    "couple days",
+    "couple of days",
+    "sometime",
+    "around",
+    "roughly",
+    "approximately",
+    "end of month",
+    "beginning of month",
+    "mid month",
+    "end of january",
+    "end of february",
+    "end of march",
+    "end of april",
+    "end of may",
+    "end of june",
+    "end of july",
+    "end of august",
+    "end of september",
+    "end of october",
+    "end of november",
+    "end of december",
 }
 
 
 def detect_ambiguous_date(query: str) -> bool:
     """Check if the query contains an ambiguous date phrase that needs clarification."""
     query_lower = query.lower()
-    
+
     # Check for ambiguous phrases
     for phrase in AMBIGUOUS_DATE_PHRASES:
         if phrase in query_lower:
             return True
-    
+
     # Check for patterns like "1 week", "2 weeks", etc.
     import re
     ambiguous_patterns = [
@@ -299,11 +403,11 @@ def detect_ambiguous_date(query: str) -> bool:
         r'\bthis\s+week\b',
         r'\bin\s+\d+\s+days?\b',  # "in 3 days"
     ]
-    
+
     for pattern in ambiguous_patterns:
         if re.search(pattern, query_lower):
             return True
-    
+
     return False
 
 
@@ -311,7 +415,7 @@ def has_specific_date(query: str) -> bool:
     """Check if the query contains specific calendar dates."""
     import re
     query_lower = query.lower()
-    
+
     # Patterns for specific dates
     specific_patterns = [
         r'\b\d{1,2}\s*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)',  # "15 Jan", "5 March"
@@ -319,22 +423,31 @@ def has_specific_date(query: str) -> bool:
         r'\b\d{4}-\d{2}-\d{2}\b',  # ISO format "2026-01-15"
         r'\b\d{1,2}/\d{1,2}/\d{2,4}\b',  # "01/15/2026"
         r'\b\d{1,2}-\d{1,2}\s*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)',  # "15-18 Jan"
-        r'\bjanuary\s+\d{1,2}', r'\bfebruary\s+\d{1,2}', r'\bmarch\s+\d{1,2}',
-        r'\bapril\s+\d{1,2}', r'\bmay\s+\d{1,2}', r'\bjune\s+\d{1,2}',
-        r'\bjuly\s+\d{1,2}', r'\baugust\s+\d{1,2}', r'\bseptember\s+\d{1,2}',
-        r'\boctober\s+\d{1,2}', r'\bnovember\s+\d{1,2}', r'\bdecember\s+\d{1,2}',
+        r'\bjanuary\s+\d{1,2}',
+        r'\bfebruary\s+\d{1,2}',
+        r'\bmarch\s+\d{1,2}',
+        r'\bapril\s+\d{1,2}',
+        r'\bmay\s+\d{1,2}',
+        r'\bjune\s+\d{1,2}',
+        r'\bjuly\s+\d{1,2}',
+        r'\baugust\s+\d{1,2}',
+        r'\bseptember\s+\d{1,2}',
+        r'\boctober\s+\d{1,2}',
+        r'\bnovember\s+\d{1,2}',
+        r'\bdecember\s+\d{1,2}',
         r'\b\d{1,2}(st|nd|rd|th)\s+(of\s+)?(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)',  # "15th of January"
     ]
-    
+
     for pattern in specific_patterns:
         if re.search(pattern, query_lower):
             return True
-    
+
     # Check for "this weekend" which is acceptable (specific 2-day period)
     if "this weekend" in query_lower or "upcoming weekend" in query_lower:
         return True
-    
+
     return False
+
 
 NON_SHOPPING_ACTIVITIES = {
     "hiking",
@@ -616,24 +729,37 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             # If user provides ambiguous date and no specific date, ask for clarification
             has_ambiguous = detect_ambiguous_date(query)
             has_specific = has_specific_date(query)
-            already_asked_date_clarification = existing_intent.get("_asked_date_clarification", False)
-            
-            if has_ambiguous and not has_specific and not already_asked_date_clarification and not merged_intent.get("travel_date"):
+            already_asked_date_clarification = existing_intent.get(
+                "_asked_date_clarification", False)
+
+            if has_ambiguous and not has_specific and not already_asked_date_clarification and not merged_intent.get(
+                    "travel_date"):
                 # User provided ambiguous date like "next week" - ask for specific dates
                 merged_intent["_asked_date_clarification"] = True
-                destination = merged_intent.get("destination", "your destination")
+                destination = merged_intent.get("destination",
+                                                "your destination")
                 date_clarification = f"Could you please specify the exact start and end dates for your trip to {destination}? (for example, 22 Jan - 28 Jan)"
-                print(f"[DEBUG] Detected ambiguous date in query, asking for clarification")
+                print(
+                    f"[DEBUG] Detected ambiguous date in query, asking for clarification"
+                )
                 return {
-                    "needs_clarification": True,
-                    "clarification_question": date_clarification,
-                    "assistant_message": change_acknowledgment + date_clarification if change_acknowledgment else date_clarification,
-                    "updated_intent": merged_intent,
-                    "clarified_query": query,
-                    "ready_for_recommendations": False,
-                    "detected_changes": detected_changes
+                    "needs_clarification":
+                    True,
+                    "clarification_question":
+                    date_clarification,
+                    "assistant_message":
+                    change_acknowledgment + date_clarification
+                    if change_acknowledgment else date_clarification,
+                    "updated_intent":
+                    merged_intent,
+                    "clarified_query":
+                    query,
+                    "ready_for_recommendations":
+                    False,
+                    "detected_changes":
+                    detected_changes
                 }
-            
+
             # Only auto-parse dates if they are specific (not ambiguous)
             if not merged_intent.get("travel_date") and has_specific:
                 parsed_date = parse_relative_date(query, datetime.now())
@@ -856,26 +982,17 @@ Extract travel intent and respond with the JSON structure. If key details are mi
 
                     merged_intent["_asked_shopping_for_activity"] = True
                     merged_intent["_awaiting_shopping_confirm"] = True
-                    merged_intent[
-                        "_pending_activity"] = direct_non_shopping_activity
+                    merged_intent["_pending_activity"] = direct_non_shopping_activity
                     merged_intent["_asked_activities"] = True
                     shopping_question = f"Would you like to do shopping for {direct_non_shopping_activity}?"
                     return {
-                        "needs_clarification":
-                        True,
-                        "clarification_question":
-                        shopping_question,
-                        "assistant_message":
-                        change_acknowledgment + shopping_question
-                        if change_acknowledgment else shopping_question,
-                        "updated_intent":
-                        merged_intent,
-                        "clarified_query":
-                        query,
-                        "ready_for_recommendations":
-                        False,
-                        "detected_changes":
-                        detected_changes
+                        "needs_clarification": True,
+                        "clarification_question": shopping_question,
+                        "assistant_message": change_acknowledgment + shopping_question if change_acknowledgment else shopping_question,
+                        "updated_intent": merged_intent,
+                        "clarified_query": query,
+                        "ready_for_recommendations": False,
+                        "detected_changes": detected_changes
                     }
 
             # Handle ambiguous intent - neither shopping nor activity detected
