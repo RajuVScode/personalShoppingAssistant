@@ -1,14 +1,10 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
+import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 
 interface UpdateUserProfileProps {
   isOpen: boolean;
@@ -163,19 +159,38 @@ export default function UpdateUserProfile({ isOpen, onClose, customerId, onUpdat
     }
   };
 
-  return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" data-testid="update-profile-modal">
-        <DialogHeader>
-          <DialogTitle className="text-lg font-semibold">Edit Profile</DialogTitle>
-        </DialogHeader>
+  if (!isOpen) return null;
+
+  const modalContent = (
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      data-testid="update-profile-modal-overlay"
+    >
+      <div
+        className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto m-4"
+        onClick={(e) => e.stopPropagation()}
+        data-testid="update-profile-modal"
+      >
+        <div className="sticky top-0 bg-[#6366F1] text-white px-6 py-4 flex items-center justify-between rounded-t-lg">
+          <h2 className="text-lg font-semibold">Edit Profile</h2>
+          <button
+            onClick={onClose}
+            className="text-white hover:bg-white/10 p-1 rounded"
+            data-testid="btn-close-update-profile"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
 
         {isLoading ? (
           <div className="p-6 flex items-center justify-center">
             <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full" />
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="p-6 space-y-6">
             <div className="space-y-4">
               <h3 className="font-medium text-gray-700 border-b pb-2">Personal Information</h3>
               
@@ -357,7 +372,9 @@ export default function UpdateUserProfile({ isOpen, onClose, customerId, onUpdat
             </div>
           </form>
         )}
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
+
+  return createPortal(modalContent, document.body);
 }

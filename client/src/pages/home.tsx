@@ -46,7 +46,9 @@ export default function HomePage() {
   };
 
   const handleEditProfile = () => {
+    console.log("Edit profile clicked, customerId:", customerId);
     setTimeout(() => {
+      console.log("Setting showUpdateProfile to true");
       setShowUpdateProfile(true);
     }, 100);
   };
