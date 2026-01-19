@@ -39,9 +39,9 @@ export default function HomePage() {
     navigate("/login");
   };
 
-  const handleEditProfile = () => {
-    console.log("Navigating to /profile");
-    navigate("/profile");
+  const handleEditProfile = (e: Event) => {
+    e.preventDefault();
+    window.location.href = "/profile";
   };
 
   return (

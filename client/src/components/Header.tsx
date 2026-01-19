@@ -45,7 +45,7 @@ export default function Header({ onSignUp, showAuthButtons = true }: HeaderProps
   };
 
   const handleEditProfile = () => {
-    navigate("/profile");
+    window.location.href = "/profile";
   };
 
   return (
