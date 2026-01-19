@@ -6,7 +6,7 @@ from sqlalchemy.orm.attributes import flag_modified
 from contextlib import asynccontextmanager
 
 from backend.database.connection import engine, get_db, Base
-from backend.database.models import Customer, Product, PurchaseHistory, Conversation
+from backend.database.models import Customer, Product, PurchaseHistory, Conversation, CustomerAddress
 from pydantic import BaseModel
 from backend.models.schemas import (
     ChatRequest, ChatResponse, CustomerCreate, CustomerResponse,
@@ -289,12 +289,109 @@ def create_customer(customer: CustomerCreate, db: Session = Depends(get_db)):
     db.refresh(db_customer)
     return db_customer
 
-@app.get("/api/customers/{customer_id}", response_model=CustomerResponse)
-def get_customer(customer_id: int, db: Session = Depends(get_db)):
-    customer = db.query(Customer).filter(Customer.id == customer_id).first()
+@app.get("/api/customers/{customer_id}")
+def get_customer(customer_id: str, db: Session = Depends(get_db)):
+    customer = db.query(Customer).filter(Customer.customer_id == customer_id).first()
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
-    return customer
+    
+    address = db.query(CustomerAddress).filter(CustomerAddress.customer_id == customer_id).first()
+    
+    return {
+        "customer_id": customer.customer_id,
+        "first_name": customer.first_name,
+        "last_name": customer.last_name,
+        "email": customer.email,
+        "phone_number": customer.phone_number,
+        "gender": customer.gender,
+        "date_of_birth": str(customer.date_of_birth) if customer.date_of_birth else None,
+        "address": {
+            "label": address.label if address else None,
+            "address_line1": address.address_line1 if address else None,
+            "address_line2": address.address_line2 if address else None,
+            "city": address.city if address else None,
+            "state": address.state if address else None,
+            "postal_code": address.postal_code if address else None,
+            "country": address.country if address else None,
+        } if address else None
+    }
+
+class CustomerUpdateRequest(BaseModel):
+    first_name: str
+    last_name: str
+    email: str
+    phone_number: str | None = None
+    gender: str | None = None
+    date_of_birth: str | None = None
+    address: dict | None = None
+
+@app.put("/api/customers/{customer_id}")
+def update_customer(customer_id: str, request: CustomerUpdateRequest, db: Session = Depends(get_db)):
+    customer = db.query(Customer).filter(Customer.customer_id == customer_id).first()
+    if not customer:
+        raise HTTPException(status_code=404, detail="Customer not found")
+    
+    customer.first_name = request.first_name
+    customer.last_name = request.last_name
+    customer.email = request.email
+    customer.phone_number = request.phone_number
+    customer.gender = request.gender
+    
+    from datetime import datetime
+    if request.date_of_birth:
+        try:
+            customer.date_of_birth = datetime.strptime(request.date_of_birth, "%Y-%m-%d").date()
+        except ValueError:
+            customer.date_of_birth = None
+    else:
+        customer.date_of_birth = None
+    
+    if request.address:
+        address = db.query(CustomerAddress).filter(CustomerAddress.customer_id == customer_id).first()
+        has_address_data = any([
+            request.address.get("address_line1"),
+            request.address.get("city"),
+            request.address.get("state"),
+            request.address.get("postal_code"),
+            request.address.get("country")
+        ])
+        
+        if address:
+            address.label = request.address.get("label") or address.label
+            address.address_line1 = request.address.get("address_line1") or address.address_line1
+            address.address_line2 = request.address.get("address_line2")
+            address.city = request.address.get("city") or address.city
+            address.state = request.address.get("state")
+            address.postal_code = request.address.get("postal_code")
+            address.country = request.address.get("country")
+        elif has_address_data:
+            import uuid
+            new_address = CustomerAddress(
+                address_id=f"addr-{str(uuid.uuid4())[:8]}",
+                customer_id=customer_id,
+                label=request.address.get("label"),
+                address_line1=request.address.get("address_line1") or "",
+                address_line2=request.address.get("address_line2"),
+                city=request.address.get("city") or "",
+                state=request.address.get("state"),
+                postal_code=request.address.get("postal_code"),
+                country=request.address.get("country")
+            )
+            db.add(new_address)
+    
+    db.commit()
+    db.refresh(customer)
+    
+    return {
+        "success": True,
+        "message": "Customer updated successfully",
+        "customer": {
+            "customer_id": customer.customer_id,
+            "first_name": customer.first_name,
+            "last_name": customer.last_name,
+            "email": customer.email
+        }
+    }
 
 @app.get("/api/products", response_model=list[ProductResponse])
 def get_products(

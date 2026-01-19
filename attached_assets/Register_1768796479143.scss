@@ -1,0 +1,13 @@
+.register .card-title {
+  font-size: 1.25rem;
+}
+
+/* Scoped styles for Register component */
+.register-card.card {
+  border: none !important;
+  width: 720px;
+  max-width: 95%;
+}
+
+/* Slightly larger inputs for register form */
+.register-card .form-control { min-height: 44px; }

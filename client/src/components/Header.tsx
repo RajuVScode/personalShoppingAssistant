@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { UserPlus, User, LogOut, ChevronDown } from "lucide-react";
 import Logo from "@/components/Logo";
+import UpdateUserProfile from "@/components/UpdateUserProfile";
 
 interface HeaderProps {
   onSignUp?: () => void;
@@ -18,12 +19,16 @@ interface HeaderProps {
 
 export default function Header({ onSignUp, showAuthButtons = true }: HeaderProps) {
   const [customerName, setCustomerName] = useState<string | null>(null);
+  const [customerId, setCustomerId] = useState<string | null>(null);
+  const [showUpdateProfile, setShowUpdateProfile] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     const checkAuth = () => {
       const name = localStorage.getItem("customer_name");
+      const id = localStorage.getItem("customer_id");
       setCustomerName(name);
+      setCustomerId(id);
     };
     
     checkAuth();
@@ -45,9 +50,16 @@ export default function Header({ onSignUp, showAuthButtons = true }: HeaderProps
   };
 
   const handleEditProfile = () => {
+    setShowUpdateProfile(true);
+  };
+
+  const handleProfileUpdate = () => {
+    const name = localStorage.getItem("customer_name");
+    setCustomerName(name);
   };
 
   return (
+    <>
     <header className="w-full bg-[#1565C0] text-white py-3 px-6 flex items-center justify-between" style={{ fontFamily: 'Calibri, sans-serif' }} data-testid="header">
       <div data-testid="header-logo">
         <Logo className="h-10" />
@@ -119,5 +131,15 @@ export default function Header({ onSignUp, showAuthButtons = true }: HeaderProps
         </div>
       )}
     </header>
+    
+    {customerId && (
+      <UpdateUserProfile
+        isOpen={showUpdateProfile}
+        onClose={() => setShowUpdateProfile(false)}
+        customerId={customerId}
+        onUpdate={handleProfileUpdate}
+      />
+    )}
+    </>
   );
 }
