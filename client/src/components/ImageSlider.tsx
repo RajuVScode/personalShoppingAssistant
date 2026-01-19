@@ -17,9 +17,6 @@ export function ImageSlider({
 }: ImageSliderProps) {
   const [isHovering, setIsHovering] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [imagesLoaded, setImagesLoaded] = useState<boolean[]>(() => 
-    Array(imageCount).fill(false).map((_, i) => i === 0)
-  );
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const productImages = Array.from({ length: imageCount }, (_, i) => {
@@ -33,23 +30,16 @@ export function ImageSlider({
     productImages.forEach((src, idx) => {
       if (idx === 0) return;
       const img = new Image();
-      img.onload = () => {
-        setImagesLoaded(prev => {
-          const newState = [...prev];
-          newState[idx] = true;
-          return newState;
-        });
-      };
       img.src = src;
     });
   }, [productId]);
 
   useEffect(() => {
-    if (isHovering && imagesLoaded.every(Boolean)) {
+    if (isHovering) {
       intervalRef.current = setInterval(() => {
         setCurrentImageIndex((prev) => (prev + 1) % imageCount);
       }, slideInterval);
-    } else if (!isHovering) {
+    } else {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
@@ -62,7 +52,7 @@ export function ImageSlider({
         clearInterval(intervalRef.current);
       }
     };
-  }, [isHovering, imagesLoaded, imageCount, slideInterval]);
+  }, [isHovering, imageCount, slideInterval]);
 
   return (
     <div 
