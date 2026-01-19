@@ -39,11 +39,6 @@ export default function HomePage() {
     navigate("/login");
   };
 
-  const handleEditProfile = (e: Event) => {
-    e.preventDefault();
-    window.location.href = "/profile";
-  };
-
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: 'Calibri, sans-serif' }}>
       <div className="bg-[#1a1a2e] text-white text-center py-2 text-sm" data-testid="promo-banner">
@@ -88,13 +83,11 @@ export default function HomePage() {
                       </div>
                     </div>
                     <div className="py-1">
-                      <DropdownMenuItem 
-                        onSelect={handleEditProfile}
-                        className="cursor-pointer px-3 py-2"
-                        data-testid="menu-edit-profile"
-                      >
-                        <User className="w-4 h-4 mr-3 text-gray-500" />
-                        <span>Edit Profile</span>
+                      <DropdownMenuItem asChild className="cursor-pointer px-3 py-2">
+                        <a href="/profile" data-testid="menu-edit-profile">
+                          <User className="w-4 h-4 mr-3 text-gray-500" />
+                          <span>Edit Profile</span>
+                        </a>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem 

@@ -44,10 +44,6 @@ export default function Header({ onSignUp, showAuthButtons = true }: HeaderProps
     navigate("/login");
   };
 
-  const handleEditProfile = () => {
-    window.location.href = "/profile";
-  };
-
   return (
     <header className="w-full bg-[#1565C0] text-white py-3 px-6 flex items-center justify-between" style={{ fontFamily: 'Calibri, sans-serif' }} data-testid="header">
       <div data-testid="header-logo">
@@ -85,13 +81,11 @@ export default function Header({ onSignUp, showAuthButtons = true }: HeaderProps
                   </div>
                 </div>
                 <div className="py-1">
-                  <DropdownMenuItem 
-                    onSelect={handleEditProfile}
-                    className="cursor-pointer px-3 py-2"
-                    data-testid="menu-edit-profile"
-                  >
-                    <User className="w-4 h-4 mr-3 text-gray-500" />
-                    <span>Edit Profile</span>
+                  <DropdownMenuItem asChild className="cursor-pointer px-3 py-2">
+                    <a href="/profile" data-testid="menu-edit-profile">
+                      <User className="w-4 h-4 mr-3 text-gray-500" />
+                      <span>Edit Profile</span>
+                    </a>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem 
