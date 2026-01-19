@@ -89,7 +89,7 @@ export default function HomePage() {
                     </div>
                     <div className="py-1">
                       <DropdownMenuItem 
-                        onClick={handleEditProfile}
+                        onSelect={handleEditProfile}
                         className="cursor-pointer px-3 py-2"
                         data-testid="menu-edit-profile"
                       >
@@ -98,7 +98,7 @@ export default function HomePage() {
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem 
-                        onClick={handleLogout}
+                        onSelect={handleLogout}
                         className="cursor-pointer px-3 py-2 text-red-600 focus:text-red-600"
                         data-testid="menu-logout"
                       >
