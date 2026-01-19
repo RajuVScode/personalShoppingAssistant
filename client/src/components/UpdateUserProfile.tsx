@@ -1,9 +1,14 @@
 import { useState, useEffect } from "react";
-import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface UpdateUserProfileProps {
   isOpen: boolean;
@@ -35,7 +40,6 @@ export default function UpdateUserProfile({ isOpen, onClose, customerId, onUpdat
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isAnimating, setIsAnimating] = useState(false);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -53,11 +57,8 @@ export default function UpdateUserProfile({ isOpen, onClose, customerId, onUpdat
   const [country, setCountry] = useState("");
 
   useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => setIsAnimating(true), 50);
+    if (isOpen && customerId) {
       fetchCustomerData();
-    } else {
-      setIsAnimating(false);
     }
   }, [isOpen, customerId]);
 
@@ -87,7 +88,11 @@ export default function UpdateUserProfile({ isOpen, onClose, customerId, onUpdat
         }
       }
     } catch (error) {
-      console.error("Error fetching customer data:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load profile data.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -138,7 +143,7 @@ export default function UpdateUserProfile({ isOpen, onClose, customerId, onUpdat
           description: "Your profile has been updated successfully.",
         });
         onUpdate?.();
-        handleClose();
+        onClose();
       } else {
         const error = await response.json();
         toast({
@@ -158,46 +163,21 @@ export default function UpdateUserProfile({ isOpen, onClose, customerId, onUpdat
     }
   };
 
-  const handleClose = () => {
-    setIsAnimating(false);
-    setTimeout(() => {
-      onClose();
-    }, 300);
-  };
-
-  if (!isOpen) return null;
-
   return (
-    <div
-      className={`fixed inset-0 z-[70] flex items-center justify-center bg-black/50 transition-opacity duration-300 ${isAnimating ? "opacity-100" : "opacity-0"}`}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) handleClose();
-      }}
-      data-testid="update-profile-modal-overlay"
-    >
-      <div
-        className={`bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto transition-all duration-300 ${isAnimating ? "scale-100 opacity-100" : "scale-95 opacity-0"}`}
-        data-testid="update-profile-modal"
-      >
-        <div className="sticky top-0 bg-[#6366F1] text-white px-6 py-4 flex items-center justify-between rounded-t-lg">
-          <h2 className="text-lg font-semibold">Edit Profile</h2>
-          <button
-            onClick={handleClose}
-            className="text-white hover:bg-white/10 p-1 rounded"
-            data-testid="btn-close-update-profile"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" data-testid="update-profile-modal">
+        <DialogHeader>
+          <DialogTitle className="text-lg font-semibold">Edit Profile</DialogTitle>
+        </DialogHeader>
 
         {isLoading ? (
           <div className="p-6 flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#6366F1]"></div>
+            <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full" />
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">Personal Information</h3>
+              <h3 className="font-medium text-gray-700 border-b pb-2">Personal Information</h3>
               
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -207,7 +187,6 @@ export default function UpdateUserProfile({ isOpen, onClose, customerId, onUpdat
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
                     placeholder="Enter first name"
-                    required
                     data-testid="input-first-name"
                   />
                 </div>
@@ -218,25 +197,24 @@ export default function UpdateUserProfile({ isOpen, onClose, customerId, onUpdat
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
                     placeholder="Enter last name"
-                    required
                     data-testid="input-last-name"
                   />
                 </div>
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="email">Email *</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter email"
+                  data-testid="input-email"
+                />
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email *</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter email"
-                    required
-                    data-testid="input-email"
-                  />
-                </div>
                 <div className="space-y-2">
                   <Label htmlFor="phoneNumber">Phone Number</Label>
                   <Input
@@ -247,94 +225,79 @@ export default function UpdateUserProfile({ isOpen, onClose, customerId, onUpdat
                     data-testid="input-phone"
                   />
                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="gender">Gender</Label>
                   <select
                     id="gender"
                     value={gender}
                     onChange={(e) => setGender(e.target.value)}
-                    className="w-full h-10 px-3 py-2 border rounded-md text-sm bg-white"
+                    className="w-full h-9 px-3 rounded-md border border-input bg-background text-sm"
                     data-testid="select-gender"
                   >
                     <option value="">Select gender</option>
                     <option value="Male">Male</option>
                     <option value="Female">Female</option>
-                    <option value="Non-binary">Non-binary</option>
-                    <option value="Prefer not to say">Prefer not to say</option>
+                    <option value="Other">Other</option>
                   </select>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="dateOfBirth">Date of Birth</Label>
-                  <Input
-                    id="dateOfBirth"
-                    type="date"
-                    value={dateOfBirth}
-                    onChange={(e) => setDateOfBirth(e.target.value)}
-                    data-testid="input-dob"
-                  />
-                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="dateOfBirth">Date of Birth</Label>
+                <Input
+                  id="dateOfBirth"
+                  type="date"
+                  value={dateOfBirth}
+                  onChange={(e) => setDateOfBirth(e.target.value)}
+                  data-testid="input-dob"
+                />
               </div>
             </div>
 
             <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">Address Information</h3>
+              <h3 className="font-medium text-gray-700 border-b pb-2">Address</h3>
               
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="addressLabel">Address Label</Label>
-                  <Input
-                    id="addressLabel"
-                    value={addressLabel}
-                    onChange={(e) => setAddressLabel(e.target.value)}
-                    placeholder="e.g., Home, Work"
-                    data-testid="input-address-label"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="country">Country</Label>
-                  <Input
-                    id="country"
-                    value={country}
-                    onChange={(e) => setCountry(e.target.value)}
-                    placeholder="Enter country"
-                    data-testid="input-country"
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="addressLabel">Label</Label>
+                <Input
+                  id="addressLabel"
+                  value={addressLabel}
+                  onChange={(e) => setAddressLabel(e.target.value)}
+                  placeholder="e.g., Home, Work"
+                  data-testid="input-address-label"
+                />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="addressLine1">Street Address 1</Label>
+                <Label htmlFor="addressLine1">Address Line 1</Label>
                 <Input
                   id="addressLine1"
                   value={addressLine1}
                   onChange={(e) => setAddressLine1(e.target.value)}
-                  placeholder="Enter street address"
-                  data-testid="input-address1"
+                  placeholder="Street address"
+                  data-testid="input-address-line1"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="addressLine2">Street Address 2</Label>
+                <Label htmlFor="addressLine2">Address Line 2</Label>
                 <Input
                   id="addressLine2"
                   value={addressLine2}
                   onChange={(e) => setAddressLine2(e.target.value)}
-                  placeholder="Apartment, suite, etc. (optional)"
-                  data-testid="input-address2"
+                  placeholder="Apartment, suite, etc."
+                  data-testid="input-address-line2"
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="city">City</Label>
                   <Input
                     id="city"
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
-                    placeholder="Enter city"
+                    placeholder="City"
                     data-testid="input-city"
                   />
                 </div>
@@ -344,18 +307,31 @@ export default function UpdateUserProfile({ isOpen, onClose, customerId, onUpdat
                     id="state"
                     value={state}
                     onChange={(e) => setState(e.target.value)}
-                    placeholder="Enter state"
+                    placeholder="State"
                     data-testid="input-state"
                   />
                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="postalCode">Postal Code</Label>
                   <Input
                     id="postalCode"
                     value={postalCode}
                     onChange={(e) => setPostalCode(e.target.value)}
-                    placeholder="Enter postal code"
+                    placeholder="Postal code"
                     data-testid="input-postal-code"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="country">Country</Label>
+                  <Input
+                    id="country"
+                    value={country}
+                    onChange={(e) => setCountry(e.target.value)}
+                    placeholder="Country"
+                    data-testid="input-country"
                   />
                 </div>
               </div>
@@ -365,9 +341,8 @@ export default function UpdateUserProfile({ isOpen, onClose, customerId, onUpdat
               <Button
                 type="button"
                 variant="outline"
-                onClick={handleClose}
-                disabled={isSaving}
-                data-testid="btn-cancel-update"
+                onClick={onClose}
+                data-testid="btn-cancel-profile"
               >
                 Cancel
               </Button>
@@ -382,7 +357,7 @@ export default function UpdateUserProfile({ isOpen, onClose, customerId, onUpdat
             </div>
           </form>
         )}
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
