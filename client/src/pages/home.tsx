@@ -40,6 +40,7 @@ export default function HomePage() {
   };
 
   const handleEditProfile = () => {
+    console.log("Navigating to /profile");
     navigate("/profile");
   };
 
