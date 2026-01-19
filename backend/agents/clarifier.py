@@ -748,28 +748,45 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             awaiting_shopping_confirm = existing_intent.get(
                 "_awaiting_shopping_confirm", False)
             if awaiting_shopping_confirm:
-                if is_affirmative_response(query):
+                # Check if user also mentioned a specific product in the same message
+                product_in_confirmation = detect_product_mention(query)
+                
+                if is_affirmative_response(query) or product_in_confirmation:
                     merged_intent["_awaiting_shopping_confirm"] = False
                     merged_intent["_confirmed_shopping"] = True
-                    merged_intent["_asked_product_category"] = True
-                    product_question = "What kind of products or category of products would you like to buy?"
-                    return {
-                        "needs_clarification":
-                        True,
-                        "clarification_question":
-                        product_question,
-                        "assistant_message":
-                        change_acknowledgment + product_question
-                        if change_acknowledgment else product_question,
-                        "updated_intent":
-                        merged_intent,
-                        "clarified_query":
-                        query,
-                        "ready_for_recommendations":
-                        False,
-                        "detected_changes":
-                        detected_changes
-                    }
+                    
+                    # If user mentioned a product (e.g., "yes, like to buy shoes"), capture it and proceed
+                    if product_in_confirmation:
+                        merged_intent["_asked_product_category"] = True
+                        merged_intent["_product_category_received"] = True
+                        merged_intent["_shopping_flow_complete"] = True
+                        merged_intent["notes"] = product_in_confirmation if not merged_intent.get(
+                            "notes") else f"{merged_intent.get('notes')}; {product_in_confirmation}"
+                        # Proceed to recommendations with the product
+                        activity_name = existing_intent.get("_pending_activity", "your trip")
+                        proceed_message = f"Great! I'll find {product_in_confirmation} recommendations for {activity_name}."
+                        return {
+                            "needs_clarification": False,
+                            "clarification_question": None,
+                            "assistant_message": change_acknowledgment + proceed_message if change_acknowledgment else proceed_message,
+                            "updated_intent": merged_intent,
+                            "clarified_query": query,
+                            "ready_for_recommendations": True,
+                            "detected_changes": detected_changes
+                        }
+                    else:
+                        # Just "yes" without a product - ask what they want to buy
+                        merged_intent["_asked_product_category"] = True
+                        product_question = "What kind of products or category of products would you like to buy?"
+                        return {
+                            "needs_clarification": True,
+                            "clarification_question": product_question,
+                            "assistant_message": change_acknowledgment + product_question if change_acknowledgment else product_question,
+                            "updated_intent": merged_intent,
+                            "clarified_query": query,
+                            "ready_for_recommendations": False,
+                            "detected_changes": detected_changes
+                        }
                 elif is_negative_response(query):
                     merged_intent["_awaiting_shopping_confirm"] = False
                     merged_intent["_declined_shopping"] = True
