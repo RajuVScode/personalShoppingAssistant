@@ -1,3 +1,25 @@
+"""
+FastAPI Backend Main Module
+
+This is the main entry point for the AI Shopping Experience backend API.
+It provides RESTful endpoints for the shopping assistant application.
+
+Key Endpoints:
+- /api/health: Health check endpoint
+- /api/login: Customer authentication
+- /api/chat: Conversational AI shopping assistant
+- /api/customer360/{id}: Customer profile and preferences
+- /api/customers/{id}: Customer profile management (GET/PUT)
+- /api/products: Product catalog management
+- /api/conversation/{id}: Conversation history management
+
+Architecture:
+- FastAPI for REST API framework
+- SQLAlchemy for database ORM
+- Multi-agent orchestrator for AI conversations
+- PostgreSQL for data persistence
+"""
+
 import os
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,6 +41,17 @@ from backend.database.seed import seed_database
 db_initialized = False
 
 def initialize_database():
+    """
+    Initialize the database tables and seed with sample data if needed.
+    
+    This function:
+    1. Creates all database tables from SQLAlchemy models
+    2. Seeds the database with sample products and customers if empty
+    3. Creates vector index for product search if API key is available
+    
+    Returns:
+        True if initialization succeeded, False otherwise
+    """
     global db_initialized
     if db_initialized:
         return True

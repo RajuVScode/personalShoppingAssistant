@@ -1,3 +1,22 @@
+"""
+Product Recommender Agent Module
+
+This module implements the ProductRecommenderAgent, responsible for generating
+personalized product recommendations based on user context and preferences.
+
+Key Responsibilities:
+- Build semantic search queries from user context (destination, weather, activities)
+- Search product catalog using vector similarity (RAG approach)
+- Apply mandatory size filtering to match user preferences
+- Diversify recommendations across product categories
+- Generate natural language explanations for recommendations
+
+The agent uses a combination of:
+1. Vector store for semantic product search
+2. Database fallback for basic filtering
+3. LLM for generating recommendation explanations
+"""
+
 import json
 from datetime import datetime
 from backend.agents.base import BaseAgent
@@ -26,7 +45,21 @@ If data is missing, state your assumptions clearly and proceed with best-practic
 Ensure the tone is formal, professional, and complete. All sections must be present."""
 
 class ProductRecommenderAgent(BaseAgent):
+    """
+    AI agent for generating personalized product recommendations.
+    
+    Uses a RAG (Retrieval-Augmented Generation) approach combining:
+    - Vector similarity search for semantic matching
+    - Rule-based filters for size/brand preferences
+    - LLM for natural language explanations
+    
+    Attributes:
+        vector_store: ProductVectorStore instance for semantic search
+        use_vector_store: Whether vector store is available and loaded
+    """
+    
     def __init__(self):
+        """Initialize the recommender with vector store and LLM connection."""
         super().__init__("ProductRecommender", RECOMMENDER_PROMPT)
         try:
             self.vector_store = ProductVectorStore()
@@ -46,6 +79,23 @@ class ProductRecommenderAgent(BaseAgent):
         context: EnrichedContext,
         num_results: int = 5
     ) -> tuple[List[Dict[str, Any]], str]:
+        """
+        Generate product recommendations based on enriched user context.
+        
+        Args:
+            context: EnrichedContext containing intent, customer profile,
+                    weather data, and other contextual information
+            num_results: Maximum number of products to return
+            
+        Returns:
+            Tuple of (products_list, explanation_string)
+            
+        Flow:
+        1. Build semantic search query from context
+        2. Search vector store (or fallback to database)
+        3. Apply mandatory size filtering
+        4. Generate natural language explanation
+        """
         products = []
         
         if self.use_vector_store and self.vector_store:

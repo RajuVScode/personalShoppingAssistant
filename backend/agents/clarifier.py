@@ -1,3 +1,20 @@
+"""
+Clarifier Agent Module
+
+This module implements the ClarifierAgent, responsible for understanding and 
+extracting user intent from natural language queries in the shopping assistant.
+
+Key Responsibilities:
+- Extract travel intent (destination, dates, activities)
+- Detect shopping intent and product mentions
+- Handle multi-destination trip planning
+- Parse date ranges and handle ambiguous dates
+- Capture user preferences (size, brand, budget)
+
+The agent uses LLM-based intent extraction combined with rule-based fallbacks
+for reliable detection of products, activities, and user responses.
+"""
+
 import json
 from datetime import datetime, timedelta
 from backend.agents.base import BaseAgent
@@ -5,10 +22,21 @@ from backend.utils.date_parser import parse_relative_date
 
 
 def get_current_date():
+    """Return today's date in ISO format (YYYY-MM-DD)."""
     return datetime.now().strftime("%Y-%m-%d")
 
 
 def get_weekend_dates(current_date: datetime, next_week: bool = False):
+    """
+    Calculate the dates for the upcoming weekend (Saturday and Sunday).
+    
+    Args:
+        current_date: The reference date to calculate from
+        next_week: If True, get next week's weekend instead of this week's
+        
+    Returns:
+        Tuple of (saturday_date, sunday_date) in YYYY-MM-DD format
+    """
     days_until_saturday = (5 - current_date.weekday()) % 7
     if days_until_saturday == 0 and current_date.weekday() != 5:
         days_until_saturday = 7
@@ -333,7 +361,23 @@ PRODUCT_KEYWORDS = {
 
 
 def detect_product_mention(query: str) -> str:
-    """Check if the query mentions a specific product. Returns the product type or None."""
+    """
+    Check if the query mentions a specific product category.
+    
+    This function scans the user query for product keywords to detect
+    shopping intent. When a product is mentioned, the system should
+    treat it as an implicit shopping request.
+    
+    Args:
+        query: The user's message text
+        
+    Returns:
+        The matched product keyword if found, None otherwise
+        
+    Example:
+        >>> detect_product_mention("I need hiking shoes")
+        'shoes'
+    """
     query_lower = query.lower()
     for product in PRODUCT_KEYWORDS:
         if product in query_lower:

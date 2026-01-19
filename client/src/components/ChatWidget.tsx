@@ -1,3 +1,21 @@
+/**
+ * ChatWidget Component
+ * 
+ * The main conversational interface for the AI shopping assistant.
+ * This component handles:
+ * - User chat interactions with the AI assistant
+ * - Product recommendations display with interactive cards
+ * - Shopping cart management (add/remove items, checkout flow)
+ * - Context insights modal (weather, events, customer profile)
+ * - Agent thinking log modal (shows AI reasoning process)
+ * - Online/In-Store mode toggle
+ * - QR code scanning for in-store product lookup
+ * - Customer 360 profile viewer
+ * 
+ * The widget appears as a floating chat bubble that expands into
+ * a full-featured shopping assistant interface.
+ */
+
 import { useState, useRef, useEffect, useCallback, useMemo, memo } from "react";
 import { useMutation } from "@tanstack/react-query";
 import {
@@ -56,6 +74,11 @@ import { useToast } from "@/hooks/use-toast";
 import Logo from "@/components/Logo";
 import { Html5Qrcode } from "html5-qrcode";
 
+/**
+ * Represents a step in the AI agent's thinking process.
+ * Displayed in the Agent Thinking Log modal to show users
+ * how the AI arrived at its recommendations.
+ */
 interface AgentThinkingStep {
   agent: string;
   action: string;
@@ -63,6 +86,11 @@ interface AgentThinkingStep {
   timestamp?: string;
 }
 
+/**
+ * Represents a chat message in the conversation.
+ * Can include product recommendations and context information
+ * alongside the text content.
+ */
 interface Message {
   role: "user" | "assistant";
   content: string;
@@ -71,6 +99,9 @@ interface Message {
   agentThinking?: AgentThinkingStep[];
 }
 
+/**
+ * Product data structure for recommendations.
+ */
 interface Product {
   id: number;
   name: string;

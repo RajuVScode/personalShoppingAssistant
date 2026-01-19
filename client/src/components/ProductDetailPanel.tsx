@@ -1,9 +1,27 @@
+/**
+ * ProductDetailPanel Component
+ * 
+ * A sliding panel that displays detailed product information.
+ * Features include:
+ * - Product image gallery with zoom functionality
+ * - Color selection with dynamic image updates
+ * - Size selection with size chart reference
+ * - Add to cart functionality with visual feedback
+ * - Product specifications (material, care instructions, etc.)
+ * 
+ * The panel slides in from the right side of the chat widget
+ * when a user clicks on a product card for more details.
+ */
+
 import { useState, useEffect } from "react";
 import { X, ShoppingCart, Check, Zap, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SizeChartModal } from "./SizeChartModal";
 import { ProductImageGallery } from "./ProductImageGallery";
 
+/**
+ * Basic product info passed from the product card.
+ */
 interface Product {
   id: number;
   name: string;
@@ -16,6 +34,10 @@ interface Product {
   rating?: number;
 }
 
+/**
+ * Extended product details fetched from the API.
+ * Includes color-specific images and full specifications.
+ */
 interface ProductDetails {
   id: number;
   name: string;
@@ -37,6 +59,9 @@ interface ProductDetails {
   care_instructions?: string;
 }
 
+/**
+ * Props for the ProductDetailPanel component.
+ */
 interface ProductDetailPanelProps {
   product: Product | null;
   isOpen: boolean;
