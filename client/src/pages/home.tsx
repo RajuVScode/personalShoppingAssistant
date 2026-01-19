@@ -1,10 +1,60 @@
-import { useState } from "react";
-import { Search, Heart, ShoppingCart, BarChart3, User, MessageCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Search, Heart, ShoppingCart, BarChart3, User, MessageCircle, LogOut, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import ChatWidget from "@/components/ChatWidget";
+import UpdateUserProfile from "@/components/UpdateUserProfile";
 
 export default function HomePage() {
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [customerName, setCustomerName] = useState<string | null>(null);
+  const [customerId, setCustomerId] = useState<string | null>(null);
+  const [showUpdateProfile, setShowUpdateProfile] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const checkAuth = () => {
+      const name = localStorage.getItem("customer_name");
+      const id = localStorage.getItem("customer_id");
+      setCustomerName(name);
+      setCustomerId(id);
+    };
+    
+    checkAuth();
+    window.addEventListener("storage", checkAuth);
+    const interval = setInterval(checkAuth, 500);
+    
+    return () => {
+      window.removeEventListener("storage", checkAuth);
+      clearInterval(interval);
+    };
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("customer_id");
+    localStorage.removeItem("customer_name");
+    setCustomerName(null);
+    setCustomerId(null);
+    navigate("/login");
+  };
+
+  const handleEditProfile = () => {
+    setTimeout(() => {
+      setShowUpdateProfile(true);
+    }, 100);
+  };
+
+  const handleProfileUpdate = () => {
+    const name = localStorage.getItem("customer_name");
+    setCustomerName(name);
+  };
 
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: 'Calibri, sans-serif' }}>
@@ -31,9 +81,55 @@ export default function HomePage() {
               <button className="text-gray-700 hover:text-gray-900" data-testid="btn-search">
                 <Search className="w-5 h-5" />
               </button>
-              <button className="text-gray-700 hover:text-gray-900" data-testid="btn-account">
-                <User className="w-5 h-5" />
-              </button>
+              
+              {customerName ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="flex items-center gap-1 text-gray-700 hover:text-gray-900" data-testid="btn-account">
+                      <User className="w-5 h-5" />
+                      <ChevronDown className="w-3 h-3" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56 mt-2">
+                    <div className="px-3 py-3 border-b">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                          <User className="w-5 h-5 text-gray-600" />
+                        </div>
+                        <span className="font-medium text-gray-800">{customerName}</span>
+                      </div>
+                    </div>
+                    <div className="py-1">
+                      <DropdownMenuItem 
+                        onClick={handleEditProfile}
+                        className="cursor-pointer px-3 py-2"
+                        data-testid="menu-edit-profile"
+                      >
+                        <User className="w-4 h-4 mr-3 text-gray-500" />
+                        <span>Edit Profile</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem 
+                        onClick={handleLogout}
+                        className="cursor-pointer px-3 py-2 text-red-600 focus:text-red-600"
+                        data-testid="menu-logout"
+                      >
+                        <LogOut className="w-4 h-4 mr-3" />
+                        <span>Logout</span>
+                      </DropdownMenuItem>
+                    </div>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <button 
+                  className="text-gray-700 hover:text-gray-900" 
+                  data-testid="btn-account"
+                  onClick={() => navigate("/login")}
+                >
+                  <User className="w-5 h-5" />
+                </button>
+              )}
+              
               <button className="text-gray-700 hover:text-gray-900" data-testid="btn-wishlist">
                 <Heart className="w-5 h-5" />
               </button>
@@ -122,6 +218,15 @@ export default function HomePage() {
         </div>
       </button>
       <ChatWidget isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
+      
+      {customerId && (
+        <UpdateUserProfile
+          isOpen={showUpdateProfile}
+          onClose={() => setShowUpdateProfile(false)}
+          customerId={customerId}
+          onUpdate={handleProfileUpdate}
+        />
+      )}
     </div>
   );
 }

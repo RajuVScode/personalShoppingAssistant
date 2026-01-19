@@ -50,7 +50,9 @@ export default function Header({ onSignUp, showAuthButtons = true }: HeaderProps
   };
 
   const handleEditProfile = () => {
-    setShowUpdateProfile(true);
+    setTimeout(() => {
+      setShowUpdateProfile(true);
+    }, 100);
   };
 
   const handleProfileUpdate = () => {
