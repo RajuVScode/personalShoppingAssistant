@@ -1,17 +1,10 @@
 import { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
-import { X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-
-interface UpdateUserProfileProps {
-  isOpen: boolean;
-  onClose: () => void;
-  customerId: string;
-  onUpdate?: () => void;
-}
 
 interface CustomerData {
   customer_id: string;
@@ -32,10 +25,12 @@ interface CustomerData {
   };
 }
 
-export default function UpdateUserProfile({ isOpen, onClose, customerId, onUpdate }: UpdateUserProfileProps) {
+export default function ProfilePage() {
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const customerId = localStorage.getItem("customer_id");
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -53,10 +48,12 @@ export default function UpdateUserProfile({ isOpen, onClose, customerId, onUpdat
   const [country, setCountry] = useState("");
 
   useEffect(() => {
-    if (isOpen && customerId) {
-      fetchCustomerData();
+    if (!customerId) {
+      navigate("/login");
+      return;
     }
-  }, [isOpen, customerId]);
+    fetchCustomerData();
+  }, [customerId]);
 
   const fetchCustomerData = async () => {
     if (!customerId) return;
@@ -138,8 +135,7 @@ export default function UpdateUserProfile({ isOpen, onClose, customerId, onUpdat
           title: "Profile Updated",
           description: "Your profile has been updated successfully.",
         });
-        onUpdate?.();
-        onClose();
+        navigate(-1);
       } else {
         const error = await response.json();
         toast({
@@ -159,37 +155,34 @@ export default function UpdateUserProfile({ isOpen, onClose, customerId, onUpdat
     }
   };
 
-  if (!isOpen) return null;
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ fontFamily: 'Calibri, sans-serif' }}>
+        <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full" />
+      </div>
+    );
+  }
 
-  const modalContent = (
-    <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-      data-testid="update-profile-modal-overlay"
-    >
-      <div
-        className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto m-4"
-        onClick={(e) => e.stopPropagation()}
-        data-testid="update-profile-modal"
-      >
-        <div className="sticky top-0 bg-[#6366F1] text-white px-6 py-4 flex items-center justify-between rounded-t-lg">
-          <h2 className="text-lg font-semibold">Edit Profile</h2>
-          <button
-            onClick={onClose}
-            className="text-white hover:bg-white/10 p-1 rounded"
-            data-testid="btn-close-update-profile"
+  return (
+    <div className="min-h-screen bg-gray-50" style={{ fontFamily: 'Calibri, sans-serif' }}>
+      <div className="max-w-2xl mx-auto py-8 px-4">
+        <div className="mb-6">
+          <Button
+            variant="ghost"
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+            data-testid="btn-back"
           >
-            <X className="w-5 h-5" />
-          </button>
+            <ArrowLeft className="w-4 h-4" />
+            Back
+          </Button>
         </div>
 
-        {isLoading ? (
-          <div className="p-6 flex items-center justify-center">
-            <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full" />
+        <div className="bg-white rounded-lg shadow-sm border">
+          <div className="bg-[#6366F1] text-white px-6 py-4 rounded-t-lg">
+            <h1 className="text-xl font-semibold" data-testid="page-title">Edit Profile</h1>
           </div>
-        ) : (
+
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
             <div className="space-y-4">
               <h3 className="font-medium text-gray-700 border-b pb-2">Personal Information</h3>
@@ -356,7 +349,7 @@ export default function UpdateUserProfile({ isOpen, onClose, customerId, onUpdat
               <Button
                 type="button"
                 variant="outline"
-                onClick={onClose}
+                onClick={() => navigate(-1)}
                 data-testid="btn-cancel-profile"
               >
                 Cancel
@@ -371,10 +364,8 @@ export default function UpdateUserProfile({ isOpen, onClose, customerId, onUpdat
               </Button>
             </div>
           </form>
-        )}
+        </div>
       </div>
     </div>
   );
-
-  return createPortal(modalContent, document.body);
 }

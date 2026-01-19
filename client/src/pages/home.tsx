@@ -10,21 +10,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import ChatWidget from "@/components/ChatWidget";
-import UpdateUserProfile from "@/components/UpdateUserProfile";
 
 export default function HomePage() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [customerName, setCustomerName] = useState<string | null>(null);
-  const [customerId, setCustomerId] = useState<string | null>(null);
-  const [showUpdateProfile, setShowUpdateProfile] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     const checkAuth = () => {
       const name = localStorage.getItem("customer_name");
-      const id = localStorage.getItem("customer_id");
       setCustomerName(name);
-      setCustomerId(id);
     };
     
     checkAuth();
@@ -41,21 +36,11 @@ export default function HomePage() {
     localStorage.removeItem("customer_id");
     localStorage.removeItem("customer_name");
     setCustomerName(null);
-    setCustomerId(null);
     navigate("/login");
   };
 
   const handleEditProfile = () => {
-    console.log("Edit profile clicked, customerId:", customerId);
-    setTimeout(() => {
-      console.log("Setting showUpdateProfile to true");
-      setShowUpdateProfile(true);
-    }, 100);
-  };
-
-  const handleProfileUpdate = () => {
-    const name = localStorage.getItem("customer_name");
-    setCustomerName(name);
+    navigate("/profile");
   };
 
   return (
@@ -220,15 +205,6 @@ export default function HomePage() {
         </div>
       </button>
       <ChatWidget isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
-      
-      {customerId && (
-        <UpdateUserProfile
-          isOpen={showUpdateProfile}
-          onClose={() => setShowUpdateProfile(false)}
-          customerId={customerId}
-          onUpdate={handleProfileUpdate}
-        />
-      )}
     </div>
   );
 }
