@@ -249,140 +249,182 @@ COMMON_ACTIVITIES = {
     "travel",
 }
 
+def detect_intent_with_llm(query: str, llm) -> dict:
+    """
+    Use LLM to detect shopping intent, product mentions, and activities from user query.
+    
+    This replaces hardcoded keyword matching with intelligent LLM-based detection,
+    allowing the system to understand natural language variations and context.
+    
+    Args:
+        query: The user's message text
+        llm: The LangChain LLM instance to use for detection
+        
+    Returns:
+        Dictionary containing:
+        - has_shopping_intent: bool - whether user wants to buy something
+        - product_mentioned: str|None - the product type mentioned (e.g., "shoes", "jacket")
+        - activity_mentioned: str|None - any activity mentioned (e.g., "hiking", "swimming")
+        - is_affirmative: bool - whether this is a yes/confirmation response
+        - is_negative: bool - whether this is a no/decline response
+    """
+    from langchain_core.messages import HumanMessage, SystemMessage
+    
+    detection_prompt = """You are an intent detection system for a shopping assistant.
+Analyze the user's message and extract:
+
+1. **Shopping Intent**: Does the user want to buy, purchase, or acquire a product? 
+   - "yes, like to buy shoes" → has_shopping_intent: true
+   - "I need a jacket for my trip" → has_shopping_intent: true
+   - "What's the weather like?" → has_shopping_intent: false
+
+2. **Product Mentioned**: What specific product category is mentioned?
+   - Look for: clothing (shoes, jacket, dress, pants, shirt, coat, sweater, etc.)
+   - Accessories (bag, backpack, hat, sunglasses, watch, etc.)
+   - Footwear (boots, sneakers, sandals, heels, etc.)
+   - Return the general category, e.g., "shoes" not "hiking shoes"
+
+3. **Activity Mentioned**: What activity or purpose is mentioned?
+   - Examples: hiking, swimming, traveling, wedding, business meeting, beach, skiing
+   - This helps contextualize product recommendations
+
+4. **Response Type**: Is this an affirmative or negative response to a question?
+   - Affirmative: yes, yeah, sure, okay, please, sounds good, let's do it
+   - Negative: no, nope, not really, skip, I'm good
+
+Respond ONLY with a JSON object (no markdown, no explanation):
+{
+  "has_shopping_intent": true/false,
+  "product_mentioned": "product_type" or null,
+  "activity_mentioned": "activity" or null,
+  "is_affirmative": true/false,
+  "is_negative": true/false
+}"""
+
+    try:
+        messages = [
+            SystemMessage(content=detection_prompt),
+            HumanMessage(content=f"User message: {query}")
+        ]
+        response = llm.invoke(messages)
+        result_text = response.content.strip()
+        
+        if result_text.startswith("```json"):
+            result_text = result_text[7:]
+        if result_text.startswith("```"):
+            result_text = result_text[3:]
+        if result_text.endswith("```"):
+            result_text = result_text[:-3]
+        
+        raw_result = json.loads(result_text.strip())
+        # Validate and normalize the result to ensure consistent structure
+        result = validate_llm_intent_result(raw_result)
+        print(f"[DEBUG] LLM intent detection result: {result}")
+        return result
+    except Exception as e:
+        print(f"[DEBUG] LLM intent detection error: {e}, falling back to keyword detection")
+        return {
+            "has_shopping_intent": False,
+            "product_mentioned": None,
+            "activity_mentioned": None,
+            "is_affirmative": False,
+            "is_negative": False
+        }
+
+
+# FALLBACK KEYWORD SETS: Used when LLM detection fails or returns invalid results.
+# Primary intent detection uses detect_intent_with_llm() for intelligent detection,
+# but these comprehensive lists ensure robust fallback behavior.
 SHOPPING_KEYWORDS = {
-    "shopping",
-    "buy",
-    "purchase",
-    "order",
-    "get a product",
-    "looking to buy",
-    "need to purchase",
-    "want to buy",
-    "buying",
-    "purchasing",
-    "shop",
-    "need some",
-    "looking for",
-    "want some",
-    "get some",
+    "shopping", "buy", "purchase", "order", "get a product",
+    "looking to buy", "need to purchase", "want to buy",
+    "buying", "purchasing", "shop", "need some",
+    "looking for", "want some", "get some",
 }
 
+# FALLBACK: Comprehensive product keywords for robust detection when LLM fails
 PRODUCT_KEYWORDS = {
-    "shoes",
-    "shoe",
-    "sneakers",
-    "boots",
-    "sandals",
-    "loafers",
-    "heels",
-    "flats",
-    "jacket",
-    "jackets",
-    "coat",
-    "coats",
-    "blazer",
-    "blazers",
-    "parka",
-    "windbreaker",
-    "backpack",
-    "backpacks",
-    "bag",
-    "bags",
-    "luggage",
-    "suitcase",
-    "duffel",
-    "tote",
-    "shirt",
-    "shirts",
-    "t-shirt",
-    "t-shirts",
-    "blouse",
-    "top",
-    "tops",
-    "pants",
-    "trousers",
-    "jeans",
-    "shorts",
-    "leggings",
-    "chinos",
-    "dress",
-    "dresses",
-    "skirt",
-    "skirts",
-    "gown",
-    "sweater",
-    "sweaters",
-    "hoodie",
-    "hoodies",
-    "cardigan",
-    "pullover",
-    "hat",
-    "hats",
-    "cap",
-    "caps",
-    "beanie",
-    "sunglasses",
-    "glasses",
-    "watch",
-    "watches",
-    "jewelry",
-    "accessories",
-    "scarf",
-    "scarves",
-    "gloves",
-    "umbrella",
-    "raincoat",
-    "poncho",
-    "waterproof",
-    "swimsuit",
-    "swimwear",
-    "bikini",
-    "trunks",
-    "suit",
-    "suits",
-    "tuxedo",
-    "formal wear",
-    "activewear",
-    "sportswear",
-    "athleisure",
-    "workout clothes",
-    "hiking gear",
-    "camping gear",
-    "travel gear",
-    "outdoor gear",
-    "thermal",
-    "thermals",
-    "base layer",
-    "fleece",
-    "down jacket",
-    "puffer",
-    "insulated",
+    # Footwear
+    "shoes", "shoe", "sneakers", "boots", "sandals", "loafers", "heels", "flats",
+    # Outerwear
+    "jacket", "jackets", "coat", "coats", "blazer", "blazers", "parka", "windbreaker",
+    # Bags
+    "backpack", "backpacks", "bag", "bags", "luggage", "suitcase", "duffel", "tote",
+    # Tops
+    "shirt", "shirts", "t-shirt", "t-shirts", "blouse", "top", "tops",
+    # Bottoms
+    "pants", "trousers", "jeans", "shorts", "leggings", "chinos",
+    # Dresses
+    "dress", "dresses", "skirt", "skirts", "gown",
+    # Knitwear
+    "sweater", "sweaters", "hoodie", "hoodies", "cardigan", "pullover",
+    # Accessories
+    "hat", "hats", "cap", "caps", "beanie", "sunglasses", "glasses",
+    "watch", "watches", "jewelry", "accessories", "scarf", "scarves", "gloves",
+    # Weather gear
+    "umbrella", "raincoat", "poncho", "waterproof",
+    # Swimwear
+    "swimsuit", "swimwear", "bikini", "trunks",
+    # Formal
+    "suit", "suits", "tuxedo", "formal wear",
+    # Activewear
+    "activewear", "sportswear", "athleisure", "workout clothes",
+    # Outdoor
+    "hiking gear", "camping gear", "travel gear", "outdoor gear",
+    # Cold weather
+    "thermal", "thermals", "base layer", "fleece", "down jacket", "puffer", "insulated",
 }
 
 
 def detect_product_mention(query: str) -> str:
     """
-    Check if the query mentions a specific product category.
+    Keyword-based fallback for product detection.
     
-    This function scans the user query for product keywords to detect
-    shopping intent. When a product is mentioned, the system should
-    treat it as an implicit shopping request.
+    Used as a robust fallback when LLM detection fails or returns invalid results.
+    The primary detection method is detect_intent_with_llm().
     
     Args:
         query: The user's message text
         
     Returns:
         The matched product keyword if found, None otherwise
-        
-    Example:
-        >>> detect_product_mention("I need hiking shoes")
-        'shoes'
     """
     query_lower = query.lower()
     for product in PRODUCT_KEYWORDS:
         if product in query_lower:
             return product
     return None
+
+
+def validate_llm_intent_result(result: dict) -> dict:
+    """
+    Validate and normalize LLM intent detection result.
+    
+    Ensures all expected keys exist with correct types, providing safe defaults
+    for missing or malformed values.
+    
+    Args:
+        result: Raw result from LLM detection
+        
+    Returns:
+        Normalized result dict with all required keys
+    """
+    if not isinstance(result, dict):
+        return {
+            "has_shopping_intent": False,
+            "product_mentioned": None,
+            "activity_mentioned": None,
+            "is_affirmative": False,
+            "is_negative": False
+        }
+    
+    return {
+        "has_shopping_intent": bool(result.get("has_shopping_intent", False)),
+        "product_mentioned": result.get("product_mentioned") if isinstance(result.get("product_mentioned"), str) else None,
+        "activity_mentioned": result.get("activity_mentioned") if isinstance(result.get("activity_mentioned"), str) else None,
+        "is_affirmative": bool(result.get("is_affirmative", False)),
+        "is_negative": bool(result.get("is_negative", False))
+    }
 
 
 AMBIGUOUS_DATE_PHRASES = {
@@ -894,7 +936,7 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             llm_has_date_info = result.get("has_date_info", False)
             has_dates_info = has_date or llm_has_date_info
 
-            # EARLY SHOPPING/ACTIVITY DETECTION from raw query (runs BEFORE destination/date checks)
+            # EARLY SHOPPING/ACTIVITY DETECTION using LLM (runs BEFORE destination/date checks)
             # Skip detection if we're waiting for a product category answer
             already_asked_product_category = existing_intent.get(
                 "_asked_product_category", False)
@@ -909,19 +951,47 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                 # Skip shopping/activity detection for this response
                 direct_shopping_intent = False
                 direct_non_shopping_activity = None
+                llm_intent_result = None
             else:
-                direct_shopping_intent = detect_shopping_intent(query)
-                direct_non_shopping_activity = detect_non_shopping_activity(
-                    query)
+                # Use LLM-based intent detection with fallback to keyword matching
+                llm_intent_result = detect_intent_with_llm(query, self.llm)
+                
+                # Extract LLM results with fallback to keyword-based detection
+                llm_shopping_intent = llm_intent_result.get("has_shopping_intent", False)
+                keyword_shopping_intent = detect_shopping_intent(query)
+                direct_shopping_intent = llm_shopping_intent or keyword_shopping_intent
+                
+                # Activity detection from LLM with fallback
+                llm_activity = llm_intent_result.get("activity_mentioned")
+                keyword_activity = detect_non_shopping_activity(query)
+                
+                # Map activity to non-shopping activity if it's not shopping-related
+                if llm_activity and llm_activity.lower() not in ["shopping", "buying", "purchasing"]:
+                    direct_non_shopping_activity = llm_activity.lower()
+                elif keyword_activity:
+                    direct_non_shopping_activity = keyword_activity
+                else:
+                    direct_non_shopping_activity = None
 
             # Handle shopping confirmation response (yes/no to "Would you like to shop for activity?")
             awaiting_shopping_confirm = existing_intent.get(
                 "_awaiting_shopping_confirm", False)
             if awaiting_shopping_confirm:
-                # Check if user also mentioned a specific product in the same message
-                product_in_confirmation = detect_product_mention(query)
+                # Use LLM result combined with keyword fallback for robust detection
+                llm_product = llm_intent_result.get("product_mentioned") if llm_intent_result else None
+                keyword_product = detect_product_mention(query)
+                product_in_confirmation = llm_product or keyword_product
                 
-                if is_affirmative_response(query) or product_in_confirmation:
+                # Combine LLM and keyword-based affirmative/negative detection
+                llm_is_affirmative = llm_intent_result.get("is_affirmative", False) if llm_intent_result else False
+                llm_is_negative = llm_intent_result.get("is_negative", False) if llm_intent_result else False
+                keyword_is_affirmative = is_affirmative_response(query)
+                keyword_is_negative = is_negative_response(query)
+                
+                is_user_affirmative = llm_is_affirmative or keyword_is_affirmative
+                is_user_negative = llm_is_negative or keyword_is_negative
+                
+                if is_user_affirmative or product_in_confirmation:
                     merged_intent["_awaiting_shopping_confirm"] = False
                     merged_intent["_confirmed_shopping"] = True
                     
@@ -957,7 +1027,7 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                             "ready_for_recommendations": False,
                             "detected_changes": detected_changes
                         }
-                elif is_negative_response(query):
+                elif is_user_negative:
                     merged_intent["_awaiting_shopping_confirm"] = False
                     merged_intent["_declined_shopping"] = True
                     activity_name = existing_intent.get(
@@ -1041,14 +1111,16 @@ Extract travel intent and respond with the JSON structure. If key details are mi
 
             # Handle ambiguous intent - neither shopping nor activity detected
             # Only ask if we haven't already asked and user hasn't provided clear context
-            # IMPORTANT: Check for specific product mentions first - this implies shopping intent
-            product_mention = detect_product_mention(query)
+            # IMPORTANT: Check for specific product mentions using LLM result with keyword fallback
+            llm_product_mention = llm_intent_result.get("product_mentioned") if llm_intent_result else None
+            keyword_product_mention = detect_product_mention(query)
+            product_mention = llm_product_mention or keyword_product_mention
             if product_mention:
                 # User mentioned a specific product - treat as shopping intent, don't ask generic question
                 direct_shopping_intent = True
                 merged_intent["_shopping_flow_complete"] = True
                 merged_intent["notes"] = f"Looking for {product_mention}" if not merged_intent.get("notes") else f"{merged_intent.get('notes')}; Looking for {product_mention}"
-                print(f"[DEBUG] Detected product mention: {product_mention} - treating as shopping intent")
+                print(f"[DEBUG] LLM detected product mention: {product_mention} - treating as shopping intent")
             
             if not direct_shopping_intent and not direct_non_shopping_activity:
                 if not existing_intent.get("_asked_ambiguous_intent", False):
