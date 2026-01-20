@@ -21,7 +21,7 @@ export function ImageSlider({
 
   const productImages = primaryImageUrl 
     ? [primaryImageUrl] 
-    : [`https://placehold.co/400x300/6B8E23/ffffff?text=Product`];
+    : [`https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=400&h=300&fit=crop`];
 
   useEffect(() => {
     productImages.forEach((src, idx) => {
