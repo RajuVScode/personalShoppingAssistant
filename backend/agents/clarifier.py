@@ -104,6 +104,14 @@ VAGUE/PARTIAL DATE DETECTION (CRITICAL FOR TRAVEL):
 - Do NOT proceed to recommendations with only partial dates for travel - you need exact dates to provide weather-appropriate recommendations
 - COMPLETE DATES include: specific day + month (e.g., "Jan 19-25", "19th to 25th January", "January 19")
 
+PAST DATE VALIDATION (CRITICAL):
+- Today's date is {CURRENT_DATE}. All travel dates MUST be in the FUTURE.
+- If user provides dates that are clearly in the PAST relative to today, set is_past_date: true
+- For PAST DATES: Ask user to provide valid FUTURE dates in your assistant_message
+  Example: "Those dates have already passed. Could you please provide future travel dates?"
+  Example: "January 15th has already passed. When would you like to travel instead?"
+- Do NOT proceed to recommendations with past dates
+
 QUESTIONING POLICY:
 - Ask ONLY for missing, high-impact information
 - Do NOT repeat already provided details
@@ -137,6 +145,7 @@ OUTPUT AS JSON:
   "has_date_info": true|false,
   "is_partial_date": true|false,
   "partial_date_value": "string|null",
+  "is_past_date": true|false,
   "is_new_trip": true|false,
   "next_question": "string|null",
   "ready_for_recommendations": true|false
@@ -830,6 +839,32 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             
             # Decision uses LLM signal only
             has_dates_info = has_date or llm_has_date_info
+            
+            # Handle PAST DATE detection - block and ask for future dates
+            is_past_date = result.get("is_past_date", False)
+            if is_past_date and has_destination:
+                dest = merged_intent.get("destination", "your destination")
+                
+                # Use LLM's message if it mentions past dates, otherwise generate
+                llm_message = result.get("assistant_message", "")
+                if "past" in llm_message.lower() or "passed" in llm_message.lower() or "already" in llm_message.lower():
+                    past_date_message = llm_message
+                else:
+                    past_date_message = f"Those dates have already passed. Could you please provide future travel dates for your trip to {dest}?"
+                
+                # Clear the invalid date
+                merged_intent["travel_date"] = None
+                merged_intent["_has_partial_date"] = False
+                
+                return {
+                    "needs_clarification": True,
+                    "clarification_question": past_date_message,
+                    "assistant_message": past_date_message,
+                    "updated_intent": merged_intent,
+                    "clarified_query": query,
+                    "ready_for_recommendations": False,
+                    "detected_changes": detected_changes
+                }
             
             # Handle PARTIAL DATE detection for travel intents
             is_partial_date = result.get("is_partial_date", False)
