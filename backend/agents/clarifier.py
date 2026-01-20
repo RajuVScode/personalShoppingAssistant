@@ -432,7 +432,58 @@ Return ONLY the response."""
         if result:
             return result
         destination = intent.get("destination") or ""
-        return f"What products are you looking for{' for ' + destination if destination else ''}?"
+        return self._generate_dynamic_question("product", query, intent) or ""
+
+    def _filter_specific_activities(self, activities: list) -> list:
+        """
+        Use LLM to dynamically filter out generic travel words and keep only specific activities.
+        Returns only activities that represent actual things to do (like hiking, skiing, sightseeing).
+        """
+        if not activities:
+            return []
+        
+        try:
+            from langchain_core.messages import SystemMessage as SysMsg
+            
+            prompt = f"""Analyze this list of activities and return ONLY the specific, actionable activities.
+
+Activities: {activities}
+
+REMOVE generic travel words like: travel, travelling, traveling, trip, vacation, holiday, visit, visiting, going, journey, tour, etc.
+KEEP specific activities like: hiking, skiing, sightseeing, beach, swimming, shopping, dining, photography, etc.
+
+Return a JSON array of ONLY the specific activities. If none are specific, return [].
+Example input: ["traveling", "hiking", "vacation", "skiing"]
+Example output: ["hiking", "skiing"]
+
+Return ONLY the JSON array, nothing else."""
+
+            messages = [SysMsg(content=prompt)]
+            response = self.llm.invoke(messages)
+            result = response.content.strip()
+            
+            # Parse the JSON array
+            import json
+            try:
+                specific = json.loads(result)
+                if isinstance(specific, list):
+                    return specific
+            except json.JSONDecodeError:
+                # Try to extract array from response
+                import re
+                match = re.search(r'\[.*?\]', result, re.DOTALL)
+                if match:
+                    try:
+                        specific = json.loads(match.group())
+                        if isinstance(specific, list):
+                            return specific
+                    except:
+                        pass
+            
+            return []
+        except Exception as e:
+            print(f"[DEBUG] Error filtering activities: {e}")
+            return []
 
     def _detect_changes(self, existing_intent: dict, new_intent: dict,
                         merged_intent: dict) -> dict:
@@ -1220,17 +1271,10 @@ Extract travel intent and respond with the JSON structure. If key details are mi
 
             if has_destination and has_dates_info and not already_asked_activities and not shopping_flow_complete and not declined_shopping:
                 # Check if specific activities were captured (not just mentions_activity flag)
-                # Filter out generic travel words that aren't real activities
-                generic_travel_words = {
-                    "travel", "travelling", "traveling", "trip", "vacation",
-                    "holiday", "visit", "visiting", "going"
-                }
+                # Use LLM to dynamically filter out generic travel words
                 captured_activities = merged_intent.get(
                     "activities") or existing_intent.get("activities") or []
-                specific_activities = [
-                    a for a in captured_activities
-                    if a.lower() not in generic_travel_words
-                ]
+                specific_activities = self._filter_specific_activities(captured_activities)
                 has_specific_activities = len(specific_activities) > 0
 
                 if has_specific_activities:
