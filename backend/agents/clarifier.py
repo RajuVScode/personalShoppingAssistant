@@ -913,7 +913,28 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             is_info_only_request = len(requested_content) > 0 and "products" not in requested_content
             
             if is_info_only_request and has_destination and (has_date or result.get("has_date_info")):
-                # Info-only request with location and date - proceed to generate requested content
+                # Info-only request with location and date - but check if activities were asked first
+                # For travel planning, we want to know activities to provide relevant context
+                already_asked_activities_check = existing_intent.get("_asked_activities", False) or merged_intent.get("_asked_activities", False)
+                captured_activities = merged_intent.get("activities") or existing_intent.get("activities") or []
+                has_specific_activities = len(self._filter_specific_activities(captured_activities)) > 0 if captured_activities else False
+                
+                if not already_asked_activities_check and not has_specific_activities:
+                    # Ask about activities first for travel planning
+                    merged_intent["_asked_activities"] = True
+                    activity_question = self._generate_dynamic_question("activity", query, merged_intent) or "What activities are you planning during your trip?"
+                    print(f"[DEBUG] Info request but activities not asked yet - asking first")
+                    return {
+                        "needs_clarification": True,
+                        "clarification_question": activity_question,
+                        "assistant_message": change_acknowledgment + activity_question if change_acknowledgment else activity_question,
+                        "updated_intent": merged_intent,
+                        "clarified_query": query,
+                        "ready_for_recommendations": False,
+                        "detected_changes": detected_changes
+                    }
+                
+                # Activities already captured or asked - proceed to generate requested content
                 print(f"[DEBUG] Dynamic content request: {requested_content} with location and date - proceeding")
                 base_message = result.get("assistant_message", "Let me get that information for you!")
                 return {
