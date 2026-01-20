@@ -4,6 +4,42 @@ from backend.database.connection import SessionLocal, engine, Base
 from backend.database.models import Product
 from sqlalchemy import text
 
+CATEGORY_IMAGE_KEYWORDS = {
+    'clothing': 'fashion-clothing',
+    'apparel': 'fashion-clothing',
+    'tops': 'shirt-fashion',
+    'bottoms': 'pants-fashion',
+    'dresses': 'dress-fashion',
+    'outerwear': 'jacket-fashion',
+    'footwear': 'shoes-footwear',
+    'shoes': 'shoes-footwear',
+    'accessories': 'fashion-accessories',
+    'bags': 'handbag-fashion',
+    'jewelry': 'jewelry-accessories',
+    'watches': 'watch-accessories',
+    'bedding': 'bedding-home',
+    'decor': 'home-decor',
+    'furniture': 'furniture-interior',
+    'kitchen': 'kitchen-home',
+    'bath': 'bathroom-home',
+    'electronics': 'electronics-gadgets',
+    'sports': 'sports-fitness',
+    'beauty': 'beauty-cosmetics',
+    'kids': 'kids-fashion',
+    'swimwear': 'swimwear-beach',
+}
+
+def generate_product_image_url(category: str, subcategory: str, sku: str) -> str:
+    category_lower = (category or '').lower()
+    subcategory_lower = (subcategory or '').lower()
+    
+    keyword = CATEGORY_IMAGE_KEYWORDS.get(subcategory_lower) or \
+              CATEGORY_IMAGE_KEYWORDS.get(category_lower) or \
+              'fashion'
+    
+    seed = abs(hash(sku)) % 1000
+    return f"https://loremflickr.com/400/300/{keyword.replace('-', ',')}?lock={seed}"
+
 def import_product_data():
     product_master = pd.read_excel("attached_assets/product_master_clean_New_1766805486832.xlsx")
     product_variants = pd.read_excel("attached_assets/product_variants_clean_New_1766805486833.xlsx")
@@ -77,7 +113,7 @@ def import_product_data():
                 sizes_available=sizes,
                 colors=colors,
                 tags=tags,
-                image_url=f"https://picsum.photos/seed/{row.get('variant_sku', products_added)}/400/300",
+                image_url=generate_product_image_url(row.get('category', 'clothing'), row.get('sub_category', ''), row.get('variant_sku', str(products_added))),
                 in_stock=in_stock,
                 rating=4.0 + (hash(row.get('variant_sku', '')) % 10) / 10,
                 material=str(material_val),

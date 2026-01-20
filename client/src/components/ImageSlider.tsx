@@ -19,12 +19,9 @@ export function ImageSlider({
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const productImages = Array.from({ length: imageCount }, (_, i) => {
-    if (i === 0 && primaryImageUrl) {
-      return primaryImageUrl;
-    }
-    return `https://picsum.photos/seed/${productId}-${i + 1}/400/300`;
-  });
+  const productImages = primaryImageUrl 
+    ? [primaryImageUrl] 
+    : [`https://loremflickr.com/400/300/fashion,product?lock=${productId}`];
 
   useEffect(() => {
     productImages.forEach((src, idx) => {
