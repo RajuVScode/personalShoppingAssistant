@@ -154,6 +154,11 @@ class ProductRecommenderAgent(BaseAgent):
         3. Apply mandatory size filtering
         4. Generate natural language explanation
         """
+        # For weather-only requests, return empty products with weather explanation
+        if is_weather_only_request(context):
+            weather_response = self._generate_weather_only_response(context)
+            return [], weather_response
+        
         products = []
         
         if self.use_vector_store and self.vector_store:
