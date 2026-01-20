@@ -628,16 +628,40 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             last_question_type = existing_intent.get("_last_question_type", "")
             was_optional_question = last_question_type in ("optional", "preference", "budget_brand", "size_color")
             
-            # UNIFIED SKIP HANDLING - only applies when user is declining OPTIONAL preferences
+            # UNIFIED SKIP HANDLING - applies when user is declining OPTIONAL preferences
             if is_skip:
                 # Always clear size preferences when user says no preference
                 merged_intent["preferred_size"] = None
-                print(f"[DEBUG] is_skip=True: Cleared preferred_size, last_question_type={last_question_type}")
+                print(f"[DEBUG] is_skip=True: Cleared preferred_size")
                 
-                # If the last question was about optional preferences, proceed
-                if was_optional_question or already_asked_optional or already_asked_activities:
+                # PRIMARY GATE: Trust LLM's explicit decision
+                # If clarifier LLM says BOTH is_skip_response=true AND ready_for_recommendations=true,
+                # it determined user is declining preferences AND we have enough info - proceed
+                if ready_for_recs:
                     base_message = result.get("assistant_message", "Perfect! Let me find products for you.")
-                    print(f"[DEBUG] is_skip + optional question: Proceeding to recommendations")
+                    print(f"[DEBUG] is_skip + ready_for_recs: LLM explicit proceed")
+                    return {
+                        "needs_clarification": False,
+                        "clarification_question": "",
+                        "assistant_message": change_acknowledgment + base_message if change_acknowledgment else base_message,
+                        "updated_intent": merged_intent,
+                        "clarified_query": query,
+                        "ready_for_recommendations": True,
+                        "detected_changes": detected_changes
+                    }
+                
+                # SECONDARY GATE: Check for established context
+                has_shopping_context = (
+                    existing_intent.get("_shopping_flow_complete") or
+                    existing_intent.get("notes") or
+                    merged_intent.get("notes") or
+                    existing_intent.get("_product_category_received") or
+                    existing_intent.get("_confirmed_shopping")
+                )
+                
+                if was_optional_question or already_asked_optional or already_asked_activities or has_shopping_context:
+                    base_message = result.get("assistant_message", "Perfect! Let me find products for you.")
+                    print(f"[DEBUG] is_skip + context: Proceeding to recommendations")
                     return {
                         "needs_clarification": False,
                         "clarification_question": "",
@@ -761,21 +785,27 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                 # Extract LLM results - pure LLM-driven detection
                 direct_shopping_intent = llm_intent_result.get("has_shopping_intent", False)
                 
-                # Check for "no preference" responses - only proceed if answering optional question
+                # Check for "no preference" responses from intent detection LLM
                 llm_no_preference = llm_intent_result.get("is_no_preference", False)
                 if llm_no_preference:
                     print(f"[DEBUG] LLM detected 'no preference' response")
                     # Clear size preferences
                     merged_intent["preferred_size"] = None
                     
-                    # Check if the last question was about optional preferences
-                    was_opt_question = last_question_type in ("optional", "preference", "budget_brand", "size_color")
+                    # Check for shopping context
+                    has_shop_ctx = (
+                        existing_intent.get("_shopping_flow_complete") or
+                        existing_intent.get("notes") or
+                        merged_intent.get("notes") or
+                        existing_intent.get("_product_category_received") or
+                        existing_intent.get("_confirmed_shopping")
+                    )
                     prior_pref = already_asked_optional or already_asked_activities
                     
-                    # Proceed if last question was optional or we've already asked preferences
-                    if was_opt_question or prior_pref:
+                    # Proceed if we have established context (shopping or travel preference questions asked)
+                    if was_optional_question or prior_pref or has_shop_ctx:
                         base_message = "Perfect! Let me find the best products for you."
-                        print(f"[DEBUG] llm_no_preference + optional question: Proceeding to recommendations")
+                        print(f"[DEBUG] llm_no_preference + context: Proceeding to recommendations")
                         return {
                             "needs_clarification": False,
                             "clarification_question": "",
@@ -785,7 +815,7 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                             "ready_for_recommendations": True,
                             "detected_changes": detected_changes
                         }
-                    # If not optional question, continue to gather critical info
+                    # If no context, continue to gather critical info
                 
                 # Activity detection from LLM only
                 llm_activity = llm_intent_result.get("activity_mentioned")
