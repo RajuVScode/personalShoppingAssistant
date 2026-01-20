@@ -27,7 +27,7 @@ from backend.database.models import Product
 from typing import List, Dict, Any
 from sqlalchemy import or_, and_
 
-RECOMMENDER_PROMPT = """You are a formal travel and lifestyle recommender.
+TRAVEL_RECOMMENDER_PROMPT = """You are a formal travel and lifestyle recommender.
 
 Given the user's travel prompt, destination, dates, weather context, and top 5 product recommendations, produce a structured, formal response that MUST include:
 
@@ -43,6 +43,37 @@ IMPORTANT: The itinerary must match the exact trip duration. For a 1-day trip, o
 If data is missing, state your assumptions clearly and proceed with best-practice recommendations.
 
 Ensure the tone is formal, professional, and complete. All sections must be present."""
+
+NON_TRAVEL_RECOMMENDER_PROMPT = """You are a professional shopping assistant.
+
+Given the user's shopping request and top product recommendations, produce a structured, helpful response that includes:
+
+1) **Understanding Your Needs** – Brief acknowledgment of what the customer is looking for
+2) **Product Recommendations** – Explain WHY each product is a good match based on the customer's style preferences, occasion, and requirements. Reference product names with clear rationale.
+3) **Product Catalog Details** – For each recommended product, provide COMPLETE catalog information: name, brand, price, material, available_colors, available_sizes, description, and availability.
+
+IMPORTANT: Do NOT include weather information, itineraries, travel activities, or destination-specific content. Focus solely on the products and why they match the customer's needs.
+
+Ensure the tone is helpful, professional, and focused on shopping assistance."""
+
+
+def is_travel_intent(context: 'EnrichedContext') -> bool:
+    """Determine if the user's intent is travel-related."""
+    segments = getattr(context.environmental, 'segments', None) or []
+    if segments and len(segments) > 0:
+        return True
+    
+    intent = context.intent
+    if hasattr(intent, 'trip_segments') and intent.trip_segments:
+        return True
+    
+    location = getattr(intent, 'location', None)
+    occasion = getattr(intent, 'occasion', '') or ''
+    
+    if location and any(keyword in occasion.lower() for keyword in ['trip', 'travel', 'vacation', 'holiday', 'visit', 'flying', 'going to']):
+        return True
+    
+    return False
 
 class ProductRecommenderAgent(BaseAgent):
     """
@@ -476,6 +507,91 @@ class ProductRecommenderAgent(BaseAgent):
         if not products:
             return "I couldn't find products matching your criteria. Could you try a different search?"
         
+        is_travel = is_travel_intent(context)
+        
+        customer_prefs = context.customer.preferences or {}
+        preferred_brands = customer_prefs.get("preferred_brands", [])
+        categories_interested = customer_prefs.get("categories_interested", [])
+        price_sensitivity = customer_prefs.get("price_sensitivity", "Not specified")
+        
+        products_json = json.dumps([{
+            "name": p.get("name"),
+            "family_name": p.get("name", "").split(" — ")[0] if " — " in p.get("name", "") else p.get("name"),
+            "category": p.get("category"),
+            "subcategory": p.get("subcategory"),
+            "price": p.get("price"),
+            "brand": p.get("brand"),
+            "material": p.get("material", "Information not available"),
+            "available_colors": p.get("colors", []),
+            "description": p.get("description", "Information not available"),
+            "in_stock": p.get("in_stock", True),
+            "rating": p.get("rating")
+        } for p in products[:5]], indent=2)
+        
+        if is_travel:
+            prompt = self._build_travel_prompt(context, products_json, preferred_brands, categories_interested, price_sensitivity)
+        else:
+            prompt = self._build_non_travel_prompt(context, products_json, preferred_brands, categories_interested, price_sensitivity)
+        
+        try:
+            response = self.invoke(prompt)
+            return response
+        except Exception as e:
+            print(f"LLM explanation failed: {e}")
+            return self._generate_fallback_explanation(context, products)
+    
+    def _build_non_travel_prompt(
+        self,
+        context: EnrichedContext,
+        products_json: str,
+        preferred_brands: list,
+        categories_interested: list,
+        price_sensitivity: str
+    ) -> str:
+        """Build prompt for non-travel shopping requests."""
+        return f"""
+{NON_TRAVEL_RECOMMENDER_PROMPT}
+
+**User Query:** {context.intent.raw_query}
+
+**Customer Profile:**
+- Name: {context.customer.name}
+- Style Preferences: {context.customer.style_profile}
+- Recent Purchases: {context.customer.recent_purchases[:3] if context.customer.recent_purchases else 'None'}
+
+**CUSTOMER SHOPPING PREFERENCES (CRITICAL - Personalize recommendations based on these):**
+- Preferred Brands: {', '.join(preferred_brands) if preferred_brands else 'No specific brand preference'}
+- Categories of Interest: {', '.join(categories_interested) if categories_interested else 'All categories'}
+- Price Sensitivity: {price_sensitivity}
+
+**Parsed Intent:**
+- Category: {context.intent.category or 'Not specified'}
+- Subcategory: {context.intent.subcategory or 'Not specified'}
+- Occasion: {context.intent.occasion or 'General shopping'}
+- Style: {context.intent.style or 'Not specified'}
+- Budget: ${context.intent.budget_min or 0} - ${context.intent.budget_max or 'No limit'}
+
+**Top 5 Recommended Products:**
+{products_json}
+
+Generate a helpful shopping response with these sections ONLY:
+1) Understanding Your Needs - Brief acknowledgment of the customer's request
+2) Product Recommendations - Explain WHY each product is a good match. Reference product names with clear rationale.
+3) Product Catalog Details - Full product info (name, brand, price, material, colors, sizes, description) for each recommendation.
+
+IMPORTANT: Do NOT include weather, itinerary, travel activities, or destination information. Focus only on products.
+Use only the product data provided. Maintain a helpful, professional tone.
+"""
+    
+    def _build_travel_prompt(
+        self,
+        context: EnrichedContext,
+        products_json: str,
+        preferred_brands: list,
+        categories_interested: list,
+        price_sensitivity: str
+    ) -> str:
+        """Build prompt for travel-related shopping requests."""
         weather_info = context.environmental.weather or {}
         events_info = context.environmental.local_events or []
         segments = getattr(context.environmental, 'segments', None) or []
@@ -495,12 +611,9 @@ class ProductRecommenderAgent(BaseAgent):
             segments_section = ""
             destination_info = getattr(context.intent, 'location', None) or 'Not specified'
         
-        customer_prefs = context.customer.preferences or {}
-        preferred_brands = customer_prefs.get("preferred_brands", [])
-        categories_interested = customer_prefs.get("categories_interested", [])
-        price_sensitivity = customer_prefs.get("price_sensitivity", "Not specified")
-        
-        prompt = f"""
+        return f"""
+{TRAVEL_RECOMMENDER_PROMPT}
+
 **User Query:** {context.intent.raw_query}
 
 **Customer Profile:**
@@ -546,19 +659,7 @@ IMPORTANT: When recommending products, PRIORITIZE items from the customer's pref
 {context.environmental.trends[:5] if context.environmental.trends else 'N/A'}
 
 **Top 5 Recommended Products from RAG:**
-{json.dumps([{
-    "name": p.get("name"),
-    "family_name": p.get("name", "").split(" — ")[0] if " — " in p.get("name", "") else p.get("name"),
-    "category": p.get("category"),
-    "subcategory": p.get("subcategory"),
-    "price": p.get("price"),
-    "brand": p.get("brand"),
-    "material": p.get("material", "Information not available"),
-    "available_colors": p.get("colors", []),
-    "description": p.get("description", "Information not available"),
-    "in_stock": p.get("in_stock", True),
-    "rating": p.get("rating")
-} for p in products[:5]], indent=2)}
+{products_json}
 
 Generate a formal response with these sections:
 {"1) Weather Overview - Include weather for EACH destination separately" if is_multi_destination else "1) Weather Overview"}
@@ -570,13 +671,6 @@ Generate a formal response with these sections:
 
 Use only the product data provided. Maintain a professional tone.
 """
-        
-        try:
-            response = self.invoke(prompt)
-            return response
-        except Exception as e:
-            print(f"LLM explanation failed: {e}")
-            return self._generate_fallback_explanation(context, products)
     
     def _generate_fallback_explanation(
         self,
@@ -584,17 +678,20 @@ Use only the product data provided. Maintain a professional tone.
         products: List[Dict[str, Any]]
     ) -> str:
         """Generate a simple explanation when LLM fails."""
-        destination = getattr(context.intent, 'location', None) or 'your destination'
-        weather_info = context.environmental.weather or {}
-        temp = weather_info.get('temperature', 'N/A')
-        conditions = weather_info.get('description', 'varied conditions')
+        is_travel = is_travel_intent(context)
         
         product_list = "\n".join([
             f"- **{p.get('name')}** by {p.get('brand')} - ${p.get('price', 'N/A')}"
             for p in products[:5]
         ])
         
-        return f"""## Travel Recommendations for {destination}
+        if is_travel:
+            destination = getattr(context.intent, 'location', None) or 'your destination'
+            weather_info = context.environmental.weather or {}
+            temp = weather_info.get('temperature', 'N/A')
+            conditions = weather_info.get('description', 'varied conditions')
+            
+            return f"""## Travel Recommendations for {destination}
 
 ### Weather Overview
 Expected temperature: {temp}°C with {conditions}.
@@ -605,3 +702,15 @@ Based on your travel plans and preferences, here are my top recommendations:
 {product_list}
 
 These items have been selected to match your trip requirements. Each product is in stock and ready to ship."""
+        else:
+            category = context.intent.category or 'your shopping needs'
+            
+            return f"""## Product Recommendations
+
+### Understanding Your Needs
+Based on your request for {category}, here are my top recommendations:
+
+### Recommended Products
+{product_list}
+
+These items have been selected to match your preferences and style. Each product is in stock and ready to ship."""
