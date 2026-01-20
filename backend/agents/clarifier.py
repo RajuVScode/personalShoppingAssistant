@@ -284,29 +284,7 @@ def validate_llm_intent_result(result: dict) -> dict:
 # NOTE: Hardcoded date phrases removed - LLM handles date ambiguity detection
 
 
-# NOTE: All date detection functions removed - LLM detects dates semantically
-# Only extract_month_from_text remains as a pure PARSING utility for combining date fragments
-
-def extract_month_from_text(text: str) -> str:
-    """Extract month name from text if present."""
-    import re
-    months = {
-        "january": "January", "february": "February", "march": "March",
-        "april": "April", "may": "May", "june": "June",
-        "july": "July", "august": "August", "september": "September",
-        "october": "October", "november": "November", "december": "December",
-        "jan": "January", "feb": "February", "mar": "March", "apr": "April",
-        "jun": "June", "jul": "July", "aug": "August", "sep": "September",
-        "oct": "October", "nov": "November", "dec": "December"
-    }
-    text_lower = text.lower()
-    for abbrev, full in months.items():
-        if re.search(rf'\b{abbrev}\b', text_lower):
-            return full
-    return None
-
-
-# NOTE: All keyword-based detection functions removed - LLM handles all intent detection semantically
+# NOTE: All date detection and keyword-based functions removed - LLM handles all detection semantically
 
 
 class ClarifierAgent(BaseAgent):
@@ -705,15 +683,6 @@ Return ONLY the JSON array, nothing else."""
 
         return ". ".join(messages) + ". " if messages else ""
 
-    def _extract_brand_fallback(self, query: str) -> str:
-        """Extract brand name from user query - now handled by LLM."""
-        # Brand extraction now handled by LLM semantic detection
-        return None
-
-    def _extract_activities_fallback(self, query: str) -> list:
-        """Extract activities from user query - now handled by LLM."""
-        # Activity extraction now handled by LLM semantic detection
-        return []
 
     def analyze(self,
                 query: str,
@@ -912,29 +881,10 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             mentions_activity = result.get("mentions_activity", False)
 
             new_activities = new_intent.get("activities") or []
-
-            fallback_activities = self._extract_activities_fallback(query)
-            if fallback_activities:
-                if isinstance(new_activities, list):
-                    for act in fallback_activities:
-                        if act not in new_activities:
-                            new_activities.append(act)
-                else:
-                    new_activities = fallback_activities
-                merged_intent["activities"] = new_activities
+            if new_activities and isinstance(new_activities, list) and len(new_activities) > 0:
                 mentions_activity = True
 
-            if new_activities and isinstance(new_activities,
-                                             list) and len(new_activities) > 0:
-                mentions_activity = True
-
-            # Fallback brand extraction - check if user mentioned a brand
-            fallback_brand = self._extract_brand_fallback(query)
-            if fallback_brand and not merged_intent.get("preferred_brand"):
-                merged_intent["preferred_brand"] = fallback_brand
-                print(f"[DEBUG] Extracted brand from query: {fallback_brand}")
-
-            # Check for budget or brand AFTER fallback extraction
+            # Check for budget or brand from LLM extraction
             has_budget_or_brand = (merged_intent.get("budget_amount")
                                    or merged_intent.get("preferred_brand"))
 
