@@ -441,6 +441,39 @@ Return ONLY the response asking for a valid date."""
         destination = intent.get("destination") or ""
         return self._generate_dynamic_question("product", query, intent) or ""
 
+    def _detect_invalid_date_response(self, message: str) -> bool:
+        """
+        Use LLM to dynamically detect if a message indicates an invalid calendar date.
+        Returns True if the message is about an invalid/non-existent date.
+        """
+        try:
+            from langchain_core.messages import SystemMessage as SysMsg
+            
+            prompt = f"""Analyze this message and determine if it's telling the user that a date they provided is INVALID or doesn't exist on the calendar.
+
+Message: "{message}"
+
+Return ONLY "true" if the message indicates:
+- The date doesn't exist (e.g., February 30, February 31, April 31)
+- The date is invalid for the calendar
+- The month doesn't have that many days
+
+Return ONLY "false" if the message is:
+- A normal question about dates
+- Asking when the user wants to travel
+- Any other message not about invalid dates
+
+Return ONLY the word "true" or "false", nothing else."""
+
+            messages = [SysMsg(content=prompt)]
+            response = self.llm.invoke(messages)
+            result = response.content.strip().lower()
+            
+            return result == "true"
+        except Exception as e:
+            print(f"[DEBUG] Error detecting invalid date response: {e}")
+            return False
+
     def _parse_date_from_query(self, query: str, existing_context: dict, conversation_history: list = None) -> dict:
         """
         Use LLM to dynamically parse date information from query and context.
@@ -912,6 +945,23 @@ Extract travel intent and respond with the JSON structure. If key details are mi
 
             # Use LLM signal for date detection - pure LLM-driven
             llm_has_date_info = result.get("has_date_info", False)
+            
+            # Check if LLM detected an invalid date in its response using semantic detection
+            llm_message = result.get("assistant_message", "")
+            if llm_message and self._detect_invalid_date_response(llm_message):
+                # Use the LLM's message directly as it already explains the issue
+                invalid_date_message = llm_message or result.get("next_question")
+                print(f"[DEBUG] LLM detected invalid calendar date in response")
+                
+                return {
+                    "needs_clarification": True,
+                    "clarification_question": invalid_date_message,
+                    "assistant_message": invalid_date_message,
+                    "updated_intent": merged_intent,
+                    "clarified_query": query,
+                    "ready_for_recommendations": False,
+                    "detected_changes": detected_changes
+                }
             
             # Date PARSING using LLM: dynamically parse and combine date fragments from context
             # E.g., user said "January" in previous message, now says "19-20" - combine them
