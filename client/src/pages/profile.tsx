@@ -49,7 +49,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (!customerId) {
-      navigate("/login");
+      navigate("/");
       return;
     }
     fetchCustomerData();

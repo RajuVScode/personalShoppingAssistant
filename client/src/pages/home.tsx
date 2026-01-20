@@ -36,7 +36,7 @@ export default function HomePage() {
     localStorage.removeItem("customer_id");
     localStorage.removeItem("customer_name");
     setCustomerName(null);
-    navigate("/login");
+    navigate("/");
   };
 
   return (
@@ -105,7 +105,7 @@ export default function HomePage() {
                 <button 
                   className="text-gray-700 hover:text-gray-900" 
                   data-testid="btn-account"
-                  onClick={() => navigate("/login")}
+                  onClick={() => setIsChatOpen(true)}
                 >
                   <User className="w-5 h-5" />
                 </button>
