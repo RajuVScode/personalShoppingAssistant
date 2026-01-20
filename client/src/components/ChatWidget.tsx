@@ -724,9 +724,10 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
     const convData = await convRes.json();
     
     if (convData.messages && convData.messages.length > 0) {
-      const restoredMessages: Message[] = convData.messages.map((msg: { role: string; content: string }) => ({
+      const restoredMessages: Message[] = convData.messages.map((msg: { role: string; content: string; products?: Product[] }) => ({
         role: msg.role as "user" | "assistant",
         content: msg.content,
+        products: msg.products || undefined,
       }));
       setMessages([greetingMessage, ...restoredMessages]);
       if (convData.context) {

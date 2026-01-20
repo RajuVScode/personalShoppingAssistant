@@ -267,10 +267,24 @@ def chat(request: ChatRequest, db: Session = Depends(get_db)):
     updated_context = result.get("context", {})
     updated_context["accumulated_intent"] = result.get("updated_intent", {})
     
+    products_for_storage = [
+        {
+            "id": p.get("id", 0),
+            "name": p.get("name", ""),
+            "description": p.get("description", ""),
+            "category": p.get("category"),
+            "subcategory": p.get("subcategory"),
+            "price": p.get("price"),
+            "brand": p.get("brand"),
+            "image_url": p.get("image_url"),
+            "rating": p.get("rating", 0)
+        } for p in result.get("products", [])
+    ]
+    
     if conversation:
         messages = list(conversation.messages or [])
         messages.append({"role": "user", "content": request.message})
-        messages.append({"role": "assistant", "content": result["response"]})
+        messages.append({"role": "assistant", "content": result["response"], "products": products_for_storage})
         conversation.messages = messages
         conversation.context = updated_context
         flag_modified(conversation, "messages")
@@ -281,7 +295,7 @@ def chat(request: ChatRequest, db: Session = Depends(get_db)):
             customer_id=request.user_id,
             messages=[
                 {"role": "user", "content": request.message},
-                {"role": "assistant", "content": result["response"]}
+                {"role": "assistant", "content": result["response"], "products": products_for_storage}
             ],
             context=updated_context
         )
