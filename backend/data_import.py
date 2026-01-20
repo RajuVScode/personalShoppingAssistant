@@ -4,43 +4,9 @@ from backend.database.connection import SessionLocal, engine, Base
 from backend.database.models import Product
 from sqlalchemy import text
 
-CATEGORY_IMAGE_KEYWORDS = {
-    'clothing': 'clothing,fashion',
-    'apparel': 'apparel,fashion',
-    'tops': 'shirt,top,blouse',
-    'bottoms': 'pants,trousers,jeans',
-    'dresses': 'dress,gown',
-    'outerwear': 'jacket,coat,outerwear',
-    'footwear': 'shoes,footwear',
-    'shoes': 'shoes,sneakers',
-    'accessories': 'accessories,fashion',
-    'bags': 'handbag,purse,bag',
-    'jewelry': 'jewelry,necklace',
-    'watches': 'watch,wristwatch',
-    'bedding': 'bedding,sheets,bedroom',
-    'decor': 'home-decor,interior',
-    'furniture': 'furniture,interior',
-    'kitchen': 'kitchen,cookware',
-    'bath': 'bathroom,towels',
-    'electronics': 'electronics,gadgets',
-    'sports': 'sports,fitness,athletic',
-    'beauty': 'beauty,cosmetics,makeup',
-    'kids': 'kids,children,clothing',
-    'swimwear': 'swimwear,bikini,beach',
-    'candles': 'candles,home',
-    'pillowcases': 'pillowcase,bedding',
-}
-
 def generate_product_image_url(category: str, subcategory: str, sku: str) -> str:
-    category_lower = (category or '').lower()
-    subcategory_lower = (subcategory or '').lower()
-    
-    keyword = CATEGORY_IMAGE_KEYWORDS.get(subcategory_lower) or \
-              CATEGORY_IMAGE_KEYWORDS.get(category_lower) or \
-              'fashion,clothing'
-    
-    seed = abs(hash(sku)) % 10000
-    return f"https://source.unsplash.com/400x300/?{keyword}&sig={seed}"
+    seed = abs(hash(sku)) % 1000
+    return f"https://picsum.photos/seed/{sku}/400/300"
 
 def import_product_data():
     product_master = pd.read_excel("attached_assets/product_master_clean_New_1766805486832.xlsx")

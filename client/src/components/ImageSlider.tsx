@@ -21,7 +21,7 @@ export function ImageSlider({
 
   const productImages = primaryImageUrl 
     ? [primaryImageUrl] 
-    : [`https://source.unsplash.com/400x300/?fashion,clothing&sig=${productId}`];
+    : [`https://picsum.photos/seed/product-${productId}/400/300`];
 
   useEffect(() => {
     productImages.forEach((src, idx) => {
