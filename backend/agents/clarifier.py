@@ -1,18 +1,19 @@
 """
-Clarifier Agent Module
+Clarifier Agent Module - Dynamic Model-Driven Approach
 
-This module implements the ClarifierAgent, responsible for understanding and 
-extracting user intent from natural language queries in the shopping assistant.
+This module implements the ClarifierAgent using a fully dynamic, LLM-driven approach
+with NO hardcoded keywords or decision trees.
 
-Key Responsibilities:
-- Extract travel intent (destination, dates, activities)
-- Detect shopping intent and product mentions
-- Handle multi-destination trip planning
-- Parse date ranges and handle ambiguous dates
-- Capture user preferences (size, brand, budget)
+Key Principles:
+- Dynamic, model-driven behavior only
+- Semantic intent inference using LLM
+- Minimal, relevant follow-up questions
+- Context-aware routing (travel vs non-travel vs direct product)
 
-The agent uses LLM-based intent extraction combined with rule-based fallbacks
-for reliable detection of products, activities, and user responses.
+The agent routes requests semantically:
+A) Travel/Trip Context → ask travel-relevant questions only
+B) Non-Travel Shopping → ask product-relevant questions only  
+C) Direct Product Request → skip discovery, move to recommendations
 """
 
 import json
@@ -47,207 +48,88 @@ def get_weekend_dates(current_date: datetime, next_week: bool = False):
     return saturday.strftime("%Y-%m-%d"), sunday.strftime("%Y-%m-%d")
 
 
-CLARIFIER_PROMPT = """You are a Clarifier Agent for a travel guide and product suggestion application. Your task:
-- Extract or confirm the user's intent across these fields:
-  destination, travel_date, activities, preferred_brand, clothes, budget_amount, budget_currency, notes.
-- SUPPORT MULTI-DESTINATION TRIPS: If user mentions multiple destinations with dates (e.g., "Paris Jan 5-8, then Rome Jan 9-12"), extract ALL of them into trip_segments.
+CLARIFIER_PROMPT = """You are a Dynamic Personal Shopping Assistant. Your role is to understand user intent semantically and ask only minimal, relevant follow-up questions.
 
-CRITICAL - INTENT INFERENCE FROM CONTEXT:
-- NEVER ask "Are you looking to buy something, or are you asking about an activity?" when the user mentions a SPECIFIC PRODUCT.
-- If user mentions products (shoes, jacket, backpack, etc.), INFER they want product recommendations. Respond directly and helpfully.
-- If user says "waterproof hiking shoes", they want PRODUCT RECOMMENDATIONS for hiking shoes. Don't ask if they're shopping.
-- If user mentions an activity context (e.g., "shoes for trekking in Himachal"), infer the use case and provide immediate guidance.
+NON-NEGOTIABLE PRINCIPLES:
+- Dynamic, model-driven behavior only. No hardcoded rules.
+- Infer intent and entities semantically from natural language.
+- Ask only minimal, relevant questions needed to proceed.
+- Provide recommendations when requirements are sufficiently clear.
 
-PRODUCT MENTIONS - TREAT AS SHOPPING INTENT:
-- shoes, sneakers, boots, sandals, jacket, coat, backpack, bag, luggage, shirt, pants, dress, etc.
-- When products are mentioned, set mentions_product: true and skip generic intent questions.
-- Provide immediate value: suggest features, ask targeted follow-ups (budget, climate, specific use case).
+INTENT ROUTING (Infer semantically - no keywords):
 
-SIZE PREFERENCE HANDLING:
-- If user specifies a size (e.g., "size UK 9", "size M", "32 inch waist", "size 10"), capture it in "preferred_size" field.
-- Size formats to recognize: UK sizes (UK 9), US sizes (US 10), EU sizes (EU 42), letter sizes (S, M, L, XL, XXL), numeric sizes (32, 34, 36), waist/inseam (32x30).
-- The system will filter recommendations to show ONLY products available in the specified size.
-- Do NOT assume size flexibility - the user's size is a mandatory filter.
+A) TRAVEL/TRIP CONTEXT
+If user indicates a travel scenario, ask ONLY travel-relevant questions:
+- Destination (city/region/country)
+- Dates or timeframe (start/end or approximate like "in January")
+- Activities/goals (sightseeing, relaxation, business, adventure)
+- Budget range (optional)
+Do NOT ask product detail questions unless user explicitly requests products for the trip.
 
-CRITICAL - EXTRACT EVERYTHING FROM USER MESSAGE:
-- ACTIVITIES: If user says "travelling to Miami for hiking" or "going to Paris for shopping", IMMEDIATELY extract "hiking" or "shopping" into the activities array. Do NOT wait to ask - capture it NOW.
-- DATES: If user mentions ANY date reference (next weekend, tomorrow, January 5, etc.), set has_date_info: true
-- NEW TRIP: If user is starting a new trip (travelling to, going to, trip to, etc.), set is_new_trip: true
-- PRODUCTS: If user mentions specific products, capture them in notes and proceed to recommendations.
+B) NON-TRAVEL SHOPPING (birthday, wedding, gifting, home, tech, etc.)
+If shopping is unrelated to travel, do NOT ask for destination, travel dates, or travel activities.
+Ask product-relevant questions:
+- Product category/type (if unspecified)
+- Intended use or recipient
+- Key attributes (size, color, style, theme)
+- Quantity and budget range
 
-LOCATION EXTRACTION - CRITICAL:
-- You MUST extract and normalize locations using your world knowledge.
-- Set "destination_city" to the normalized city name (e.g., "Liverpool", "Birmingham", "Tokyo")
-- Set "destination_country" to the normalized country name (e.g., "UK", "USA", "Japan")
-- Set "country_only" to true if user mentions ONLY a country without a specific city (e.g., "travelling to the UK", "going to France")
-- Handle typos gracefully using your knowledge (e.g., "Parris" → Paris, "Londun" → London)
-- Combine city and country into "destination" field (e.g., "Liverpool, UK", "Tokyo, Japan")
+C) DIRECT PRODUCT REQUEST
+If user clearly specifies a product (e.g., "shoes for Paris trip in January, Size M"):
+- SKIP discovery questions
+- Extract ALL details from the message (product, destination, dates, size)
+- If only 1-2 critical details missing, ask at most 1-2 clarifying questions
+- Move quickly to recommendations
 
-COUNTRY-ONLY DETECTION:
-- If user says "travelling to the UK" or "going to France" WITHOUT mentioning a city → set country_only: true
-- If user says "travelling to Liverpool UK" or "going to Paris" → set country_only: false (city is present)
-- When country_only is true, the system will ask which city they're visiting
+SIZE PREFERENCE:
+- Capture any size mentioned (UK 9, M, L, EU 42, 32, etc.) in preferred_size
+- Size is a MANDATORY filter - show only products in that size
 
-CRITICAL RULES:
-1. ONLY ask for destination and travel_date if they are truly MISSING (not mentioned at all).
-2. NEVER ask for confirmation of an obvious destination. Accept city names as-is:
-   - "Paris" → destination: "Paris, France", destination_city: "Paris", destination_country: "France"
-   - "Liverpool UK" → destination: "Liverpool, UK", destination_city: "Liverpool", destination_country: "UK"
-   - Handle any city worldwide using your knowledge - no hardcoded list needed
-3. Once you have destination AND travel_date, proceed - do NOT over-clarify.
-4. If user provides some optional details, ACCEPT them and proceed - do NOT ask for more.
-5. If user says "that's it" or provides destination+dates without extras, PROCEED without asking more questions.
-6. Activities, budget, and clothes are OPTIONAL - do not require them to proceed.
-7. NEVER get stuck in a loop asking the same question. If user confirms a destination, ACCEPT it immediately.
+DATE HANDLING:
+- Accept month names (January, February) as valid date info
+- If user says "19-20" after mentioning a month, combine them
+- For ambiguous dates like "next week", ask for specific dates
+- All dates must be FUTURE relative to {CURRENT_DATE}
 
-- Use US English tone, be helpful and polite.
-- Infer budget currency from context; default to USD.
-- If budget is provided without currency, set currency to USD by default.
-- Activities should be either an array or strings. Accept single activities.
-- Clothes can be a simple descriptive string.
-- Be concise and avoid over-prompting.
-- DO NOT ask "did you mean X?" for obvious destinations - just accept them.
+QUESTIONING POLICY:
+- Ask ONLY for missing, high-impact information
+- Do NOT repeat already provided details
+- Keep questions concise (one sentence)
+- If intent is ambiguous, ask ONE targeted question
 
-Context:
-- Today's date (ISO): {CURRENT_DATE}
+Today's date: {CURRENT_DATE}
 
-Rules:
-- Keep assistant_message friendly and purposeful.
-- Use next_question only if more info is needed AND ask exactly one question.
-- Never include extra keys or text outside the JSON.
-- Please don't consider model date as current date. Always use the provided CURRENT_DATE.
-- If only one date is mentioned, set start_date = end_date.
-- Parse various date formats:
-- Parse ranges like "from 5 March to 8 March", "10-12 Jan 2025", "2025-01-10 to 2025-01-12".
-
-AMBIGUOUS DATE HANDLING - ALWAYS ASK FOR CLARIFICATION:
-- When user provides AMBIGUOUS or RELATIVE date expressions, DO NOT auto-interpret them.
-- Instead, set "has_ambiguous_date": true and ask for specific calendar dates.
-- AMBIGUOUS DATE PHRASES that REQUIRE clarification:
-  - "next week", "this week", "a week", "one week", "two weeks", "in 2 weeks"
-  - "next month", "this month", "a month"
-  - "soon", "in a few days", "sometime next week"
-  - Any phrase without specific calendar dates (day, month, or date range)
-- Ask: "Could you please specify the exact start and end dates for your trip (for example, 22 Jan–28 Jan)?"
-
-UNAMBIGUOUS DATES - Process without clarification:
-- Specific dates: "January 15", "March 12-15", "2026-01-22 to 2026-01-28"
-- Specific weekends with dates implied: "this weekend" (Saturday-Sunday only - 2 days is acceptable)
-- Explicit date ranges: "from 5 March to 8 March", "10-12 Jan 2025"
-
-- CRITICAL: All dates MUST be in the FUTURE relative to {CURRENT_DATE}.
-- If month/day is given without year, always use the NEXT occurrence of that date in the future.
-- Date format: "YYYY-MM-DD" (single date) or "YYYY-MM-DD to YYYY-MM-DD" (range).
-
-MULTI-DESTINATION HANDLING:
-- If user mentions multiple destinations with different dates, extract each as a trip_segment.
-- Example: "Paris Jan 5-8, then Rome Jan 9-12" → two segments
-- Each segment has: destination, start_date, end_date, activities (optional)
-- Set "destination" to first destination, "travel_date" to full range (first start to last end)
-- Preserve trip_segments array for detailed per-leg context
-
-DECISION LOGIC:
-- If destination is missing → next_question asks for destination
-- If travel_date is missing → next_question asks for travel dates  
-- If user provides AMBIGUOUS date (next week, one week, etc.) → ask for specific calendar dates
-- If destination AND specific travel_date are present → Set next_question to null AND ready_for_recommendations to true
-- DO NOT ask for activities/budget/clothes individually - these are optional extras
-
-USER RESPONSE DETECTION - Use your language understanding to detect:
-- "is_skip_response": true if user wants to skip/proceed without optional info (e.g., "that's it", "no preference", "just proceed", "I'm good", "nothing else", etc.)
-- "mentions_activity": true if user mentions ANY activity, event, sport, or experience. Examples: "hiking", "cycling", "beach", "concert", "dining", "wedding", "sightseeing", "swimming", "shopping", "museum". Even a single word like "hiking" should set this to true.
-- "is_confirmation": true if user is confirming something (e.g., "yes", "yeah", "correct", "that's right", etc.)
-
-IMPORTANT - CAPTURING ACTIVITIES:
-- When user mentions activities (even single words like "hiking" or "cycling"), ADD them to the "activities" array in updated_intent.
-- Example: If user says "hiking", set activities: ["hiking"] AND mentions_activity: true
-- Always preserve existing activities and ADD new ones to the array.
-
-OUTPUT STRICTLY AS A JSON OBJECT with this shape:
+OUTPUT AS JSON:
 {{
-  "assistant_message": "string - what the assistant says to the user in this turn",
+  "assistant_message": "string - your response to the user",
   "updated_intent": {{
-      "destination": "string|null - normalized 'City, Country' format (e.g., 'Liverpool, UK')",
-      "destination_city": "string|null - just the city name (e.g., 'Liverpool')",
-      "destination_country": "string|null - just the country name (e.g., 'UK')",
-      "country_only": true|false - true if user mentioned country without city,
-      "travel_date": "string|null - full date range",
-      "trip_segments": [
-          {{
-              "destination": "string",
-              "start_date": "YYYY-MM-DD",
-              "end_date": "YYYY-MM-DD",
-              "activities": ["string", ...]|null
-          }}
-      ]|null,
+      "destination": "string|null - 'City, Country' format",
+      "destination_city": "string|null",
+      "destination_country": "string|null",
+      "country_only": true|false,
+      "travel_date": "string|null",
+      "trip_segments": [...]|null,
       "activities": ["string", ...]|null,
       "preferred_brand": "string|null",
-      "preferred_size": "string|null - user's size preference (e.g., 'UK 9', 'M', 'L', '32', 'EU 42')",
+      "preferred_size": "string|null",
       "clothes": "string|null",
       "budget_amount": number|null,
       "budget_currency": "string|null",
-      "notes": "string|null"
+      "notes": "string|null",
+      "mentions_product": true|false
   }},
   "is_skip_response": true|false,
   "mentions_activity": true|false,
   "is_confirmation": true|false,
-  "has_date_info": true|false - true if user mentioned ANY date/time reference,
-  "is_new_trip": true|false - true if user is starting a new trip request,
+  "has_date_info": true|false,
+  "is_new_trip": true|false,
   "next_question": "string|null",
   "ready_for_recommendations": true|false
 }}
 
-Set "ready_for_recommendations": true when destination and travel_date are collected."""
+CRITICAL: When user provides product + destination + date info (even partial like month name) + size, set ready_for_recommendations: true."""
 
-COMMON_ACTIVITIES = {
-    "hiking",
-    "cycling",
-    "swimming",
-    "surfing",
-    "skiing",
-    "snowboarding",
-    "shopping",
-    "sightseeing",
-    "dining",
-    "beach",
-    "museum",
-    "concert",
-    "wedding",
-    "conference",
-    "meeting",
-    "business",
-    "festival",
-    "party",
-    "spa",
-    "wellness",
-    "yoga",
-    "golf",
-    "tennis",
-    "running",
-    "jogging",
-    "camping",
-    "fishing",
-    "climbing",
-    "diving",
-    "snorkeling",
-    "kayaking",
-    "sailing",
-    "boating",
-    "photography",
-    "wine tasting",
-    "cooking class",
-    "tour",
-    "adventure",
-    "nightlife",
-    "clubbing",
-    "theater",
-    "opera",
-    "trekking",
-    "cooking",
-    "gym",
-    "gaming",
-    "travel",
-}
+# NOTE: Hardcoded activity lists removed - now handled by LLM semantic detection
 
 def detect_intent_with_llm(query: str, llm) -> dict:
     """
@@ -271,26 +153,21 @@ def detect_intent_with_llm(query: str, llm) -> dict:
     from langchain_core.messages import HumanMessage, SystemMessage
     
     detection_prompt = """You are an intent detection system for a shopping assistant.
-Analyze the user's message and extract:
+Analyze the user's message semantically and extract:
 
-1. **Shopping Intent**: Does the user want to buy, purchase, or acquire a product? 
-   - "yes, like to buy shoes" → has_shopping_intent: true
-   - "I need a jacket for my trip" → has_shopping_intent: true
-   - "What's the weather like?" → has_shopping_intent: false
+1. **Shopping Intent**: Does the user express desire to buy, purchase, or acquire any product?
+   Use semantic understanding - detect shopping intent from context, not just specific words.
 
-2. **Product Mentioned**: What specific product category is mentioned?
-   - Look for: clothing (shoes, jacket, dress, pants, shirt, coat, sweater, etc.)
-   - Accessories (bag, backpack, hat, sunglasses, watch, etc.)
-   - Footwear (boots, sneakers, sandals, heels, etc.)
-   - Return the general category, e.g., "shoes" not "hiking shoes"
+2. **Product Mentioned**: What type of product is the user interested in?
+   Return the general product category mentioned (clothing, footwear, accessories, etc.)
+   Return null if no specific product is mentioned.
 
-3. **Activity Mentioned**: What activity or purpose is mentioned?
-   - Examples: hiking, swimming, traveling, wedding, business meeting, beach, skiing
-   - This helps contextualize product recommendations
+3. **Activity Mentioned**: What activity, event, or purpose is mentioned?
+   Detect any activity, hobby, event, or occasion mentioned in context.
+   Return null if no activity is mentioned.
 
-4. **Response Type**: Is this an affirmative or negative response to a question?
-   - Affirmative: yes, yeah, sure, okay, please, sounds good, let's do it
-   - Negative: no, nope, not really, skip, I'm good
+4. **Response Type**: Is this an affirmative or negative response to a previous question?
+   Detect confirmation or declination semantically from context.
 
 Respond ONLY with a JSON object (no markdown, no explanation):
 {
@@ -322,7 +199,7 @@ Respond ONLY with a JSON object (no markdown, no explanation):
         print(f"[DEBUG] LLM intent detection result: {result}")
         return result
     except Exception as e:
-        print(f"[DEBUG] LLM intent detection error: {e}, falling back to keyword detection")
+        print(f"[DEBUG] LLM intent detection error: {e}, using default values")
         return {
             "has_shopping_intent": False,
             "product_mentioned": None,
@@ -332,68 +209,7 @@ Respond ONLY with a JSON object (no markdown, no explanation):
         }
 
 
-# FALLBACK KEYWORD SETS: Used when LLM detection fails or returns invalid results.
-# Primary intent detection uses detect_intent_with_llm() for intelligent detection,
-# but these comprehensive lists ensure robust fallback behavior.
-SHOPPING_KEYWORDS = {
-    "shopping", "buy", "purchase", "order", "get a product",
-    "looking to buy", "need to purchase", "want to buy",
-    "buying", "purchasing", "shop", "need some",
-    "looking for", "want some", "get some",
-}
-
-# FALLBACK: Comprehensive product keywords for robust detection when LLM fails
-PRODUCT_KEYWORDS = {
-    # Footwear
-    "shoes", "shoe", "sneakers", "boots", "sandals", "loafers", "heels", "flats",
-    # Outerwear
-    "jacket", "jackets", "coat", "coats", "blazer", "blazers", "parka", "windbreaker",
-    # Bags
-    "backpack", "backpacks", "bag", "bags", "luggage", "suitcase", "duffel", "tote",
-    # Tops
-    "shirt", "shirts", "t-shirt", "t-shirts", "blouse", "top", "tops",
-    # Bottoms
-    "pants", "trousers", "jeans", "shorts", "leggings", "chinos",
-    # Dresses
-    "dress", "dresses", "skirt", "skirts", "gown",
-    # Knitwear
-    "sweater", "sweaters", "hoodie", "hoodies", "cardigan", "pullover",
-    # Accessories
-    "hat", "hats", "cap", "caps", "beanie", "sunglasses", "glasses",
-    "watch", "watches", "jewelry", "accessories", "scarf", "scarves", "gloves",
-    # Weather gear
-    "umbrella", "raincoat", "poncho", "waterproof",
-    # Swimwear
-    "swimsuit", "swimwear", "bikini", "trunks",
-    # Formal
-    "suit", "suits", "tuxedo", "formal wear",
-    # Activewear
-    "activewear", "sportswear", "athleisure", "workout clothes",
-    # Outdoor
-    "hiking gear", "camping gear", "travel gear", "outdoor gear",
-    # Cold weather
-    "thermal", "thermals", "base layer", "fleece", "down jacket", "puffer", "insulated",
-}
-
-
-def detect_product_mention(query: str) -> str:
-    """
-    Keyword-based fallback for product detection.
-    
-    Used as a robust fallback when LLM detection fails or returns invalid results.
-    The primary detection method is detect_intent_with_llm().
-    
-    Args:
-        query: The user's message text
-        
-    Returns:
-        The matched product keyword if found, None otherwise
-    """
-    query_lower = query.lower()
-    for product in PRODUCT_KEYWORDS:
-        if product in query_lower:
-            return product
-    return None
+# NOTE: Hardcoded keyword sets removed - LLM handles all detection semantically
 
 
 def validate_llm_intent_result(result: dict) -> dict:
@@ -427,140 +243,11 @@ def validate_llm_intent_result(result: dict) -> dict:
     }
 
 
-AMBIGUOUS_DATE_PHRASES = {
-    "next week",
-    "this week",
-    "a week",
-    "one week",
-    "two weeks",
-    "2 weeks",
-    "in 2 weeks",
-    "in two weeks",
-    "few weeks",
-    "couple weeks",
-    "couple of weeks",
-    "next month",
-    "this month",
-    "a month",
-    "one month",
-    "two months",
-    "soon",
-    "in a few days",
-    "few days",
-    "couple days",
-    "couple of days",
-    "sometime",
-    "around",
-    "roughly",
-    "approximately",
-    "end of month",
-    "beginning of month",
-    "mid month",
-    "end of january",
-    "end of february",
-    "end of march",
-    "end of april",
-    "end of may",
-    "end of june",
-    "end of july",
-    "end of august",
-    "end of september",
-    "end of october",
-    "end of november",
-    "end of december",
-}
+# NOTE: Hardcoded date phrases removed - LLM handles date ambiguity detection
 
 
-def detect_ambiguous_date(query: str) -> bool:
-    """Check if the query contains an ambiguous date phrase that needs clarification."""
-    query_lower = query.lower()
-
-    # Check for ambiguous phrases
-    for phrase in AMBIGUOUS_DATE_PHRASES:
-        if phrase in query_lower:
-            return True
-
-    # Check for patterns like "1 week", "2 weeks", etc.
-    import re
-    ambiguous_patterns = [
-        r'\b\d+\s*weeks?\b',  # "1 week", "2 weeks"
-        r'\b\d+\s*months?\b',  # "1 month", "2 months"
-        r'\bnext\s+week\b',
-        r'\bthis\s+week\b',
-        r'\bin\s+\d+\s+days?\b',  # "in 3 days"
-    ]
-
-    for pattern in ambiguous_patterns:
-        if re.search(pattern, query_lower):
-            return True
-
-    return False
-
-
-def has_specific_date(query: str) -> bool:
-    """Check if the query contains specific calendar dates (month + day)."""
-    import re
-    query_lower = query.lower()
-
-    # Patterns for specific dates (month + day combinations)
-    specific_patterns = [
-        r'\b\d{1,2}\s*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)',  # "15 Jan", "5 March"
-        r'\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\s*\d{1,2}',  # "Jan 15", "March 5"
-        r'\b\d{4}-\d{2}-\d{2}\b',  # ISO format "2026-01-15"
-        r'\b\d{1,2}/\d{1,2}/\d{2,4}\b',  # "01/15/2026"
-        r'\b\d{1,2}-\d{1,2}\s*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)',  # "15-18 Jan"
-        r'\bjanuary\s+\d{1,2}',
-        r'\bfebruary\s+\d{1,2}',
-        r'\bmarch\s+\d{1,2}',
-        r'\bapril\s+\d{1,2}',
-        r'\bmay\s+\d{1,2}',
-        r'\bjune\s+\d{1,2}',
-        r'\bjuly\s+\d{1,2}',
-        r'\baugust\s+\d{1,2}',
-        r'\bseptember\s+\d{1,2}',
-        r'\boctober\s+\d{1,2}',
-        r'\bnovember\s+\d{1,2}',
-        r'\bdecember\s+\d{1,2}',
-        r'\b\d{1,2}(st|nd|rd|th)\s+(of\s+)?(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)',  # "15th of January"
-    ]
-
-    for pattern in specific_patterns:
-        if re.search(pattern, query_lower):
-            return True
-
-    # Check for "this weekend" which is acceptable (specific 2-day period)
-    if "this weekend" in query_lower or "upcoming weekend" in query_lower:
-        return True
-
-    return False
-
-
-def has_partial_date_info(query: str) -> bool:
-    """Check if query has partial date info (month only, without specific days)."""
-    import re
-    query_lower = query.lower()
-    
-    # Check for month names alone
-    month_names = [
-        "january", "february", "march", "april", "may", "june",
-        "july", "august", "september", "october", "november", "december",
-        "jan", "feb", "mar", "apr", "jun", "jul", "aug", "sep", "oct", "nov", "dec"
-    ]
-    for month in month_names:
-        if re.search(rf'\b{month}\b', query_lower):
-            return True
-    return False
-
-
-def has_day_range_only(query: str) -> bool:
-    """Check if query contains just a day range like '19-20' without month context."""
-    import re
-    query_lower = query.lower()
-    # Match patterns like "19-20", "15-18" (just numbers)
-    if re.search(r'^\s*\d{1,2}\s*-\s*\d{1,2}\s*$', query_lower):
-        return True
-    return False
-
+# NOTE: All date detection functions removed - LLM detects dates semantically
+# Only extract_month_from_text remains as a pure PARSING utility for combining date fragments
 
 def extract_month_from_text(text: str) -> str:
     """Extract month name from text if present."""
@@ -581,102 +268,7 @@ def extract_month_from_text(text: str) -> str:
     return None
 
 
-NON_SHOPPING_ACTIVITIES = {
-    "hiking",
-    "trekking",
-    "running",
-    "dining",
-    "cooking",
-    "camping",
-    "gym",
-    "gaming",
-    "photography",
-    "swimming",
-    "cycling",
-    "surfing",
-    "skiing",
-    "snowboarding",
-    "yoga",
-    "golf",
-    "tennis",
-    "jogging",
-    "fishing",
-    "climbing",
-    "diving",
-    "snorkeling",
-    "kayaking",
-    "sailing",
-    "boating",
-    "wine tasting",
-    "cooking class",
-    "tour",
-    "adventure",
-    "nightlife",
-    "clubbing",
-    "theater",
-    "opera",
-    "sightseeing",
-    "beach",
-    "museum",
-    "concert",
-    "wedding",
-    "conference",
-    "meeting",
-    "business",
-    "festival",
-    "party",
-    "spa",
-    "wellness",
-}
-
-
-def detect_shopping_intent(query: str) -> bool:
-    """Check if the query indicates shopping/purchasing intent."""
-    query_lower = query.lower()
-    for keyword in SHOPPING_KEYWORDS:
-        if keyword in query_lower:
-            return True
-    return False
-
-
-def detect_non_shopping_activity(query: str) -> str:
-    """Check if the query mentions a non-shopping activity. Returns the activity name or None."""
-    query_lower = query.lower()
-    for activity in NON_SHOPPING_ACTIVITIES:
-        if activity in query_lower:
-            return activity
-    return None
-
-
-def is_affirmative_response(query: str) -> bool:
-    """Check if the query is an affirmative response."""
-    affirmatives = {
-        "yes", "yeah", "sure", "okay", "ok", "go ahead", "proceed", "yep",
-        "yup", "absolutely", "definitely", "please", "of course",
-        "sounds good", "let's do it", "yes please", "sure thing"
-    }
-    query_lower = query.lower().strip()
-    return query_lower in affirmatives or any(aff in query_lower
-                                              for aff in affirmatives)
-
-
-def is_negative_response(query: str) -> bool:
-    """Check if the query is a negative response."""
-    negatives = {
-        "no", "nope", "nah", "not really", "no thanks", "no thank you",
-        "i'm good", "skip", "not interested", "don't need"
-    }
-    query_lower = query.lower().strip()
-    return query_lower in negatives or any(neg in query_lower
-                                           for neg in negatives)
-
-
-KNOWN_BRANDS = {
-    "riviera atelier", "montclair house", "maison signature",
-    "aurelle couture", "golden atelier", "veloce luxe", "luxe & co.",
-    "evangeline", "opal essence", "bellezza studio", "seaside atelier",
-    "sable & stone"
-}
+# NOTE: All keyword-based detection functions removed - LLM handles all intent detection semantically
 
 
 class ClarifierAgent(BaseAgent):
@@ -832,20 +424,14 @@ Return ONLY the question, no quotes or explanation."""
         return ". ".join(messages) + ". " if messages else ""
 
     def _extract_brand_fallback(self, query: str) -> str:
-        """Extract brand name from user query by matching against known brands."""
-        query_lower = query.lower().strip()
-        for brand in KNOWN_BRANDS:
-            if brand in query_lower:
-                return brand.title()
+        """Extract brand name from user query - now handled by LLM."""
+        # Brand extraction now handled by LLM semantic detection
         return None
 
     def _extract_activities_fallback(self, query: str) -> list:
-        query_lower = query.lower()
-        found = []
-        for activity in COMMON_ACTIVITIES:
-            if activity in query_lower:
-                found.append(activity)
-        return found
+        """Extract activities from user query - now handled by LLM."""
+        # Activity extraction now handled by LLM semantic detection
+        return []
 
     def analyze(self,
                 query: str,
@@ -915,49 +501,16 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                 print(
                     f"[DEBUG] Detected changes: {detected_changes['changes']}")
 
-            # Check for ambiguous dates BEFORE auto-parsing
-            # If user provides ambiguous date and no specific date, ask for clarification
-            has_ambiguous = detect_ambiguous_date(query)
-            has_specific = has_specific_date(query)
-            already_asked_date_clarification = existing_intent.get(
-                "_asked_date_clarification", False)
+            # Use LLM-detected date info signal for date parsing
+            llm_detected_date = result.get("has_date_info", False)
 
-            if has_ambiguous and not has_specific and not already_asked_date_clarification and not merged_intent.get(
-                    "travel_date"):
-                # User provided ambiguous date like "next week" - ask for specific dates
-                merged_intent["_asked_date_clarification"] = True
-                destination = merged_intent.get("destination",
-                                                "your destination")
-                date_clarification = f"Could you please specify the exact start and end dates for your trip to {destination}? (for example, 22 Jan - 28 Jan)"
-                print(
-                    f"[DEBUG] Detected ambiguous date in query, asking for clarification"
-                )
-                return {
-                    "needs_clarification":
-                    True,
-                    "clarification_question":
-                    date_clarification,
-                    "assistant_message":
-                    change_acknowledgment + date_clarification
-                    if change_acknowledgment else date_clarification,
-                    "updated_intent":
-                    merged_intent,
-                    "clarified_query":
-                    query,
-                    "ready_for_recommendations":
-                    False,
-                    "detected_changes":
-                    detected_changes
-                }
-
-            # Only auto-parse dates if they are specific (not ambiguous)
-            if not merged_intent.get("travel_date") and has_specific:
+            # Only auto-parse dates if LLM detected date info
+            if not merged_intent.get("travel_date") and llm_detected_date:
                 parsed_date = parse_relative_date(query, datetime.now())
                 if parsed_date:
                     merged_intent["travel_date"] = parsed_date
-                    result["has_date_info"] = True
                     print(
-                        f"[DEBUG] Parsed specific date from query: {parsed_date}"
+                        f"[DEBUG] Parsed date from query: {parsed_date}"
                     )
 
             country_only = new_intent.get("country_only", False)
@@ -994,6 +547,25 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             has_date = merged_intent.get("travel_date") or (len(trip_segments)
                                                             > 0)
             has_required = has_destination and has_date
+            
+            # DYNAMIC MODE: Trust LLM's ready_for_recommendations decision
+            # This enables the dynamic, model-driven approach - no hardcoded rules
+            mentions_product = new_intent.get("mentions_product", False) or result.get("updated_intent", {}).get("mentions_product", False)
+            
+            # Trust LLM when it says ready_for_recommendations AND has product mention
+            if ready_for_recs and mentions_product:
+                # LLM determined we have enough info - trust it and proceed
+                print(f"[DEBUG] Dynamic mode: LLM ready_for_recommendations=True with product mention, proceeding")
+                base_message = result.get("assistant_message", "Let me find the best products for you!")
+                return {
+                    "needs_clarification": False,
+                    "clarification_question": "",
+                    "assistant_message": change_acknowledgment + base_message if change_acknowledgment else base_message,
+                    "updated_intent": merged_intent,
+                    "clarified_query": query,
+                    "ready_for_recommendations": True,
+                    "detected_changes": detected_changes
+                }
 
             already_asked_optional = existing_intent.get(
                 "_asked_optional", False) or merged_intent.get(
@@ -1037,62 +609,41 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                 existing_intent["_asked_optional"] = False
                 existing_intent["_asked_activities"] = False
 
+            # Use LLM signal for date detection - pure LLM-driven
             llm_has_date_info = result.get("has_date_info", False)
             
-            # Check for partial date info (month only) or day range with context
-            partial_date = has_partial_date_info(query)
-            day_range_only = has_day_range_only(query)
-            
-            # Check if we have month context from existing intent or previous query
-            existing_month = None
-            existing_travel_date = existing_intent.get("travel_date") or ""
-            existing_notes = existing_intent.get("notes") or ""
-            pending_month = existing_intent.get("_pending_month")
-            
-            # Extract month from existing context (check pending month first, then travel_date, then notes)
-            existing_month = pending_month or extract_month_from_text(existing_travel_date) or extract_month_from_text(existing_notes)
-            
-            # Also check the previous query in conversation for month context
-            if not existing_month and conversation_history:
-                for prev_msg in reversed(conversation_history[-5:]):
-                    if isinstance(prev_msg, dict):
-                        prev_content = prev_msg.get("content", "")
-                    else:
-                        prev_content = str(prev_msg)
-                    existing_month = extract_month_from_text(prev_content)
-                    if existing_month:
-                        break
-            
-            # If user provided day range and we have month from context, combine them
-            if day_range_only and existing_month:
+            # Date PARSING only (not decision-making): combine date fragments from context
+            # E.g., user said "January" in previous message, now says "19-20" - combine them
+            if llm_has_date_info and not has_date:
                 import re
-                day_match = re.search(r'(\d{1,2})\s*-\s*(\d{1,2})', query)
+                # Check for day range pattern (e.g., "19-20") that needs month context
+                day_match = re.search(r'^\s*(\d{1,2})\s*-\s*(\d{1,2})\s*$', query)
                 if day_match:
-                    start_day = int(day_match.group(1))
-                    end_day = int(day_match.group(2))
-                    # Create normalized date string
-                    combined_date = f"{existing_month} {start_day}-{end_day}"
-                    merged_intent["travel_date"] = combined_date
-                    # Clear all partial date flags since we now have complete date
-                    merged_intent["_pending_month"] = None
-                    merged_intent["_has_partial_date"] = False
-                    merged_intent["_asked_specific_dates"] = True  # Mark as resolved
-                    print(f"[DEBUG] Combined date from context: {combined_date}")
-                    has_date = True  # We now have a complete date
+                    # Look for month context in existing intent
+                    existing_travel_date = existing_intent.get("travel_date") or ""
+                    existing_month = extract_month_from_text(existing_travel_date)
+                    
+                    # Also check conversation history for month context
+                    if not existing_month and conversation_history:
+                        for prev_msg in reversed(conversation_history[-5:]):
+                            if isinstance(prev_msg, dict):
+                                prev_content = prev_msg.get("content", "")
+                            else:
+                                prev_content = str(prev_msg)
+                            existing_month = extract_month_from_text(prev_content)
+                            if existing_month:
+                                break
+                    
+                    if existing_month:
+                        start_day = int(day_match.group(1))
+                        end_day = int(day_match.group(2))
+                        combined_date = f"{existing_month} {start_day}-{end_day}"
+                        merged_intent["travel_date"] = combined_date
+                        print(f"[DEBUG] Combined date from context: {combined_date}")
+                        has_date = True
             
-            # If this query mentions a month (even without days), store it for context
-            if partial_date and not has_date:
-                month_in_query = extract_month_from_text(query)
-                if month_in_query:
-                    merged_intent["_pending_month"] = month_in_query
-                    # Mark that we have partial date info - will be used to ask for specific dates
-                    merged_intent["_has_partial_date"] = True
-                    print(f"[DEBUG] Stored pending month from query: {month_in_query}")
-            
-            # has_dates_info is true if we have complete dates OR partial date info (month only)
-            # This prevents re-asking the generic "when are you planning" question
-            has_partial_date_stored = partial_date or existing_intent.get("_has_partial_date", False)
-            has_dates_info = has_date or llm_has_date_info or has_partial_date_stored
+            # Decision uses LLM signal only
+            has_dates_info = has_date or llm_has_date_info
 
             # EARLY SHOPPING/ACTIVITY DETECTION using LLM (runs BEFORE destination/date checks)
             # Skip detection if we're waiting for a product category answer
@@ -1111,23 +662,20 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                 direct_non_shopping_activity = None
                 llm_intent_result = None
             else:
-                # Use LLM-based intent detection with fallback to keyword matching
+                # Use LLM-based intent detection (fully dynamic, no keyword fallback)
                 llm_intent_result = detect_intent_with_llm(query, self.llm)
                 
-                # Extract LLM results with fallback to keyword-based detection
-                llm_shopping_intent = llm_intent_result.get("has_shopping_intent", False)
-                keyword_shopping_intent = detect_shopping_intent(query)
-                direct_shopping_intent = llm_shopping_intent or keyword_shopping_intent
+                # Extract LLM results - pure LLM-driven detection
+                direct_shopping_intent = llm_intent_result.get("has_shopping_intent", False)
                 
-                # Activity detection from LLM with fallback
+                # Activity detection from LLM only
                 llm_activity = llm_intent_result.get("activity_mentioned")
-                keyword_activity = detect_non_shopping_activity(query)
                 
-                # Map activity to non-shopping activity if it's not shopping-related
-                if llm_activity and llm_activity.lower() not in ["shopping", "buying", "purchasing"]:
+                # Map activity to non-shopping based on LLM signals
+                # If has_shopping_intent is true, the activity is shopping-related
+                # Otherwise, it's a non-shopping activity
+                if llm_activity and not direct_shopping_intent:
                     direct_non_shopping_activity = llm_activity.lower()
-                elif keyword_activity:
-                    direct_non_shopping_activity = keyword_activity
                 else:
                     direct_non_shopping_activity = None
 
@@ -1135,19 +683,12 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             awaiting_shopping_confirm = existing_intent.get(
                 "_awaiting_shopping_confirm", False)
             if awaiting_shopping_confirm:
-                # Use LLM result combined with keyword fallback for robust detection
-                llm_product = llm_intent_result.get("product_mentioned") if llm_intent_result else None
-                keyword_product = detect_product_mention(query)
-                product_in_confirmation = llm_product or keyword_product
+                # Use LLM result only - pure LLM-driven detection
+                product_in_confirmation = llm_intent_result.get("product_mentioned") if llm_intent_result else None
                 
-                # Combine LLM and keyword-based affirmative/negative detection
-                llm_is_affirmative = llm_intent_result.get("is_affirmative", False) if llm_intent_result else False
-                llm_is_negative = llm_intent_result.get("is_negative", False) if llm_intent_result else False
-                keyword_is_affirmative = is_affirmative_response(query)
-                keyword_is_negative = is_negative_response(query)
-                
-                is_user_affirmative = llm_is_affirmative or keyword_is_affirmative
-                is_user_negative = llm_is_negative or keyword_is_negative
+                # LLM-based affirmative/negative detection
+                is_user_affirmative = llm_intent_result.get("is_affirmative", False) if llm_intent_result else False
+                is_user_negative = llm_intent_result.get("is_negative", False) if llm_intent_result else False
                 
                 if is_user_affirmative or product_in_confirmation:
                     merged_intent["_awaiting_shopping_confirm"] = False
@@ -1210,10 +751,8 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                     }
 
             # Handle direct shopping intent from query (e.g., "I want to buy shoes")
-            # FIRST check if user already mentioned a specific product (LLM + keyword fallback)
-            llm_product_mention = llm_intent_result.get("product_mentioned") if llm_intent_result else None
-            keyword_product_mention = detect_product_mention(query)
-            product_mention = llm_product_mention or keyword_product_mention
+            # Check if user mentioned a specific product using LLM only
+            product_mention = llm_intent_result.get("product_mentioned") if llm_intent_result else None
             
             if direct_shopping_intent and not existing_intent.get(
                     "_asked_product_category", False):
