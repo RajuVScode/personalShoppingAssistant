@@ -21,7 +21,7 @@ export function ImageSlider({
 
   const productImages = primaryImageUrl 
     ? [primaryImageUrl] 
-    : [`https://loremflickr.com/400/300/fashion,product?lock=${productId}`];
+    : [`https://source.unsplash.com/400x300/?fashion,clothing&sig=${productId}`];
 
   useEffect(() => {
     productImages.forEach((src, idx) => {

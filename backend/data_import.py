@@ -5,28 +5,30 @@ from backend.database.models import Product
 from sqlalchemy import text
 
 CATEGORY_IMAGE_KEYWORDS = {
-    'clothing': 'fashion-clothing',
-    'apparel': 'fashion-clothing',
-    'tops': 'shirt-fashion',
-    'bottoms': 'pants-fashion',
-    'dresses': 'dress-fashion',
-    'outerwear': 'jacket-fashion',
-    'footwear': 'shoes-footwear',
-    'shoes': 'shoes-footwear',
-    'accessories': 'fashion-accessories',
-    'bags': 'handbag-fashion',
-    'jewelry': 'jewelry-accessories',
-    'watches': 'watch-accessories',
-    'bedding': 'bedding-home',
-    'decor': 'home-decor',
-    'furniture': 'furniture-interior',
-    'kitchen': 'kitchen-home',
-    'bath': 'bathroom-home',
-    'electronics': 'electronics-gadgets',
-    'sports': 'sports-fitness',
-    'beauty': 'beauty-cosmetics',
-    'kids': 'kids-fashion',
-    'swimwear': 'swimwear-beach',
+    'clothing': 'clothing,fashion',
+    'apparel': 'apparel,fashion',
+    'tops': 'shirt,top,blouse',
+    'bottoms': 'pants,trousers,jeans',
+    'dresses': 'dress,gown',
+    'outerwear': 'jacket,coat,outerwear',
+    'footwear': 'shoes,footwear',
+    'shoes': 'shoes,sneakers',
+    'accessories': 'accessories,fashion',
+    'bags': 'handbag,purse,bag',
+    'jewelry': 'jewelry,necklace',
+    'watches': 'watch,wristwatch',
+    'bedding': 'bedding,sheets,bedroom',
+    'decor': 'home-decor,interior',
+    'furniture': 'furniture,interior',
+    'kitchen': 'kitchen,cookware',
+    'bath': 'bathroom,towels',
+    'electronics': 'electronics,gadgets',
+    'sports': 'sports,fitness,athletic',
+    'beauty': 'beauty,cosmetics,makeup',
+    'kids': 'kids,children,clothing',
+    'swimwear': 'swimwear,bikini,beach',
+    'candles': 'candles,home',
+    'pillowcases': 'pillowcase,bedding',
 }
 
 def generate_product_image_url(category: str, subcategory: str, sku: str) -> str:
@@ -35,10 +37,10 @@ def generate_product_image_url(category: str, subcategory: str, sku: str) -> str
     
     keyword = CATEGORY_IMAGE_KEYWORDS.get(subcategory_lower) or \
               CATEGORY_IMAGE_KEYWORDS.get(category_lower) or \
-              'fashion'
+              'fashion,clothing'
     
-    seed = abs(hash(sku)) % 1000
-    return f"https://loremflickr.com/400/300/{keyword.replace('-', ',')}?lock={seed}"
+    seed = abs(hash(sku)) % 10000
+    return f"https://source.unsplash.com/400x300/?{keyword}&sig={seed}"
 
 def import_product_data():
     product_master = pd.read_excel("attached_assets/product_master_clean_New_1766805486832.xlsx")
