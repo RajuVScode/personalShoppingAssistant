@@ -81,9 +81,10 @@ If user clearly specifies a product (e.g., "shoes for Paris trip in January, Siz
 - If only 1-2 critical details missing, ask at most 1-2 clarifying questions
 - Move quickly to recommendations
 
-SIZE PREFERENCE:
+SIZE/COLOR PREFERENCE:
 - Capture any size mentioned (UK 9, M, L, EU 42, 32, etc.) in preferred_size
-- Size is a MANDATORY filter - show only products in that size
+- Size and color are OPTIONAL - if user says "no preference", "any size", "doesn't matter", or similar, proceed WITHOUT filtering
+- When user declines preference questions with "no", "skip", "no preference", set is_skip_response: true and proceed to recommendations
 
 DATE HANDLING:
 - Accept month names (January, February) as valid date info
@@ -127,7 +128,10 @@ OUTPUT AS JSON:
   "ready_for_recommendations": true|false
 }}
 
-CRITICAL: When user provides product + destination + date info (even partial like month name) + size, set ready_for_recommendations: true."""
+CRITICAL: 
+- When user provides product + destination + date info (even partial like month name), set ready_for_recommendations: true
+- Size/color are OPTIONAL - do NOT require them to proceed
+- If user says "no", "no preference", "skip", "any", "doesn't matter" to preference questions, set is_skip_response: true and ready_for_recommendations: true"""
 
 # NOTE: Hardcoded activity lists removed - now handled by LLM semantic detection
 
@@ -169,13 +173,17 @@ Analyze the user's message semantically and extract:
 4. **Response Type**: Is this an affirmative or negative response to a previous question?
    Detect confirmation or declination semantically from context.
 
+5. **No Preference Response**: Is the user declining to specify a preference?
+   Detect "no preference", "any", "doesn't matter", "skip", "no" as declining preference questions.
+
 Respond ONLY with a JSON object (no markdown, no explanation):
 {
   "has_shopping_intent": true/false,
   "product_mentioned": "product_type" or null,
   "activity_mentioned": "activity" or null,
   "is_affirmative": true/false,
-  "is_negative": true/false
+  "is_negative": true/false,
+  "is_no_preference": true/false
 }"""
 
     try:
@@ -205,7 +213,8 @@ Respond ONLY with a JSON object (no markdown, no explanation):
             "product_mentioned": None,
             "activity_mentioned": None,
             "is_affirmative": False,
-            "is_negative": False
+            "is_negative": False,
+            "is_no_preference": False
         }
 
 
@@ -231,7 +240,8 @@ def validate_llm_intent_result(result: dict) -> dict:
             "product_mentioned": None,
             "activity_mentioned": None,
             "is_affirmative": False,
-            "is_negative": False
+            "is_negative": False,
+            "is_no_preference": False
         }
     
     return {
@@ -239,7 +249,8 @@ def validate_llm_intent_result(result: dict) -> dict:
         "product_mentioned": result.get("product_mentioned") if isinstance(result.get("product_mentioned"), str) else None,
         "activity_mentioned": result.get("activity_mentioned") if isinstance(result.get("activity_mentioned"), str) else None,
         "is_affirmative": bool(result.get("is_affirmative", False)),
-        "is_negative": bool(result.get("is_negative", False))
+        "is_negative": bool(result.get("is_negative", False)),
+        "is_no_preference": bool(result.get("is_no_preference", False))
     }
 
 
@@ -607,6 +618,36 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             # DYNAMIC MODE: Trust LLM's ready_for_recommendations decision
             # This enables the dynamic, model-driven approach - no hardcoded rules
             mentions_product = new_intent.get("mentions_product", False) or result.get("updated_intent", {}).get("mentions_product", False)
+            is_skip = result.get("is_skip_response", False)
+            
+            # Track already_asked flags
+            already_asked_optional = existing_intent.get("_asked_optional", False)
+            already_asked_activities = existing_intent.get("_asked_activities", False)
+            
+            # Check last question type to determine if skip applies to optional preferences
+            last_question_type = existing_intent.get("_last_question_type", "")
+            was_optional_question = last_question_type in ("optional", "preference", "budget_brand", "size_color")
+            
+            # UNIFIED SKIP HANDLING - only applies when user is declining OPTIONAL preferences
+            if is_skip:
+                # Always clear size preferences when user says no preference
+                merged_intent["preferred_size"] = None
+                print(f"[DEBUG] is_skip=True: Cleared preferred_size, last_question_type={last_question_type}")
+                
+                # If the last question was about optional preferences, proceed
+                if was_optional_question or already_asked_optional or already_asked_activities:
+                    base_message = result.get("assistant_message", "Perfect! Let me find products for you.")
+                    print(f"[DEBUG] is_skip + optional question: Proceeding to recommendations")
+                    return {
+                        "needs_clarification": False,
+                        "clarification_question": "",
+                        "assistant_message": change_acknowledgment + base_message if change_acknowledgment else base_message,
+                        "updated_intent": merged_intent,
+                        "clarified_query": query,
+                        "ready_for_recommendations": True,
+                        "detected_changes": detected_changes
+                    }
+                # Otherwise, "no" may be answering a critical question - continue flow
             
             # Trust LLM when it says ready_for_recommendations AND has product mention
             if ready_for_recs and mentions_product:
@@ -623,14 +664,10 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                     "detected_changes": detected_changes
                 }
 
-            already_asked_optional = existing_intent.get(
-                "_asked_optional", False) or merged_intent.get(
-                    "_asked_optional", False)
-            already_asked_activities = existing_intent.get(
-                "_asked_activities", False) or merged_intent.get(
-                    "_asked_activities", False)
-
-            is_skip = result.get("is_skip_response", False)
+            # Update already_asked flags from merged_intent as well
+            already_asked_optional = already_asked_optional or merged_intent.get("_asked_optional", False)
+            already_asked_activities = already_asked_activities or merged_intent.get("_asked_activities", False)
+            
             mentions_activity = result.get("mentions_activity", False)
 
             new_activities = new_intent.get("activities") or []
@@ -723,6 +760,32 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                 
                 # Extract LLM results - pure LLM-driven detection
                 direct_shopping_intent = llm_intent_result.get("has_shopping_intent", False)
+                
+                # Check for "no preference" responses - only proceed if answering optional question
+                llm_no_preference = llm_intent_result.get("is_no_preference", False)
+                if llm_no_preference:
+                    print(f"[DEBUG] LLM detected 'no preference' response")
+                    # Clear size preferences
+                    merged_intent["preferred_size"] = None
+                    
+                    # Check if the last question was about optional preferences
+                    was_opt_question = last_question_type in ("optional", "preference", "budget_brand", "size_color")
+                    prior_pref = already_asked_optional or already_asked_activities
+                    
+                    # Proceed if last question was optional or we've already asked preferences
+                    if was_opt_question or prior_pref:
+                        base_message = "Perfect! Let me find the best products for you."
+                        print(f"[DEBUG] llm_no_preference + optional question: Proceeding to recommendations")
+                        return {
+                            "needs_clarification": False,
+                            "clarification_question": "",
+                            "assistant_message": change_acknowledgment + base_message if change_acknowledgment else base_message,
+                            "updated_intent": merged_intent,
+                            "clarified_query": query,
+                            "ready_for_recommendations": True,
+                            "detected_changes": detected_changes
+                        }
+                    # If not optional question, continue to gather critical info
                 
                 # Activity detection from LLM only
                 llm_activity = llm_intent_result.get("activity_mentioned")
@@ -1011,6 +1074,7 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                     # Activities already captured by early detection, continue to optional
                 else:
                     merged_intent["_asked_activities"] = True
+                    merged_intent["_last_question_type"] = "optional"
                     activity_question = self._generate_dynamic_question("activity", query, merged_intent)
                     if not activity_question:
                         activity_question = "What activities are you planning for this trip?"
@@ -1055,6 +1119,7 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                         dest_str = "your destinations"
 
                     merged_intent["_asked_optional"] = True
+                    merged_intent["_last_question_type"] = "optional"
 
                     optional_question = f"Great! Your trip to {dest_str} is confirmed. Do you have any preferences for budget or favorite brands? (This is optional - feel free to skip!)"
 
