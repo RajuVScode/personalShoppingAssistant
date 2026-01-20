@@ -498,11 +498,11 @@ def detect_ambiguous_date(query: str) -> bool:
 
 
 def has_specific_date(query: str) -> bool:
-    """Check if the query contains specific calendar dates."""
+    """Check if the query contains specific calendar dates (month + day)."""
     import re
     query_lower = query.lower()
 
-    # Patterns for specific dates
+    # Patterns for specific dates (month + day combinations)
     specific_patterns = [
         r'\b\d{1,2}\s*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)',  # "15 Jan", "5 March"
         r'\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\s*\d{1,2}',  # "Jan 15", "March 5"
@@ -533,6 +533,52 @@ def has_specific_date(query: str) -> bool:
         return True
 
     return False
+
+
+def has_partial_date_info(query: str) -> bool:
+    """Check if query has partial date info (month only, without specific days)."""
+    import re
+    query_lower = query.lower()
+    
+    # Check for month names alone
+    month_names = [
+        "january", "february", "march", "april", "may", "june",
+        "july", "august", "september", "october", "november", "december",
+        "jan", "feb", "mar", "apr", "jun", "jul", "aug", "sep", "oct", "nov", "dec"
+    ]
+    for month in month_names:
+        if re.search(rf'\b{month}\b', query_lower):
+            return True
+    return False
+
+
+def has_day_range_only(query: str) -> bool:
+    """Check if query contains just a day range like '19-20' without month context."""
+    import re
+    query_lower = query.lower()
+    # Match patterns like "19-20", "15-18" (just numbers)
+    if re.search(r'^\s*\d{1,2}\s*-\s*\d{1,2}\s*$', query_lower):
+        return True
+    return False
+
+
+def extract_month_from_text(text: str) -> str:
+    """Extract month name from text if present."""
+    import re
+    months = {
+        "january": "January", "february": "February", "march": "March",
+        "april": "April", "may": "May", "june": "June",
+        "july": "July", "august": "August", "september": "September",
+        "october": "October", "november": "November", "december": "December",
+        "jan": "January", "feb": "February", "mar": "March", "apr": "April",
+        "jun": "June", "jul": "July", "aug": "August", "sep": "September",
+        "oct": "October", "nov": "November", "dec": "December"
+    }
+    text_lower = text.lower()
+    for abbrev, full in months.items():
+        if re.search(rf'\b{abbrev}\b', text_lower):
+            return full
+    return None
 
 
 NON_SHOPPING_ACTIVITIES = {
@@ -992,7 +1038,61 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                 existing_intent["_asked_activities"] = False
 
             llm_has_date_info = result.get("has_date_info", False)
-            has_dates_info = has_date or llm_has_date_info
+            
+            # Check for partial date info (month only) or day range with context
+            partial_date = has_partial_date_info(query)
+            day_range_only = has_day_range_only(query)
+            
+            # Check if we have month context from existing intent or previous query
+            existing_month = None
+            existing_travel_date = existing_intent.get("travel_date") or ""
+            existing_notes = existing_intent.get("notes") or ""
+            pending_month = existing_intent.get("_pending_month")
+            
+            # Extract month from existing context (check pending month first, then travel_date, then notes)
+            existing_month = pending_month or extract_month_from_text(existing_travel_date) or extract_month_from_text(existing_notes)
+            
+            # Also check the previous query in conversation for month context
+            if not existing_month and conversation_history:
+                for prev_msg in reversed(conversation_history[-5:]):
+                    if isinstance(prev_msg, dict):
+                        prev_content = prev_msg.get("content", "")
+                    else:
+                        prev_content = str(prev_msg)
+                    existing_month = extract_month_from_text(prev_content)
+                    if existing_month:
+                        break
+            
+            # If user provided day range and we have month from context, combine them
+            if day_range_only and existing_month:
+                import re
+                day_match = re.search(r'(\d{1,2})\s*-\s*(\d{1,2})', query)
+                if day_match:
+                    start_day = int(day_match.group(1))
+                    end_day = int(day_match.group(2))
+                    # Create normalized date string
+                    combined_date = f"{existing_month} {start_day}-{end_day}"
+                    merged_intent["travel_date"] = combined_date
+                    # Clear all partial date flags since we now have complete date
+                    merged_intent["_pending_month"] = None
+                    merged_intent["_has_partial_date"] = False
+                    merged_intent["_asked_specific_dates"] = True  # Mark as resolved
+                    print(f"[DEBUG] Combined date from context: {combined_date}")
+                    has_date = True  # We now have a complete date
+            
+            # If this query mentions a month (even without days), store it for context
+            if partial_date and not has_date:
+                month_in_query = extract_month_from_text(query)
+                if month_in_query:
+                    merged_intent["_pending_month"] = month_in_query
+                    # Mark that we have partial date info - will be used to ask for specific dates
+                    merged_intent["_has_partial_date"] = True
+                    print(f"[DEBUG] Stored pending month from query: {month_in_query}")
+            
+            # has_dates_info is true if we have complete dates OR partial date info (month only)
+            # This prevents re-asking the generic "when are you planning" question
+            has_partial_date_stored = partial_date or existing_intent.get("_has_partial_date", False)
+            has_dates_info = has_date or llm_has_date_info or has_partial_date_stored
 
             # EARLY SHOPPING/ACTIVITY DETECTION using LLM (runs BEFORE destination/date checks)
             # Skip detection if we're waiting for a product category answer
@@ -1227,6 +1327,35 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             if has_destination and not has_dates_info:
                 dest = merged_intent.get("destination", "your destination")
                 date_question = f"When are you planning to travel to {dest}? (e.g., 'next weekend', 'January 15-20', or specific dates)"
+                return {
+                    "needs_clarification":
+                    True,
+                    "clarification_question":
+                    date_question,
+                    "assistant_message":
+                    change_acknowledgment +
+                    date_question if change_acknowledgment else date_question,
+                    "updated_intent":
+                    merged_intent,
+                    "clarified_query":
+                    query,
+                    "ready_for_recommendations":
+                    False,
+                    "detected_changes":
+                    detected_changes
+                }
+            
+            # Check for partial date (month only) - ask for specific days
+            pending_month = merged_intent.get("_pending_month") or existing_intent.get("_pending_month")
+            # has_complete_date is true if we have an actual date (not just partial)
+            has_partial_flag = merged_intent.get("_has_partial_date", False) or existing_intent.get("_has_partial_date", False)
+            has_complete_date = has_date or (merged_intent.get("travel_date") and not has_partial_flag)
+            
+            if has_destination and pending_month and not has_complete_date and not existing_intent.get("_asked_specific_dates"):
+                dest = merged_intent.get("destination", "your destination")
+                # Ask for specific dates while acknowledging the month
+                date_question = f"What specific dates in {pending_month} are you traveling to {dest}? (e.g., '{pending_month} 15-20' or '19-20')"
+                merged_intent["_asked_specific_dates"] = True
                 return {
                     "needs_clarification":
                     True,
