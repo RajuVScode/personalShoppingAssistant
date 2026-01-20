@@ -914,7 +914,7 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             if is_weather_only and has_destination and (has_date or result.get("has_date_info")):
                 # Weather-only request with location and date - proceed to show weather
                 print(f"[DEBUG] Weather-only request with location and date - proceeding to weather display")
-                merged_intent["_weather_only"] = True
+                merged_intent["weather_only"] = True
                 base_message = result.get("assistant_message", "Let me check the weather for you!")
                 return {
                     "needs_clarification": False,

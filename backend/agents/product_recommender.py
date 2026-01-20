@@ -56,6 +56,25 @@ IMPORTANT: Do NOT include weather information, itineraries, travel activities, o
 
 Ensure the tone is helpful, professional, and focused on shopping assistance."""
 
+WEATHER_ONLY_PROMPT = """You are a weather information assistant.
+
+Given the destination and weather data, provide ONLY a weather overview. Do NOT include product recommendations, activities, itineraries, or any shopping content.
+
+Produce a concise, helpful response that includes:
+
+1) **Weather Overview** – Current/forecasted temperatures (high/low in both Celsius and Fahrenheit), precipitation likelihood, wind conditions, humidity, and general weather description.
+2) **What to Expect** – Brief practical advice about the weather conditions (e.g., "Expect sunny skies, perfect for outdoor activities" or "Pack an umbrella as rain is likely").
+
+IMPORTANT: 
+- ONLY provide weather information
+- Do NOT include product recommendations
+- Do NOT include activity suggestions
+- Do NOT include itineraries
+- Do NOT include local events
+- Keep the response concise and focused on weather
+
+Ensure the tone is helpful and informative."""
+
 
 def is_travel_intent(context: 'EnrichedContext') -> bool:
     """Determine if the user's intent is travel-related."""
@@ -73,6 +92,14 @@ def is_travel_intent(context: 'EnrichedContext') -> bool:
     if location and any(keyword in occasion.lower() for keyword in ['trip', 'travel', 'vacation', 'holiday', 'visit', 'flying', 'going to']):
         return True
     
+    return False
+
+def is_weather_only_request(context: 'EnrichedContext') -> bool:
+    """Determine if the user only wants weather information (not shopping)."""
+    intent = context.intent
+    # Check for weather_only flag set by clarifier
+    if hasattr(intent, 'weather_only') and intent.weather_only:
+        return True
     return False
 
 class ProductRecommenderAgent(BaseAgent):
@@ -504,6 +531,10 @@ class ProductRecommenderAgent(BaseAgent):
         context: EnrichedContext, 
         products: List[Dict[str, Any]]
     ) -> str:
+        # Check for weather-only request FIRST
+        if is_weather_only_request(context):
+            return self._generate_weather_only_response(context)
+        
         if not products:
             return "I couldn't find products matching your criteria. Could you try a different search?"
         
@@ -539,6 +570,51 @@ class ProductRecommenderAgent(BaseAgent):
         except Exception as e:
             print(f"LLM explanation failed: {e}")
             return self._generate_fallback_explanation(context, products)
+    
+    def _generate_weather_only_response(self, context: EnrichedContext) -> str:
+        """Generate a weather-only response without products, activities, or itinerary."""
+        weather_info = context.environmental.weather or {}
+        destination = getattr(context.intent, 'location', None) or 'the requested location'
+        travel_date = getattr(context.intent, 'travel_date', None) or 'the requested date'
+        
+        prompt = f"""
+{WEATHER_ONLY_PROMPT}
+
+**Destination:** {destination}
+**Date:** {travel_date}
+
+**Weather Data:**
+- Temperature: {weather_info.get('temperature', 'N/A')}°C
+- High: {weather_info.get('high_temp', weather_info.get('temperature', 'N/A'))}°C
+- Low: {weather_info.get('low_temp', 'N/A')}°C
+- Conditions: {weather_info.get('description', 'N/A')}
+- Precipitation: {weather_info.get('precipitation', 'N/A')}
+- Wind: {weather_info.get('wind', 'N/A')}
+- Humidity: {weather_info.get('humidity', 'N/A')}
+- Season: {weather_info.get('season', 'Not specified')}
+
+Generate a concise weather overview with ONLY these sections:
+1) Weather Overview - Temperature details and conditions
+2) What to Expect - Brief practical advice
+
+Do NOT include any product recommendations, activities, itineraries, or events.
+"""
+        
+        try:
+            response = self.invoke(prompt)
+            return response
+        except Exception as e:
+            print(f"Weather LLM failed: {e}")
+            # Fallback weather response
+            temp = weather_info.get('temperature', 'N/A')
+            conditions = weather_info.get('description', 'varied conditions')
+            return f"""## Weather in {destination}
+
+### Weather Overview
+Expected temperature: {temp}°C with {conditions}.
+
+### What to Expect
+Plan accordingly based on the weather conditions above."""
     
     def _build_non_travel_prompt(
         self,
