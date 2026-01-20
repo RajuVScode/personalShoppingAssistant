@@ -204,10 +204,10 @@ class ShoppingOrchestrator:
             if clarifier_intent.get("trip_segments"):
                 intent_dict["trip_segments"] = clarifier_intent["trip_segments"]
             
-            # Pass through weather_only flag for weather-only requests
-            if clarifier_intent.get("weather_only"):
-                intent_dict["weather_only"] = True
-                # Also set travel_date for weather display
+            # Pass through requested_content for dynamic response generation
+            if clarifier_intent.get("requested_content"):
+                intent_dict["requested_content"] = clarifier_intent["requested_content"]
+                # Also set travel_date for context
                 if clarifier_intent.get("travel_date"):
                     intent_dict["travel_date"] = clarifier_intent["travel_date"]
             

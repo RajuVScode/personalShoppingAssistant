@@ -56,24 +56,6 @@ IMPORTANT: Do NOT include weather information, itineraries, travel activities, o
 
 Ensure the tone is helpful, professional, and focused on shopping assistance."""
 
-WEATHER_ONLY_PROMPT = """You are a weather information assistant.
-
-Given the destination and weather data, provide ONLY a weather overview. Do NOT include product recommendations, activities, itineraries, or any shopping content.
-
-Produce a concise, helpful response that includes:
-
-1) **Weather Overview** – Current/forecasted temperatures (high/low in both Celsius and Fahrenheit), precipitation likelihood, wind conditions, humidity, and general weather description.
-2) **What to Expect** – Brief practical advice about the weather conditions (e.g., "Expect sunny skies, perfect for outdoor activities" or "Pack an umbrella as rain is likely").
-
-IMPORTANT: 
-- ONLY provide weather information
-- Do NOT include product recommendations
-- Do NOT include activity suggestions
-- Do NOT include itineraries
-- Do NOT include local events
-- Keep the response concise and focused on weather
-
-Ensure the tone is helpful and informative."""
 
 
 def is_travel_intent(context: 'EnrichedContext') -> bool:
@@ -94,13 +76,16 @@ def is_travel_intent(context: 'EnrichedContext') -> bool:
     
     return False
 
-def is_weather_only_request(context: 'EnrichedContext') -> bool:
-    """Determine if the user only wants weather information (not shopping)."""
+def get_requested_content(context: 'EnrichedContext') -> list:
+    """Get the list of content types the user requested."""
     intent = context.intent
-    # Check for weather_only flag set by clarifier
-    if hasattr(intent, 'weather_only') and intent.weather_only:
-        return True
-    return False
+    requested = getattr(intent, 'requested_content', None) or []
+    return requested if isinstance(requested, list) else [requested]
+
+def is_info_only_request(context: 'EnrichedContext') -> bool:
+    """Determine if the user wants only information (weather/itinerary/events) without products."""
+    requested = get_requested_content(context)
+    return len(requested) > 0 and "products" not in requested
 
 class ProductRecommenderAgent(BaseAgent):
     """
@@ -154,10 +139,11 @@ class ProductRecommenderAgent(BaseAgent):
         3. Apply mandatory size filtering
         4. Generate natural language explanation
         """
-        # For weather-only requests, return empty products with weather explanation
-        if is_weather_only_request(context):
-            weather_response = self._generate_weather_only_response(context)
-            return [], weather_response
+        # For info-only requests (weather, itinerary, events without products), return dynamic response
+        if is_info_only_request(context):
+            requested = get_requested_content(context)
+            dynamic_response = self._generate_dynamic_content_response(context, requested)
+            return [], dynamic_response
         
         products = []
         
@@ -536,10 +522,6 @@ class ProductRecommenderAgent(BaseAgent):
         context: EnrichedContext, 
         products: List[Dict[str, Any]]
     ) -> str:
-        # Check for weather-only request FIRST
-        if is_weather_only_request(context):
-            return self._generate_weather_only_response(context)
-        
         if not products:
             return "I couldn't find products matching your criteria. Could you try a different search?"
         
@@ -576,21 +558,44 @@ class ProductRecommenderAgent(BaseAgent):
             print(f"LLM explanation failed: {e}")
             return self._generate_fallback_explanation(context, products)
     
-    def _generate_weather_only_response(self, context: EnrichedContext) -> str:
-        """Generate a weather-only response without products, activities, or itinerary."""
+    def _generate_dynamic_content_response(self, context: EnrichedContext, requested_content: list) -> str:
+        """Generate a dynamic response based on what content types the user requested."""
         weather_info = context.environmental.weather or {}
+        events_info = context.environmental.local_events or []
         destination = getattr(context.intent, 'location', None) or 'the requested location'
         travel_date = getattr(context.intent, 'travel_date', None) or 'the requested date'
         
-        prompt = f"""
-{WEATHER_ONLY_PROMPT}
+        # Build sections to include based on requested_content
+        sections_to_include = []
+        if "weather" in requested_content:
+            sections_to_include.append("Weather Overview - Temperature (high/low in Celsius and Fahrenheit), precipitation, wind, humidity, and conditions")
+        if "itinerary" in requested_content:
+            sections_to_include.append("Itinerary - Day-by-day schedule with activities and timing")
+        if "local_events" in requested_content:
+            sections_to_include.append("Local Events - Events happening at the destination during the dates")
+        if "activities" in requested_content:
+            sections_to_include.append("Recommended Activities - Things to do at the destination")
+        
+        sections_str = "\n".join([f"{i+1}) {s}" for i, s in enumerate(sections_to_include)])
+        
+        # Build a list of what NOT to include
+        all_possible = ["weather", "itinerary", "local_events", "activities", "products"]
+        excluded = [c for c in all_possible if c not in requested_content]
+        excluded_str = ", ".join(excluded) if excluded else "none"
+        
+        prompt = f"""You are a helpful travel information assistant.
+
+Generate a response that includes ONLY the following sections based on what the user requested:
+{sections_str}
+
+DO NOT include: {excluded_str}
 
 **Destination:** {destination}
-**Date:** {travel_date}
+**Date(s):** {travel_date}
 
-**Weather Data:**
+**Available Weather Data:**
 - Temperature: {weather_info.get('temperature', 'N/A')}°C
-- High: {weather_info.get('high_temp', weather_info.get('temperature', 'N/A'))}°C
+- High: {weather_info.get('high_temp', weather_info.get('temperature', 'N/A'))}°C  
 - Low: {weather_info.get('low_temp', 'N/A')}°C
 - Conditions: {weather_info.get('description', 'N/A')}
 - Precipitation: {weather_info.get('precipitation', 'N/A')}
@@ -598,28 +603,39 @@ class ProductRecommenderAgent(BaseAgent):
 - Humidity: {weather_info.get('humidity', 'N/A')}
 - Season: {weather_info.get('season', 'Not specified')}
 
-Generate a concise weather overview with ONLY these sections:
-1) Weather Overview - Temperature details and conditions
-2) What to Expect - Brief practical advice
+**Available Local Events:**
+{json.dumps(events_info[:5], indent=2) if events_info else 'No events data available.'}
 
-Do NOT include any product recommendations, activities, itineraries, or events.
+IMPORTANT:
+- Generate ONLY the sections listed above
+- Do NOT add product recommendations
+- Do NOT add content types that were not requested
+- Keep the response focused and concise
+- Maintain a professional, helpful tone
 """
         
         try:
             response = self.invoke(prompt)
             return response
         except Exception as e:
-            print(f"Weather LLM failed: {e}")
-            # Fallback weather response
-            temp = weather_info.get('temperature', 'N/A')
-            conditions = weather_info.get('description', 'varied conditions')
-            return f"""## Weather in {destination}
-
-### Weather Overview
-Expected temperature: {temp}°C with {conditions}.
-
-### What to Expect
-Plan accordingly based on the weather conditions above."""
+            print(f"Dynamic content LLM failed: {e}")
+            # Fallback response
+            fallback_parts = []
+            if "weather" in requested_content:
+                temp = weather_info.get('temperature', 'N/A')
+                conditions = weather_info.get('description', 'varied conditions')
+                fallback_parts.append(f"## Weather in {destination}\nExpected temperature: {temp}°C with {conditions}.")
+            if "local_events" in requested_content:
+                if events_info:
+                    fallback_parts.append(f"## Local Events\n{len(events_info)} events found at {destination}.")
+                else:
+                    fallback_parts.append("## Local Events\nNo events found for the requested dates.")
+            if "itinerary" in requested_content:
+                fallback_parts.append(f"## Itinerary\nA detailed itinerary for {destination} is being prepared.")
+            if "activities" in requested_content:
+                fallback_parts.append(f"## Activities\nExplore popular attractions in {destination}.")
+            
+            return "\n\n".join(fallback_parts) if fallback_parts else "Information is being prepared."
     
     def _build_non_travel_prompt(
         self,

@@ -56,30 +56,24 @@ CORE PRINCIPLES:
 - Prompt the user for required missing information before generating results.
 - Do not generate unrelated or unsolicited content.
 
-INTENT-SPECIFIC RESPONSE BEHAVIOR:
+DYNAMIC INTENT DETECTION:
 
-1) Weather-Only Requests
-   - If the user ONLY asks about weather (e.g., "what's the weather in Paris tomorrow", "weather in Miami"):
-     • Set is_weather_only_request: true
-     • If location AND date are provided, set ready_for_recommendations: true immediately
-     • Do NOT ask about activities, shopping plans, or travel purposes
-     • The system will fetch and display weather data directly
-   - If the location or travel date is missing:
-     • Prompt the user to provide the correct location and valid travel date(s) before proceeding.
+Instead of using scenario-specific flags, dynamically detect what content the user is requesting using the `requested_content` field. This should be an array of content types the user wants:
 
-2) Itinerary Requests
-   - If the user requests an itinerary:
-     • Return only itinerary-related content.
-     • Do NOT include weather or local event details unless explicitly requested.
-   - If the required information (location or travel dates) is missing or unclear:
-     • Prompt the user to provide valid location and travel date details.
+- "weather" - User wants weather information for a location/date
+- "itinerary" - User wants a day-by-day travel itinerary
+- "local_events" - User wants information about events happening at the destination
+- "products" - User wants product/shopping recommendations
+- "activities" - User wants activity suggestions
 
-3) Local Events Requests
-   - If the user requests information about local events:
-     • Return only local event details relevant to the specified location and date range.
-     • Do NOT include weather or itinerary information unless explicitly requested.
-   - If the location or date range is missing, invalid, or ambiguous:
-     • Prompt the user to provide the correct location and travel dates.
+Examples:
+- "What's the weather in Miami tomorrow?" → requested_content: ["weather"]
+- "Plan a 3-day itinerary for Paris" → requested_content: ["itinerary"]
+- "What events are happening in NYC next week?" → requested_content: ["local_events"]
+- "I need clothes for my trip to Tokyo" → requested_content: ["weather", "products"] (products for travel context)
+- "What's the weather and any events in London?" → requested_content: ["weather", "local_events"]
+
+The system will generate ONLY the content types specified in requested_content.
 
 INPUT VALIDATION & PROMPTING:
 - Before providing weather, itinerary, or local event information, ensure that:
@@ -197,7 +191,7 @@ OUTPUT AS JSON:
   "partial_date_value": "string|null",
   "is_past_date": true|false,
   "is_new_trip": true|false,
-  "is_weather_only_request": true|false,
+  "requested_content": ["weather"|"itinerary"|"local_events"|"products"|"activities"],
   "next_question": "string|null",
   "ready_for_recommendations": true|false
 }}
@@ -909,13 +903,19 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                     }
                 # Otherwise, "no" may be answering a critical question - continue flow
             
-            # Handle WEATHER-ONLY requests - when user just asks about weather
-            is_weather_only = result.get("is_weather_only_request", False)
-            if is_weather_only and has_destination and (has_date or result.get("has_date_info")):
-                # Weather-only request with location and date - proceed to show weather
-                print(f"[DEBUG] Weather-only request with location and date - proceeding to weather display")
-                merged_intent["weather_only"] = True
-                base_message = result.get("assistant_message", "Let me check the weather for you!")
+            # Handle DYNAMIC REQUESTED CONTENT - determine what user is asking for
+            requested_content = result.get("requested_content", [])
+            if isinstance(requested_content, str):
+                requested_content = [requested_content]
+            merged_intent["requested_content"] = requested_content
+            
+            # Check if this is a non-product request (weather, itinerary, local_events only)
+            is_info_only_request = len(requested_content) > 0 and "products" not in requested_content
+            
+            if is_info_only_request and has_destination and (has_date or result.get("has_date_info")):
+                # Info-only request with location and date - proceed to generate requested content
+                print(f"[DEBUG] Dynamic content request: {requested_content} with location and date - proceeding")
+                base_message = result.get("assistant_message", "Let me get that information for you!")
                 return {
                     "needs_clarification": False,
                     "clarification_question": "",
@@ -925,8 +925,8 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                     "ready_for_recommendations": True,
                     "detected_changes": detected_changes
                 }
-            elif is_weather_only and not has_destination:
-                # Weather request but missing location - ask for it
+            elif is_info_only_request and not has_destination:
+                # Info request but missing location - ask for it
                 location_question = self._generate_dynamic_question("destination", query, merged_intent) or result.get("next_question") or result.get("assistant_message")
                 return {
                     "needs_clarification": True,
@@ -937,8 +937,8 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                     "ready_for_recommendations": False,
                     "detected_changes": detected_changes
                 }
-            elif is_weather_only and has_destination and not has_date and not result.get("has_date_info"):
-                # Weather request but missing date - ask for it
+            elif is_info_only_request and has_destination and not has_date and not result.get("has_date_info"):
+                # Info request but missing date - ask for it
                 date_question = self._generate_dynamic_question("date", query, merged_intent) or result.get("next_question") or result.get("assistant_message")
                 return {
                     "needs_clarification": True,

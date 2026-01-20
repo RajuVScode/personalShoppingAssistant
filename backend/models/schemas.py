@@ -90,7 +90,7 @@ class NormalizedIntent(BaseModel):
     location: Optional[str] = None
     trip_segments: Optional[List[TripSegment]] = []
     brand: Optional[str] = None
-    weather_only: Optional[bool] = False
+    requested_content: Optional[List[str]] = []
     travel_date: Optional[str] = None
 
 class CustomerContext(BaseModel):
