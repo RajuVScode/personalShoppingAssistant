@@ -91,7 +91,7 @@ class ProductRecommenderAgent(BaseAgent):
     
     def __init__(self):
         """Initialize the recommender with vector store and LLM connection."""
-        super().__init__("ProductRecommender", RECOMMENDER_PROMPT)
+        super().__init__("ProductRecommender", TRAVEL_RECOMMENDER_PROMPT)
         try:
             self.vector_store = ProductVectorStore()
             if self.vector_store.load_index():
