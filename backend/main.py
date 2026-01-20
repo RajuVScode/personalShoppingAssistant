@@ -463,15 +463,9 @@ def get_product_details(product_id: int, db: Session = Depends(get_db)):
         colors = ["Default"]
     
     color_images = {}
+    base_image = product.image_url or "https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=600&h=800&fit=crop"
     for idx, color in enumerate(colors):
-        color_key = color.lower().replace(" ", "-").replace("/", "-")
-        images = [
-            f"https://picsum.photos/seed/{product_id}-{color_key}-1/600/800",
-            f"https://picsum.photos/seed/{product_id}-{color_key}-2/600/800",
-            f"https://picsum.photos/seed/{product_id}-{color_key}-3/600/800",
-            f"https://picsum.photos/seed/{product_id}-{color_key}-4/600/800",
-        ]
-        color_images[color] = images
+        color_images[color] = [base_image]
     
     return {
         "id": product.id,
