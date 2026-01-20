@@ -434,6 +434,83 @@ Return ONLY the response."""
         destination = intent.get("destination") or ""
         return self._generate_dynamic_question("product", query, intent) or ""
 
+    def _parse_date_from_query(self, query: str, existing_context: dict, conversation_history: list = None) -> dict:
+        """
+        Use LLM to dynamically parse date information from query and context.
+        Handles partial dates, date ranges, and combining fragments from conversation.
+        
+        Returns dict with:
+            - has_complete_date: bool - whether a complete date was found
+            - parsed_date: str - the parsed/combined date string
+            - needs_more_info: bool - whether more date info is needed
+        """
+        try:
+            from langchain_core.messages import SystemMessage as SysMsg
+            
+            # Gather context
+            existing_travel_date = existing_context.get("travel_date") or ""
+            existing_month = existing_context.get("_pending_month") or ""
+            destination = existing_context.get("destination") or ""
+            
+            # Get recent conversation for context
+            conv_context = ""
+            if conversation_history:
+                recent = conversation_history[-5:] if len(conversation_history) > 5 else conversation_history
+                for msg in recent:
+                    if isinstance(msg, dict):
+                        conv_context += f"{msg.get('role', 'user')}: {msg.get('content', '')}\n"
+                    else:
+                        conv_context += f"{msg}\n"
+            
+            prompt = f"""Parse date information from the user's message and combine with any existing context.
+
+User message: "{query}"
+Existing travel date: "{existing_travel_date}"
+Previously mentioned month: "{existing_month}"
+Destination: "{destination}"
+
+Recent conversation:
+{conv_context}
+
+Analyze and return a JSON object:
+{{
+    "has_complete_date": true/false,  // true if we have enough info (at least month + day or specific dates)
+    "parsed_date": "string",  // The complete or partial date (e.g., "January 19-20", "March 5", "next week")
+    "month_only": "string or null",  // If only a month was mentioned without days
+    "needs_more_info": true/false  // true if we need specific days for a month
+}}
+
+Examples:
+- Query "19-20" with existing_month "January" -> {{"has_complete_date": true, "parsed_date": "January 19-20", "month_only": null, "needs_more_info": false}}
+- Query "January" alone -> {{"has_complete_date": false, "parsed_date": "January", "month_only": "January", "needs_more_info": true}}
+- Query "Jan 19th" -> {{"has_complete_date": true, "parsed_date": "January 19", "month_only": null, "needs_more_info": false}}
+- Query "tomorrow" -> {{"has_complete_date": true, "parsed_date": "tomorrow", "month_only": null, "needs_more_info": false}}
+
+Return ONLY the JSON object."""
+
+            messages = [SysMsg(content=prompt)]
+            response = self.llm.invoke(messages)
+            result = response.content.strip()
+            
+            import json
+            try:
+                parsed = json.loads(result)
+                return parsed
+            except json.JSONDecodeError:
+                import re
+                match = re.search(r'\{.*?\}', result, re.DOTALL)
+                if match:
+                    try:
+                        parsed = json.loads(match.group())
+                        return parsed
+                    except:
+                        pass
+            
+            return {"has_complete_date": False, "parsed_date": "", "needs_more_info": True}
+        except Exception as e:
+            print(f"[DEBUG] Error parsing date: {e}")
+            return {"has_complete_date": False, "parsed_date": "", "needs_more_info": True}
+
     def _filter_specific_activities(self, activities: list) -> list:
         """
         Use LLM to dynamically filter out generic travel words and keep only specific activities.
@@ -815,83 +892,28 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             # Use LLM signal for date detection - pure LLM-driven
             llm_has_date_info = result.get("has_date_info", False)
             
-            # Date PARSING only (not decision-making): combine date fragments from context
+            # Date PARSING using LLM: dynamically parse and combine date fragments from context
             # E.g., user said "January" in previous message, now says "19-20" - combine them
-            # ALWAYS run when LLM detects date info - user may be refining a partial date
             if llm_has_date_info:
-                import re
+                # Use LLM-based date parsing instead of hardcoded regex patterns
+                date_context = {
+                    "travel_date": existing_intent.get("travel_date") or merged_intent.get("travel_date") or "",
+                    "_pending_month": existing_intent.get("_pending_month") or merged_intent.get("_pending_month") or "",
+                    "destination": merged_intent.get("destination") or "",
+                    "notes": existing_intent.get("notes") or merged_intent.get("notes") or ""
+                }
                 
-                # Pattern 1: Day range pattern (e.g., "19-20") that needs month context
-                day_range_match = re.search(r'^\s*(\d{1,2})\s*-\s*(\d{1,2})\s*$', query)
+                date_result = self._parse_date_from_query(query, date_context, conversation_history)
                 
-                # Pattern 2: Specific date with month (e.g., "19th Jan", "Jan 19", "19 January", "January 19th")
-                # This should be recognized as a COMPLETE date
-                month_names = r'(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)'
-                specific_date_match = re.search(
-                    rf'(\d{{1,2}})(?:st|nd|rd|th)?\s+({month_names})|({month_names})\s+(\d{{1,2}})(?:st|nd|rd|th)?',
-                    query, re.IGNORECASE
-                )
-                
-                # Pattern 3: Standalone day ordinal (e.g., "the 19th", "19th", "on the 20th")
-                # This needs month context from prior conversation
-                standalone_day_match = re.search(
-                    r'(?:the\s+)?(\d{1,2})(?:st|nd|rd|th)',
-                    query, re.IGNORECASE
-                )
-                
-                if specific_date_match:
-                    # User provided a complete date like "19th Jan" - set it directly
-                    if specific_date_match.group(1) and specific_date_match.group(2):
-                        # Format: "19th Jan"
-                        day = specific_date_match.group(1)
-                        month = specific_date_match.group(2)
-                    else:
-                        # Format: "Jan 19"
-                        month = specific_date_match.group(3)
-                        day = specific_date_match.group(4)
-                    combined_date = f"{month} {day}"
-                    merged_intent["travel_date"] = combined_date
-                    print(f"[DEBUG] Recognized specific date from query: {combined_date}")
+                if date_result.get("has_complete_date") and date_result.get("parsed_date"):
+                    merged_intent["travel_date"] = date_result["parsed_date"]
+                    print(f"[DEBUG] LLM parsed date: {date_result['parsed_date']}")
                     has_date = True
-                elif day_range_match or standalone_day_match:
-                    # Look for month context in multiple sources
-                    # 1. Check existing_intent.travel_date
-                    existing_travel_date = existing_intent.get("travel_date") or ""
-                    existing_month = extract_month_from_text(existing_travel_date)
-                    
-                    # 2. Check merged_intent.travel_date (might have month from LLM)
-                    if not existing_month:
-                        merged_travel_date = merged_intent.get("travel_date") or ""
-                        existing_month = extract_month_from_text(merged_travel_date)
-                    
-                    # 3. Check notes field for month context
-                    if not existing_month:
-                        notes = existing_intent.get("notes") or merged_intent.get("notes") or ""
-                        existing_month = extract_month_from_text(notes)
-                    
-                    # 4. Check conversation history for month context
-                    if not existing_month and conversation_history:
-                        for prev_msg in reversed(conversation_history[-5:]):
-                            if isinstance(prev_msg, dict):
-                                prev_content = prev_msg.get("content", "")
-                            else:
-                                prev_content = str(prev_msg)
-                            existing_month = extract_month_from_text(prev_content)
-                            if existing_month:
-                                break
-                    
-                    if existing_month:
-                        if day_range_match:
-                            start_day = int(day_range_match.group(1))
-                            end_day = int(day_range_match.group(2))
-                            combined_date = f"{existing_month} {start_day}-{end_day}"
-                        else:
-                            # Standalone day ordinal
-                            day = standalone_day_match.group(1)
-                            combined_date = f"{existing_month} {day}"
-                        merged_intent["travel_date"] = combined_date
-                        print(f"[DEBUG] Combined date from context: {combined_date}")
-                        has_date = True
+                elif date_result.get("month_only"):
+                    # Store month for later combination with days
+                    merged_intent["_pending_month"] = date_result["month_only"]
+                    merged_intent["_has_partial_date"] = True
+                    print(f"[DEBUG] LLM detected partial date (month only): {date_result['month_only']}")
             
             # Recalculate has_date and has_required after date parsing
             # This ensures parsed dates from patterns are properly recognized
