@@ -1416,7 +1416,8 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                     detected_changes
                 }
 
-            # 1. Ask Activities if missing (only if shopping flow wasn't triggered earlier)
+            # 1. Ask Activities if missing for travel-related requests
+            # Activities help recommend appropriate products even when shopping intent is detected
             shopping_flow_complete = merged_intent.get(
                 "_shopping_flow_complete", False) or existing_intent.get(
                     "_shopping_flow_complete", False)
@@ -1424,7 +1425,8 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                 "_declined_shopping", False) or existing_intent.get(
                     "_declined_shopping", False)
 
-            if has_destination and has_dates_info and not already_asked_activities and not shopping_flow_complete and not declined_shopping:
+            # For travel intents with shopping, still ask about activities to recommend relevant products
+            if has_destination and has_dates_info and not already_asked_activities and not declined_shopping:
                 # Check if specific activities were captured (not just mentions_activity flag)
                 # Use LLM to dynamically filter out generic travel words
                 captured_activities = merged_intent.get(
