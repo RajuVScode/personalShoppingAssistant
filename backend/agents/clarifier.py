@@ -1425,8 +1425,14 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                 "_declined_shopping", False) or existing_intent.get(
                     "_declined_shopping", False)
 
-            # For travel intents with shopping, still ask about activities to recommend relevant products
-            if has_destination and has_dates_info and not already_asked_activities and not declined_shopping:
+            # For travel intents, ask about activities to recommend relevant products
+            # Skip if user already provided a direct product request with clear context
+            has_direct_product = (
+                shopping_flow_complete and 
+                (merged_intent.get("notes") or merged_intent.get("preferred_brand") or merged_intent.get("clothes"))
+            )
+            
+            if has_destination and has_dates_info and not already_asked_activities and not declined_shopping and not has_direct_product:
                 # Check if specific activities were captured (not just mentions_activity flag)
                 # Use LLM to dynamically filter out generic travel words
                 captured_activities = merged_intent.get(
