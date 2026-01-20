@@ -21,7 +21,7 @@ export function ImageSlider({
 
   const productImages = primaryImageUrl 
     ? [primaryImageUrl] 
-    : [`https://picsum.photos/seed/product-${productId}/400/300`];
+    : [`https://placehold.co/400x300/6B8E23/ffffff?text=Product`];
 
   useEffect(() => {
     productImages.forEach((src, idx) => {

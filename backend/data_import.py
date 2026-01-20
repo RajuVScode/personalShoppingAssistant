@@ -5,8 +5,37 @@ from backend.database.models import Product
 from sqlalchemy import text
 
 def generate_product_image_url(category: str, subcategory: str, sku: str) -> str:
-    seed = abs(hash(sku)) % 1000
-    return f"https://picsum.photos/seed/{sku}/400/300"
+    import urllib.parse
+    
+    label = subcategory if subcategory else category if category else "Product"
+    label = label.replace("'", "").replace('"', '')
+    
+    colors = {
+        'dresses': '4A90A4',
+        'tops': '7B68EE',
+        'bottoms': '4682B4',
+        'outerwear': '708090',
+        'footwear': '8B4513',
+        'shoes': '8B4513',
+        'sneakers': '2F4F4F',
+        'boots': '654321',
+        'accessories': 'DAA520',
+        'bags': 'A0522D',
+        'jewelry': 'FFD700',
+        'watches': '696969',
+        'bedding': '87CEEB',
+        'decor': 'DEB887',
+        'pillowcases': 'B0C4DE',
+        'candles': 'FFE4B5',
+        'clothing': '6B8E23',
+    }
+    
+    subcategory_lower = (subcategory or '').lower()
+    category_lower = (category or '').lower()
+    bg_color = colors.get(subcategory_lower) or colors.get(category_lower) or '6B8E23'
+    
+    encoded_label = urllib.parse.quote(label)
+    return f"https://placehold.co/400x300/{bg_color}/ffffff?text={encoded_label}"
 
 def import_product_data():
     product_master = pd.read_excel("attached_assets/product_master_clean_New_1766805486832.xlsx")
