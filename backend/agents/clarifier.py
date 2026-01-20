@@ -59,10 +59,12 @@ CORE PRINCIPLES:
 INTENT-SPECIFIC RESPONSE BEHAVIOR:
 
 1) Weather-Only Requests
-   - If the user requests weather information for a specific location and date(s):
-     • Return only the weather details.
-     • Do NOT return itineraries, attractions, or local events.
-   - If the location or travel date is missing, incomplete, or ambiguous:
+   - If the user ONLY asks about weather (e.g., "what's the weather in Paris tomorrow", "weather in Miami"):
+     • Set is_weather_only_request: true
+     • If location AND date are provided, set ready_for_recommendations: true immediately
+     • Do NOT ask about activities, shopping plans, or travel purposes
+     • The system will fetch and display weather data directly
+   - If the location or travel date is missing:
      • Prompt the user to provide the correct location and valid travel date(s) before proceeding.
 
 2) Itinerary Requests
@@ -195,6 +197,7 @@ OUTPUT AS JSON:
   "partial_date_value": "string|null",
   "is_past_date": true|false,
   "is_new_trip": true|false,
+  "is_weather_only_request": true|false,
   "next_question": "string|null",
   "ready_for_recommendations": true|false
 }}
@@ -905,6 +908,47 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                         "detected_changes": detected_changes
                     }
                 # Otherwise, "no" may be answering a critical question - continue flow
+            
+            # Handle WEATHER-ONLY requests - when user just asks about weather
+            is_weather_only = result.get("is_weather_only_request", False)
+            if is_weather_only and has_destination and (has_date or result.get("has_date_info")):
+                # Weather-only request with location and date - proceed to show weather
+                print(f"[DEBUG] Weather-only request with location and date - proceeding to weather display")
+                merged_intent["_weather_only"] = True
+                base_message = result.get("assistant_message", "Let me check the weather for you!")
+                return {
+                    "needs_clarification": False,
+                    "clarification_question": "",
+                    "assistant_message": change_acknowledgment + base_message if change_acknowledgment else base_message,
+                    "updated_intent": merged_intent,
+                    "clarified_query": query,
+                    "ready_for_recommendations": True,
+                    "detected_changes": detected_changes
+                }
+            elif is_weather_only and not has_destination:
+                # Weather request but missing location - ask for it
+                location_question = self._generate_dynamic_question("destination", query, merged_intent) or result.get("next_question") or result.get("assistant_message")
+                return {
+                    "needs_clarification": True,
+                    "clarification_question": location_question,
+                    "assistant_message": location_question,
+                    "updated_intent": merged_intent,
+                    "clarified_query": query,
+                    "ready_for_recommendations": False,
+                    "detected_changes": detected_changes
+                }
+            elif is_weather_only and has_destination and not has_date and not result.get("has_date_info"):
+                # Weather request but missing date - ask for it
+                date_question = self._generate_dynamic_question("date", query, merged_intent) or result.get("next_question") or result.get("assistant_message")
+                return {
+                    "needs_clarification": True,
+                    "clarification_question": date_question,
+                    "assistant_message": date_question,
+                    "updated_intent": merged_intent,
+                    "clarified_query": query,
+                    "ready_for_recommendations": False,
+                    "detected_changes": detected_changes
+                }
             
             # Trust LLM when it says ready_for_recommendations AND has product mention
             if ready_for_recs and mentions_product:
