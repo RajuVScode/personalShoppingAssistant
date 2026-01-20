@@ -276,20 +276,18 @@ class ClarifierAgent(BaseAgent):
     def __init__(self):
         super().__init__("Clarifier", CLARIFIER_PROMPT)
 
-    def _generate_dynamic_product_question(self, query: str, intent: dict) -> str:
+    def _generate_dynamic_question(self, question_type: str, query: str, intent: dict, extra_context: dict = None) -> str:
         """
-        Generate a contextual product question using LLM based on user context.
-        
-        Instead of asking generic "What kind of products would you like to buy?",
-        this generates a question tailored to the user's destination, activities,
-        and other context.
+        Generate contextual questions dynamically using LLM based on question type and context.
         
         Args:
+            question_type: Type of question to generate (city, product, date, activity, etc.)
             query: The user's original message
             intent: Current merged intent with destination, dates, activities etc.
+            extra_context: Additional context like country, month, activity name etc.
             
         Returns:
-            A contextual question about what products the user needs
+            A contextual, natural-sounding question
         """
         try:
             from langchain_core.messages import SystemMessage as SysMsg
@@ -297,42 +295,98 @@ class ClarifierAgent(BaseAgent):
             destination = intent.get("destination") or intent.get("destination_city") or ""
             activities = intent.get("activities") or []
             travel_date = intent.get("travel_date") or ""
+            extra = extra_context or {}
             
             context_parts = []
             if destination:
-                context_parts.append(f"traveling to {destination}")
+                context_parts.append(f"destination: {destination}")
             if travel_date:
-                context_parts.append(f"on {travel_date}")
+                context_parts.append(f"travel date: {travel_date}")
             if activities:
-                context_parts.append(f"for {', '.join(activities)}")
+                context_parts.append(f"activities: {', '.join(activities)}")
+            for key, val in extra.items():
+                if val:
+                    context_parts.append(f"{key}: {val}")
             
-            context_str = " ".join(context_parts) if context_parts else "their trip"
+            context_str = "; ".join(context_parts) if context_parts else "no specific context yet"
             
-            prompt = f"""You are a helpful shopping assistant. The user indicated they want to shop but didn't specify what products.
-
-User's message: "{query}"
+            prompts = {
+                "city": f"""Generate a SHORT, friendly question (max 12 words) asking which city the user is traveling to.
+The user mentioned a country but not a specific city.
 Context: {context_str}
+User said: "{query}"
+Return ONLY the question.""",
 
-Generate a SHORT, friendly question (1 sentence, max 15 words) asking what specific products they're looking for.
+                "product": f"""Generate a SHORT, friendly question (max 15 words) asking what specific products the user is looking for.
+The user wants to shop but didn't specify what products.
+Context: {context_str}
+User said: "{query}"
 Do NOT suggest products. Just ask what they need.
+Return ONLY the question.""",
 
-Return ONLY the question, no quotes or explanation."""
+                "date": f"""Generate a SHORT, friendly question (max 15 words) asking when the user is planning to travel.
+The user has a destination but hasn't mentioned travel dates.
+Context: {context_str}
+User said: "{query}"
+Return ONLY the question.""",
 
+                "specific_date": f"""Generate a SHORT, friendly question (max 15 words) asking for specific travel dates.
+The user mentioned a month but not specific days.
+Context: {context_str}
+User said: "{query}"
+Return ONLY the question.""",
+
+                "activity": f"""Generate a SHORT, friendly question (max 15 words) asking what activities the user is planning.
+Context: {context_str}
+User said: "{query}"
+Return ONLY the question.""",
+
+                "shopping_offer": f"""Generate a SHORT, friendly question (max 15 words) asking if the user would like product recommendations for their activity.
+Context: {context_str}
+User said: "{query}"
+Return ONLY the question.""",
+
+                "ambiguous_intent": f"""Generate a SHORT, friendly question (max 15 words) clarifying if the user wants to buy something or is asking about an activity.
+Context: {context_str}
+User said: "{query}"
+Return ONLY the question.""",
+
+                "proceed_message": f"""Generate a SHORT, friendly confirmation (max 12 words) that you'll find product recommendations.
+Context: {context_str}
+User said: "{query}"
+Return ONLY the confirmation, no question mark.""",
+
+                "decline_shopping": f"""Generate a SHORT, friendly response (max 20 words) acknowledging the user doesn't want to shop and wishing them well.
+Context: {context_str}
+User said: "{query}"
+Return ONLY the response."""
+            }
+            
+            prompt = prompts.get(question_type)
+            if not prompt:
+                return None
+            
             messages = [SysMsg(content=prompt)]
             response = self.llm.invoke(messages)
-            question = response.content.strip().strip('"\'')
+            result = response.content.strip().strip('"\'')
             
             # Validate response is reasonable
-            if question and len(question) > 10 and len(question) < 200 and "?" in question:
-                return question
+            if result and len(result) > 5 and len(result) < 250:
+                return result
             else:
-                # Fallback if LLM response is malformed
-                return f"What products are you looking for{' for ' + destination if destination else ''}?"
+                return None
                 
         except Exception as e:
-            print(f"[DEBUG] Error generating dynamic product question: {e}")
-            destination = intent.get("destination") or intent.get("destination_city") or ""
-            return f"What products are you looking for{' for ' + destination if destination else ''}?"
+            print(f"[DEBUG] Error generating dynamic question ({question_type}): {e}")
+            return None
+
+    def _generate_dynamic_product_question(self, query: str, intent: dict) -> str:
+        """Generate contextual product question - wrapper for backwards compatibility."""
+        result = self._generate_dynamic_question("product", query, intent)
+        if result:
+            return result
+        destination = intent.get("destination") or ""
+        return f"What products are you looking for{' for ' + destination if destination else ''}?"
 
     def _detect_changes(self, existing_intent: dict, new_intent: dict,
                         merged_intent: dict) -> dict:
@@ -518,7 +572,9 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             destination_city = new_intent.get("destination_city")
 
             if country_only and destination_country and not destination_city and not existing_destination:
-                city_question = f"Which city are you travelling to in {destination_country}?"
+                city_question = self._generate_dynamic_question("city", query, merged_intent, {"country": destination_country})
+                if not city_question:
+                    city_question = f"Which city are you travelling to in {destination_country}?"
                 merged_intent["_pending_country"] = destination_country
                 return {
                     "needs_clarification":
@@ -703,7 +759,9 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                             "notes") else f"{merged_intent.get('notes')}; {product_in_confirmation}"
                         # Proceed to recommendations with the product
                         activity_name = existing_intent.get("_pending_activity", "your trip")
-                        proceed_message = f"Great! I'll find {product_in_confirmation} recommendations for {activity_name}."
+                        proceed_message = self._generate_dynamic_question("proceed_message", query, merged_intent, {"product": product_in_confirmation, "activity": activity_name})
+                        if not proceed_message:
+                            proceed_message = f"Great! I'll find {product_in_confirmation} recommendations for {activity_name}."
                         return {
                             "needs_clarification": False,
                             "clarification_question": None,
@@ -716,7 +774,9 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                     else:
                         # Just "yes" without a product - ask what they want to buy
                         merged_intent["_asked_product_category"] = True
-                        product_question = "What kind of products or category of products would you like to buy?"
+                        product_question = self._generate_dynamic_question("product", query, merged_intent)
+                        if not product_question:
+                            product_question = "What products are you looking for?"
                         return {
                             "needs_clarification": True,
                             "clarification_question": product_question,
@@ -731,7 +791,9 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                     merged_intent["_declined_shopping"] = True
                     activity_name = existing_intent.get(
                         "_pending_activity", "your activity")
-                    tip_message = f"No problem! Here are some tips for {activity_name}: Make sure to check weather conditions, bring appropriate gear, and stay hydrated. Enjoy your trip!"
+                    tip_message = self._generate_dynamic_question("decline_shopping", query, merged_intent, {"activity": activity_name})
+                    if not tip_message:
+                        tip_message = f"No problem! Enjoy your {activity_name}!"
                     return {
                         "needs_clarification":
                         False,
@@ -808,7 +870,9 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                     merged_intent["_awaiting_shopping_confirm"] = True
                     merged_intent["_pending_activity"] = direct_non_shopping_activity
                     merged_intent["_asked_activities"] = True
-                    shopping_question = f"Would you like to do shopping for {direct_non_shopping_activity}?"
+                    shopping_question = self._generate_dynamic_question("shopping_offer", query, merged_intent, {"activity": direct_non_shopping_activity})
+                    if not shopping_question:
+                        shopping_question = f"Would you like product recommendations for {direct_non_shopping_activity}?"
                     return {
                         "needs_clarification": True,
                         "clarification_question": shopping_question,
@@ -844,7 +908,9 @@ Extract travel intent and respond with the JSON structure. If key details are mi
 
                     if not has_any_context and len(query.strip()) > 3:
                         merged_intent["_asked_ambiguous_intent"] = True
-                        ambiguous_question = "Are you looking to buy something, or are you asking about an activity?"
+                        ambiguous_question = self._generate_dynamic_question("ambiguous_intent", query, merged_intent)
+                        if not ambiguous_question:
+                            ambiguous_question = "Are you looking for products or asking about an activity?"
                         return {
                             "needs_clarification":
                             True,
@@ -865,7 +931,9 @@ Extract travel intent and respond with the JSON structure. If key details are mi
 
             if has_destination and not has_dates_info:
                 dest = merged_intent.get("destination", "your destination")
-                date_question = f"When are you planning to travel to {dest}? (e.g., 'next weekend', 'January 15-20', or specific dates)"
+                date_question = self._generate_dynamic_question("date", query, merged_intent)
+                if not date_question:
+                    date_question = f"When are you planning to travel to {dest}?"
                 return {
                     "needs_clarification":
                     True,
@@ -893,7 +961,9 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             if has_destination and pending_month and not has_complete_date and not existing_intent.get("_asked_specific_dates"):
                 dest = merged_intent.get("destination", "your destination")
                 # Ask for specific dates while acknowledging the month
-                date_question = f"What specific dates in {pending_month} are you traveling to {dest}? (e.g., '{pending_month} 15-20' or '19-20')"
+                date_question = self._generate_dynamic_question("specific_date", query, merged_intent, {"month": pending_month})
+                if not date_question:
+                    date_question = f"What specific dates in {pending_month} are you traveling?"
                 merged_intent["_asked_specific_dates"] = True
                 return {
                     "needs_clarification":
@@ -941,7 +1011,9 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                     # Activities already captured by early detection, continue to optional
                 else:
                     merged_intent["_asked_activities"] = True
-                    activity_question = "What kind of activities are you planning for this trip? (e.g., hiking, shopping, dining)"
+                    activity_question = self._generate_dynamic_question("activity", query, merged_intent)
+                    if not activity_question:
+                        activity_question = "What activities are you planning for this trip?"
                     return {
                         "needs_clarification":
                         True,
