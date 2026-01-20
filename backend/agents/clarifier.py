@@ -90,10 +90,19 @@ DATE HANDLING:
 - Recognize ALL date formats semantically: "19th Jan", "Jan 19", "January 19th", "19 January", "the 19th", etc.
 - When user provides a specific day (like "19th Jan"), this IS a complete date - do NOT ask for dates again
 - Combine partial dates with prior context: if month was mentioned before and user now provides day, merge them
-- Accept month-only dates (January, February) as valid partial date info
-- For truly ambiguous dates like "next week" without specifics, ask for clarification
 - All dates must be FUTURE relative to {CURRENT_DATE}
 - Set has_date_info: true when ANY recognizable date/time information is provided
+
+VAGUE/PARTIAL DATE DETECTION (CRITICAL FOR TRAVEL):
+- When user provides ONLY a month (e.g., "January", "in February", "next March") WITHOUT specific days, this is a PARTIAL DATE
+- When user provides ONLY a duration (e.g., "one week", "two weeks", "a few days") WITHOUT specific start/end dates, this is a PARTIAL DATE
+- When user provides vague timeframes (e.g., "sometime next month", "early January", "late February"), this is a PARTIAL DATE
+- For PARTIAL DATES: Set is_partial_date: true and partial_date_value to the detected timeframe (e.g., "January", "one week")
+- For PARTIAL DATES in travel context: You MUST ask for specific dates in your assistant_message
+  Example: "What specific dates in January are you planning to travel to Paris?"
+  Example: "When exactly would you like to visit? Could you provide the start and end dates for your one week trip?"
+- Do NOT proceed to recommendations with only partial dates for travel - you need exact dates to provide weather-appropriate recommendations
+- COMPLETE DATES include: specific day + month (e.g., "Jan 19-25", "19th to 25th January", "January 19")
 
 QUESTIONING POLICY:
 - Ask ONLY for missing, high-impact information
@@ -126,13 +135,17 @@ OUTPUT AS JSON:
   "mentions_activity": true|false,
   "is_confirmation": true|false,
   "has_date_info": true|false,
+  "is_partial_date": true|false,
+  "partial_date_value": "string|null",
   "is_new_trip": true|false,
   "next_question": "string|null",
   "ready_for_recommendations": true|false
 }}
 
 CRITICAL: 
-- When user provides product + destination + date info (even partial like month name), set ready_for_recommendations: true
+- For TRAVEL intents with PARTIAL DATES (month only, duration only, vague timeframes): set is_partial_date: true, partial_date_value to the timeframe, and ready_for_recommendations: false. Ask for specific dates in assistant_message.
+- For TRAVEL intents with COMPLETE DATES (specific start/end days): set is_partial_date: false and ready_for_recommendations: true
+- For NON-TRAVEL shopping: partial dates are acceptable, proceed to recommendations
 - Size/color are OPTIONAL - do NOT require them to proceed
 - If user says "no", "no preference", "skip", "any", "doesn't matter" to preference questions, set is_skip_response: true and ready_for_recommendations: true"""
 
@@ -817,6 +830,39 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             
             # Decision uses LLM signal only
             has_dates_info = has_date or llm_has_date_info
+            
+            # Handle PARTIAL DATE detection for travel intents
+            is_partial_date = result.get("is_partial_date", False)
+            partial_date_value = result.get("partial_date_value")
+            
+            # Store partial date info for later use
+            if is_partial_date and partial_date_value:
+                merged_intent["_pending_month"] = partial_date_value
+                merged_intent["_has_partial_date"] = True
+                print(f"[DEBUG] Partial date detected: {partial_date_value}")
+            
+            # If destination + partial date (travel context), ask for specific dates
+            if has_destination and is_partial_date and not existing_intent.get("_asked_specific_dates"):
+                dest = merged_intent.get("destination", "your destination")
+                partial_info = partial_date_value or "your timeframe"
+                
+                # Use LLM's assistant_message if it's asking for dates, otherwise generate
+                llm_message = result.get("assistant_message", "")
+                if "date" in llm_message.lower() or "when" in llm_message.lower():
+                    date_question = llm_message
+                else:
+                    date_question = f"What specific dates in {partial_info} are you planning to travel to {dest}?"
+                
+                merged_intent["_asked_specific_dates"] = True
+                return {
+                    "needs_clarification": True,
+                    "clarification_question": date_question,
+                    "assistant_message": change_acknowledgment + date_question if change_acknowledgment else date_question,
+                    "updated_intent": merged_intent,
+                    "clarified_query": query,
+                    "ready_for_recommendations": False,
+                    "detected_changes": detected_changes
+                }
 
             # EARLY SHOPPING/ACTIVITY DETECTION using LLM (runs BEFORE destination/date checks)
             # Skip detection if we're waiting for a product category answer
