@@ -355,6 +355,12 @@ Context: {context_str}
 User said: "{query}"
 Return ONLY the question.""",
 
+                "destination": f"""Generate a SHORT, friendly question (max 12 words) asking where the user would like to travel.
+The user hasn't mentioned a destination yet.
+Context: {context_str}
+User said: "{query}"
+Return ONLY the question.""",
+
                 "product": f"""Generate a SHORT, friendly question (max 15 words) asking what specific products the user is looking for.
 The user wants to shop but didn't specify what products.
 Context: {context_str}
@@ -402,6 +408,7 @@ Return ONLY the response."""
             
             prompt = prompts.get(question_type)
             if not prompt:
+                print(f"[DEBUG] Unknown question type: {question_type}")
                 return None
             
             messages = [SysMsg(content=prompt)]
@@ -412,6 +419,7 @@ Return ONLY the response."""
             if result and len(result) > 5 and len(result) < 250:
                 return result
             else:
+                print(f"[DEBUG] Dynamic question generation returned invalid response for {question_type}")
                 return None
                 
         except Exception as e:
@@ -880,15 +888,14 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             
             # If destination + partial date (travel context), ask for specific dates
             if has_destination and is_partial_date and not existing_intent.get("_asked_specific_dates"):
-                dest = merged_intent.get("destination", "your destination")
                 partial_info = partial_date_value or "your timeframe"
                 
-                # Use LLM's assistant_message if it's asking for dates, otherwise generate
+                # Use LLM's assistant_message if it's asking for dates, otherwise generate dynamically
                 llm_message = result.get("assistant_message", "")
                 if "date" in llm_message.lower() or "when" in llm_message.lower():
                     date_question = llm_message
                 else:
-                    date_question = f"What specific dates in {partial_info} are you planning to travel to {dest}?"
+                    date_question = self._generate_dynamic_question("specific_date", query, merged_intent, {"month": partial_info}) or result.get("next_question") or llm_message
                 
                 merged_intent["_asked_specific_dates"] = True
                 return {
@@ -1006,9 +1013,7 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                     else:
                         # Just "yes" without a product - ask what they want to buy
                         merged_intent["_asked_product_category"] = True
-                        product_question = self._generate_dynamic_question("product", query, merged_intent)
-                        if not product_question:
-                            product_question = "What products are you looking for?"
+                        product_question = self._generate_dynamic_question("product", query, merged_intent) or result.get("assistant_message") or result.get("next_question")
                         return {
                             "needs_clarification": True,
                             "clarification_question": product_question,
@@ -1102,9 +1107,7 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                     merged_intent["_awaiting_shopping_confirm"] = True
                     merged_intent["_pending_activity"] = direct_non_shopping_activity
                     merged_intent["_asked_activities"] = True
-                    shopping_question = self._generate_dynamic_question("shopping_offer", query, merged_intent, {"activity": direct_non_shopping_activity})
-                    if not shopping_question:
-                        shopping_question = f"Would you like product recommendations for {direct_non_shopping_activity}?"
+                    shopping_question = self._generate_dynamic_question("shopping_offer", query, merged_intent, {"activity": direct_non_shopping_activity}) or result.get("assistant_message") or result.get("next_question")
                     return {
                         "needs_clarification": True,
                         "clarification_question": shopping_question,
@@ -1140,9 +1143,7 @@ Extract travel intent and respond with the JSON structure. If key details are mi
 
                     if not has_any_context and len(query.strip()) > 3:
                         merged_intent["_asked_ambiguous_intent"] = True
-                        ambiguous_question = self._generate_dynamic_question("ambiguous_intent", query, merged_intent)
-                        if not ambiguous_question:
-                            ambiguous_question = "Are you looking for products or asking about an activity?"
+                        ambiguous_question = self._generate_dynamic_question("ambiguous_intent", query, merged_intent) or result.get("assistant_message") or result.get("next_question")
                         return {
                             "needs_clarification":
                             True,
@@ -1162,10 +1163,7 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                         }
 
             if has_destination and not has_dates_info:
-                dest = merged_intent.get("destination", "your destination")
-                date_question = self._generate_dynamic_question("date", query, merged_intent)
-                if not date_question:
-                    date_question = f"When are you planning to travel to {dest}?"
+                date_question = self._generate_dynamic_question("date", query, merged_intent) or result.get("assistant_message") or result.get("next_question")
                 return {
                     "needs_clarification":
                     True,
@@ -1191,11 +1189,8 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             has_complete_date = has_date or (merged_intent.get("travel_date") and not has_partial_flag)
             
             if has_destination and pending_month and not has_complete_date and not existing_intent.get("_asked_specific_dates"):
-                dest = merged_intent.get("destination", "your destination")
-                # Ask for specific dates while acknowledging the month
-                date_question = self._generate_dynamic_question("specific_date", query, merged_intent, {"month": pending_month})
-                if not date_question:
-                    date_question = f"What specific dates in {pending_month} are you traveling?"
+                # Ask for specific dates while acknowledging the month - use dynamic generation
+                date_question = self._generate_dynamic_question("specific_date", query, merged_intent, {"month": pending_month}) or result.get("assistant_message") or result.get("next_question")
                 merged_intent["_asked_specific_dates"] = True
                 return {
                     "needs_clarification":
@@ -1244,9 +1239,7 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                 else:
                     merged_intent["_asked_activities"] = True
                     merged_intent["_last_question_type"] = "optional"
-                    activity_question = self._generate_dynamic_question("activity", query, merged_intent)
-                    if not activity_question:
-                        activity_question = "What activities are you planning for this trip?"
+                    activity_question = self._generate_dynamic_question("activity", query, merged_intent) or result.get("assistant_message") or result.get("next_question")
                     return {
                         "needs_clarification":
                         True,
@@ -1265,50 +1258,14 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                         detected_changes
                     }
 
-            # 2. Ask Optional (Budget/Brand) if missing
+            # 2. Budget/Brand preferences are optional - skip asking and proceed to recommendations
+            # The LLM handles all questions dynamically based on user input
             if has_destination and has_dates_info and (
                     already_asked_activities
                     or merged_intent.get("_asked_activities")
             ) and not already_asked_optional:
-                if has_budget_or_brand:
-                    merged_intent["_asked_optional"] = True
-                else:
-                    destinations = []
-                    if merged_intent.get("trip_segments"):
-                        for seg in merged_intent["trip_segments"]:
-                            if isinstance(seg, dict):
-                                destinations.append(seg.get("destination", ""))
-                            else:
-                                destinations.append(seg.destination)
-                    if not destinations:
-                        destinations = [merged_intent.get("destination", "")]
-
-                    dest_str = " and ".join([d for d in destinations if d])
-                    if not dest_str:
-                        dest_str = "your destinations"
-
-                    merged_intent["_asked_optional"] = True
-                    merged_intent["_last_question_type"] = "optional"
-
-                    optional_question = f"Great! Your trip to {dest_str} is confirmed. Do you have any preferences for budget or favorite brands? (This is optional - feel free to skip!)"
-
-                    return {
-                        "needs_clarification":
-                        True,
-                        "clarification_question":
-                        optional_question,
-                        "assistant_message":
-                        change_acknowledgment + optional_question
-                        if change_acknowledgment else optional_question,
-                        "updated_intent":
-                        merged_intent,
-                        "clarified_query":
-                        query,
-                        "ready_for_recommendations":
-                        False,
-                        "detected_changes":
-                        detected_changes
-                    }
+                merged_intent["_asked_optional"] = True
+                # Proceed directly - budget/brand are optional, no need to ask
 
             if already_asked_optional and already_asked_activities:
                 if is_skip or has_budget_or_brand or mentions_activity or has_dates_info:
@@ -1326,8 +1283,7 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                     }
 
             if not has_destination:
-                next_question = result.get(
-                    "next_question") or "Where would you like to travel?"
+                next_question = result.get("next_question") or result.get("assistant_message") or self._generate_dynamic_question("destination", query, merged_intent)
                 return {
                     "needs_clarification":
                     True,
