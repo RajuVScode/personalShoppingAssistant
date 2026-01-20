@@ -403,7 +403,14 @@ Return ONLY the confirmation, no question mark.""",
                 "decline_shopping": f"""Generate a SHORT, friendly response (max 20 words) acknowledging the user doesn't want to shop and wishing them well.
 Context: {context_str}
 User said: "{query}"
-Return ONLY the response."""
+Return ONLY the response.""",
+
+                "invalid_date": f"""Generate a SHORT, friendly response (max 25 words) explaining that the date provided doesn't exist on the calendar and asking for a valid date.
+Context: {context_str}
+Reason the date is invalid: {extra.get('reason', 'The date does not exist on the calendar')}
+User said: "{query}"
+Be helpful and explain why the date is invalid (e.g., February only has 28 or 29 days).
+Return ONLY the response asking for a valid date."""
             }
             
             prompt = prompts.get(question_type)
@@ -462,29 +469,43 @@ Return ONLY the response."""
                     else:
                         conv_context += f"{msg}\n"
             
-            prompt = f"""Parse date information from the user's message and combine with any existing context.
+            # Get current year for leap year validation
+            from datetime import datetime
+            current_year = datetime.now().year
+            next_year = current_year + 1
+            
+            prompt = f"""Parse date information from the user's message and validate it against the calendar.
 
 User message: "{query}"
 Existing travel date: "{existing_travel_date}"
 Previously mentioned month: "{existing_month}"
 Destination: "{destination}"
+Current year: {current_year}
 
 Recent conversation:
 {conv_context}
 
+IMPORTANT: Validate that dates are real calendar dates!
+- February has 28 days (29 in leap years: {current_year} is {"a leap year" if current_year % 4 == 0 and (current_year % 100 != 0 or current_year % 400 == 0) else "not a leap year"}, {next_year} is {"a leap year" if next_year % 4 == 0 and (next_year % 100 != 0 or next_year % 400 == 0) else "not a leap year"})
+- April, June, September, November have 30 days
+- January, March, May, July, August, October, December have 31 days
+- There is NO February 29 in non-leap years, NO February 30, NO February 31, etc.
+
 Analyze and return a JSON object:
 {{
-    "has_complete_date": true/false,  // true if we have enough info (at least month + day or specific dates)
+    "has_complete_date": true/false,  // true if we have a valid complete date
     "parsed_date": "string",  // The complete or partial date (e.g., "January 19-20", "March 5", "next week")
     "month_only": "string or null",  // If only a month was mentioned without days
-    "needs_more_info": true/false  // true if we need specific days for a month
+    "needs_more_info": true/false,  // true if we need specific days for a month
+    "is_invalid_date": true/false,  // true if the date doesn't exist on the calendar (e.g., Feb 30, Feb 31, April 31)
+    "invalid_date_reason": "string or null"  // Explanation if date is invalid (e.g., "February only has 28 days in 2026")
 }}
 
 Examples:
-- Query "19-20" with existing_month "January" -> {{"has_complete_date": true, "parsed_date": "January 19-20", "month_only": null, "needs_more_info": false}}
-- Query "January" alone -> {{"has_complete_date": false, "parsed_date": "January", "month_only": "January", "needs_more_info": true}}
-- Query "Jan 19th" -> {{"has_complete_date": true, "parsed_date": "January 19", "month_only": null, "needs_more_info": false}}
-- Query "tomorrow" -> {{"has_complete_date": true, "parsed_date": "tomorrow", "month_only": null, "needs_more_info": false}}
+- Query "Feb 30" -> {{"has_complete_date": false, "parsed_date": "", "month_only": null, "needs_more_info": false, "is_invalid_date": true, "invalid_date_reason": "February only has 28 days"}}
+- Query "Feb 29" in non-leap year -> {{"has_complete_date": false, "parsed_date": "", "month_only": null, "needs_more_info": false, "is_invalid_date": true, "invalid_date_reason": "February 29 only exists in leap years, and {next_year} is not a leap year"}}
+- Query "April 31" -> {{"has_complete_date": false, "parsed_date": "", "month_only": null, "needs_more_info": false, "is_invalid_date": true, "invalid_date_reason": "April only has 30 days"}}
+- Query "Jan 19th" -> {{"has_complete_date": true, "parsed_date": "January 19", "month_only": null, "needs_more_info": false, "is_invalid_date": false, "invalid_date_reason": null}}
 
 Return ONLY the JSON object."""
 
@@ -905,7 +926,28 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                 
                 date_result = self._parse_date_from_query(query, date_context, conversation_history)
                 
-                if date_result.get("has_complete_date") and date_result.get("parsed_date"):
+                # Handle invalid calendar dates (e.g., Feb 30, Feb 29 in non-leap year)
+                if date_result.get("is_invalid_date"):
+                    invalid_reason = date_result.get("invalid_date_reason") or "That date doesn't exist on the calendar."
+                    dest = merged_intent.get("destination", "your destination")
+                    
+                    # Generate dynamic message for invalid date
+                    invalid_date_message = self._generate_dynamic_question("invalid_date", query, merged_intent, {"reason": invalid_reason})
+                    if not invalid_date_message:
+                        invalid_date_message = f"{invalid_reason} Please provide a valid date for your trip to {dest}."
+                    
+                    print(f"[DEBUG] Invalid calendar date detected: {invalid_reason}")
+                    
+                    return {
+                        "needs_clarification": True,
+                        "clarification_question": invalid_date_message,
+                        "assistant_message": invalid_date_message,
+                        "updated_intent": merged_intent,
+                        "clarified_query": query,
+                        "ready_for_recommendations": False,
+                        "detected_changes": detected_changes
+                    }
+                elif date_result.get("has_complete_date") and date_result.get("parsed_date"):
                     merged_intent["travel_date"] = date_result["parsed_date"]
                     print(f"[DEBUG] LLM parsed date: {date_result['parsed_date']}")
                     has_date = True
