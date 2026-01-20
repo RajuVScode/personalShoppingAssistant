@@ -262,6 +262,13 @@ interface ChatWidgetProps {
   onClose: () => void;
 }
 
+const isTravelIntent = (context: ContextInfo | null): boolean => {
+  if (!context) return false;
+  return !!(
+    context.intent?.trip_segments && context.intent.trip_segments.length > 0
+  );
+};
+
 export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [cartItems, setCartItems] = useState<Map<number, CartItem>>(new Map());
@@ -1722,7 +1729,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                   </>
                 )}
 
-              {currentContext?.environmental?.segments &&
+              {isTravelIntent(currentContext) && currentContext?.environmental?.segments &&
                 currentContext.environmental.segments.length > 0 ? (
                   <>
                     <Separator />
@@ -1744,19 +1751,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                       </div>
                     </div>
                   </>
-                ) : currentContext?.environmental?.weather && (
-                  <>
-                    <Separator />
-                    <div>
-                      <h3 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                        <Cloud className="h-4 w-4" /> Weather
-                      </h3>
-                      <p className="text-sm">
-                        {currentContext.environmental.weather.temperature}°C - {currentContext.environmental.weather.description}
-                      </p>
-                    </div>
-                  </>
-                )}
+                ) : null}
 
               {currentContext?.environmental?.trends &&
                 currentContext.environmental.trends.length > 0 && (
