@@ -87,11 +87,12 @@ SIZE/COLOR PREFERENCE:
 - When user declines preference questions with "no", "skip", "no preference", set is_skip_response: true and proceed to recommendations
 
 DATE HANDLING:
-- Recognize ALL date formats semantically: "19th Jan", "Jan 19", "January 19th", "19 January", "the 19th", etc.
-- When user provides a specific day (like "19th Jan"), this IS a complete date - do NOT ask for dates again
+- Recognize ALL date formats semantically: "19th Jan", "Jan 19", "January 19th", "19 January", "the 19th", "tomorrow", "next week", etc.
+- When user provides a specific day (like "19th Jan" or "tomorrow"), this IS a complete date - do NOT ask for dates again
 - Combine partial dates with prior context: if month was mentioned before and user now provides day, merge them
 - All dates must be FUTURE relative to {CURRENT_DATE}
 - Set has_date_info: true when ANY recognizable date/time information is provided
+- IMPORTANT: Do NOT ask for travel TIME (hours/minutes). Only travel DATE is required. Once a date is captured, proceed with other questions or recommendations.
 
 VAGUE/PARTIAL DATE DETECTION (CRITICAL FOR TRAVEL):
 - When user provides ONLY a month (e.g., "January", "in February", "next March") WITHOUT specific days, this is a PARTIAL DATE
@@ -153,7 +154,8 @@ OUTPUT AS JSON:
 
 CRITICAL: 
 - For TRAVEL intents with PARTIAL DATES (month only, duration only, vague timeframes): set is_partial_date: true, partial_date_value to the timeframe, and ready_for_recommendations: false. Ask for specific dates in assistant_message.
-- For TRAVEL intents with COMPLETE DATES (specific start/end days): set is_partial_date: false and ready_for_recommendations: true
+- For TRAVEL intents with COMPLETE DATES (specific start/end days, "tomorrow", "next Monday"): set is_partial_date: false and ready_for_recommendations: true
+- NEVER ask for travel TIME (departure time, arrival time, hours). Only DATE matters.
 - For NON-TRAVEL shopping: partial dates are acceptable, proceed to recommendations
 - Size/color are OPTIONAL - do NOT require them to proceed
 - If user says "no", "no preference", "skip", "any", "doesn't matter" to preference questions, set is_skip_response: true and ready_for_recommendations: true"""
