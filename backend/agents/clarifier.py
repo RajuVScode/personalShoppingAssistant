@@ -638,6 +638,64 @@ class ClarifierAgent(BaseAgent):
     def __init__(self):
         super().__init__("Clarifier", CLARIFIER_PROMPT)
 
+    def _generate_dynamic_product_question(self, query: str, intent: dict) -> str:
+        """
+        Generate a contextual product question using LLM based on user context.
+        
+        Instead of asking generic "What kind of products would you like to buy?",
+        this generates a question tailored to the user's destination, activities,
+        and other context.
+        
+        Args:
+            query: The user's original message
+            intent: Current merged intent with destination, dates, activities etc.
+            
+        Returns:
+            A contextual question about what products the user needs
+        """
+        try:
+            from langchain_core.messages import SystemMessage as SysMsg
+            
+            destination = intent.get("destination") or intent.get("destination_city") or ""
+            activities = intent.get("activities") or []
+            travel_date = intent.get("travel_date") or ""
+            
+            context_parts = []
+            if destination:
+                context_parts.append(f"traveling to {destination}")
+            if travel_date:
+                context_parts.append(f"on {travel_date}")
+            if activities:
+                context_parts.append(f"for {', '.join(activities)}")
+            
+            context_str = " ".join(context_parts) if context_parts else "their trip"
+            
+            prompt = f"""You are a helpful shopping assistant. The user indicated they want to shop but didn't specify what products.
+
+User's message: "{query}"
+Context: {context_str}
+
+Generate a SHORT, friendly question (1 sentence, max 15 words) asking what specific products they're looking for.
+Do NOT suggest products. Just ask what they need.
+
+Return ONLY the question, no quotes or explanation."""
+
+            messages = [SysMsg(content=prompt)]
+            response = self.llm.invoke(messages)
+            question = response.content.strip().strip('"\'')
+            
+            # Validate response is reasonable
+            if question and len(question) > 10 and len(question) < 200 and "?" in question:
+                return question
+            else:
+                # Fallback if LLM response is malformed
+                return f"What products are you looking for{' for ' + destination if destination else ''}?"
+                
+        except Exception as e:
+            print(f"[DEBUG] Error generating dynamic product question: {e}")
+            destination = intent.get("destination") or intent.get("destination_city") or ""
+            return f"What products are you looking for{' for ' + destination if destination else ''}?"
+
     def _detect_changes(self, existing_intent: dict, new_intent: dict,
                         merged_intent: dict) -> dict:
         """Detect modifications to destination, dates, and activities."""
@@ -1052,7 +1110,11 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                     }
 
             # Handle direct shopping intent from query (e.g., "I want to buy shoes")
-            # This runs regardless of destination/date status
+            # FIRST check if user already mentioned a specific product (LLM + keyword fallback)
+            llm_product_mention = llm_intent_result.get("product_mentioned") if llm_intent_result else None
+            keyword_product_mention = detect_product_mention(query)
+            product_mention = llm_product_mention or keyword_product_mention
+            
             if direct_shopping_intent and not existing_intent.get(
                     "_asked_product_category", False):
                 # Add shopping to activities if not present
@@ -1063,24 +1125,33 @@ Extract travel intent and respond with the JSON structure. If key details are mi
 
                 merged_intent["_asked_product_category"] = True
                 merged_intent["_asked_activities"] = True
-                product_question = "What kind of products would you like to buy?"
-                return {
-                    "needs_clarification":
-                    True,
-                    "clarification_question":
-                    product_question,
-                    "assistant_message":
-                    change_acknowledgment + product_question
-                    if change_acknowledgment else product_question,
-                    "updated_intent":
-                    merged_intent,
-                    "clarified_query":
-                    query,
-                    "ready_for_recommendations":
-                    False,
-                    "detected_changes":
-                    detected_changes
-                }
+                
+                # If user already mentioned a product, don't ask - mark complete and continue
+                if product_mention:
+                    merged_intent["_shopping_flow_complete"] = True
+                    merged_intent["notes"] = f"Looking for {product_mention}" if not merged_intent.get("notes") else f"{merged_intent.get('notes')}; Looking for {product_mention}"
+                    print(f"[DEBUG] Product already mentioned: {product_mention} - skipping product question")
+                    # Don't return - let the flow continue to ask destination/date if needed
+                else:
+                    # No product mentioned, ask what they want (use LLM to generate dynamic question)
+                    product_question = self._generate_dynamic_product_question(query, merged_intent)
+                    return {
+                        "needs_clarification":
+                        True,
+                        "clarification_question":
+                        product_question,
+                        "assistant_message":
+                        change_acknowledgment + product_question
+                        if change_acknowledgment else product_question,
+                        "updated_intent":
+                        merged_intent,
+                        "clarified_query":
+                        query,
+                        "ready_for_recommendations":
+                        False,
+                        "detected_changes":
+                        detected_changes
+                    }
 
             # Handle direct non-shopping activity from query (e.g., "planning a hiking trip")
             # This runs regardless of destination/date status
@@ -1111,16 +1182,15 @@ Extract travel intent and respond with the JSON structure. If key details are mi
 
             # Handle ambiguous intent - neither shopping nor activity detected
             # Only ask if we haven't already asked and user hasn't provided clear context
-            # IMPORTANT: Check for specific product mentions using LLM result with keyword fallback
-            llm_product_mention = llm_intent_result.get("product_mentioned") if llm_intent_result else None
-            keyword_product_mention = detect_product_mention(query)
-            product_mention = llm_product_mention or keyword_product_mention
-            if product_mention:
-                # User mentioned a specific product - treat as shopping intent, don't ask generic question
+            # NOTE: product_mention already detected earlier (before shopping intent handling)
+            # If product was mentioned but we didn't go through shopping flow, set it up now
+            if product_mention and not merged_intent.get("_shopping_flow_complete"):
+                # User mentioned a specific product - treat as shopping intent
                 direct_shopping_intent = True
                 merged_intent["_shopping_flow_complete"] = True
-                merged_intent["notes"] = f"Looking for {product_mention}" if not merged_intent.get("notes") else f"{merged_intent.get('notes')}; Looking for {product_mention}"
-                print(f"[DEBUG] LLM detected product mention: {product_mention} - treating as shopping intent")
+                if not merged_intent.get("notes") or product_mention not in str(merged_intent.get("notes", "")):
+                    merged_intent["notes"] = f"Looking for {product_mention}" if not merged_intent.get("notes") else f"{merged_intent.get('notes')}; Looking for {product_mention}"
+                print(f"[DEBUG] Late product mention detection: {product_mention} - treating as shopping intent")
             
             if not direct_shopping_intent and not direct_non_shopping_activity:
                 if not existing_intent.get("_asked_ambiguous_intent", False):
