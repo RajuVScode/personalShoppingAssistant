@@ -897,7 +897,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
 
   return (
     <div 
-      className={`fixed inset-0 z-50 flex items-center justify-end pr-[1%] bg-black/50 transition-opacity duration-500 ${isAnimating ? 'opacity-100' : 'opacity-0'}`} 
+      className={`fixed inset-0 z-50 flex items-center justify-end sm:pr-[1%] bg-black/50 transition-opacity duration-500 ${isAnimating ? 'opacity-100' : 'opacity-0'}`} 
       data-testid="chat-overlay"
       onClick={(e) => {
         if (e.target === e.currentTarget) handleClose();
@@ -905,24 +905,24 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
     >
       <div 
         ref={chatModalRef}
-        className={`bg-white w-[97vw] h-[95vh] rounded-[5px] shadow-2xl flex flex-col overflow-hidden transition-transform duration-500 ease-in-out ${isAnimating ? 'translate-x-0' : 'translate-x-[105%]'}`} 
+        className={`bg-white w-full h-full sm:w-[97vw] sm:h-[95vh] sm:rounded-[5px] shadow-2xl flex flex-col overflow-hidden transition-transform duration-500 ease-in-out ${isAnimating ? 'translate-x-0' : 'translate-x-[105%]'}`} 
         data-testid="chat-modal"
       >
-        <div className="bg-white text-gray-800 px-4 py-1.5 flex items-center justify-between rounded-t-[5px] border-b border-gray-200" data-testid="chat-header">
-          <div className="flex items-center gap-3">
-            <div className="h-8 w-8 bg-[#C9A961] rounded-full flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-white">
+        <div className="bg-white text-gray-800 px-2 sm:px-4 py-1.5 flex items-center justify-between sm:rounded-t-[5px] border-b border-gray-200" data-testid="chat-header">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="h-7 w-7 sm:h-8 sm:w-8 bg-[#C9A961] rounded-full flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white">
                 <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
                 <circle cx="12" cy="7" r="4"></circle>
               </svg>
             </div>
-            <Logo className="h-10" />
+            <Logo className="h-8 sm:h-10" />
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1 sm:gap-4">
             <button
               onClick={() => setShoppingMode(shoppingMode === "online" ? "instore" : "online")}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-[6px] text-sm font-medium transition-all ${
+              className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-[6px] text-xs sm:text-sm font-medium transition-all ${
                 shoppingMode === "online" 
                   ? "bg-green-500 text-white" 
                   : "bg-[#C9A961] text-white"
@@ -931,20 +931,20 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
             >
               {shoppingMode === "online" ? (
                 <>
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="10" />
                     <line x1="2" y1="12" x2="22" y2="12" />
                     <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
                   </svg>
-                  <span>Online</span>
+                  <span className="hidden sm:inline">Online</span>
                 </>
               ) : (
                 <>
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
                     <polyline points="9 22 9 12 15 12 15 22" />
                   </svg>
-                  <span>In-Store</span>
+                  <span className="hidden sm:inline">In-Store</span>
                 </>
               )}
             </button>
@@ -1072,7 +1072,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
         </div>
 
         <div className="flex flex-1 overflow-hidden">
-          <div className="w-48 bg-gray-100 p-4 border-r" data-testid="chat-sidebar">
+          <div className="hidden md:block w-48 bg-gray-100 p-4 border-r flex-shrink-0" data-testid="chat-sidebar">
             <button
               onClick={resetConversation}
               className="flex items-center gap-2 w-full px-3 py-1.5 mb-4 text-gray-700 bg-white hover:bg-blue-50 hover:border-blue-300 hover:shadow-md rounded-[6px] border border-gray-300 transition-all"
@@ -1186,7 +1186,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                       </div>
 
                       {message.products && message.products.length > 0 && (
-                        <div className="mt-4 grid grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
                           {message.products.slice(0, 6).map((product) => (
                             <ProductCard
                               key={product.id}
@@ -1279,7 +1279,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
               </div>
             </ScrollArea>
 
-            <div className="border-t px-6 py-4">
+            <div className="border-t px-3 sm:px-6 py-3 sm:py-4">
               {shoppingMode === "instore" && (
                 <div className="flex gap-2 mb-3">
                   <button
@@ -1353,7 +1353,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
           data-testid="cart-modal-overlay"
         >
           <div 
-            className={`bg-white w-[400px] h-full shadow-2xl flex flex-col relative transition-transform duration-300 ease-in-out ${isCartAnimating ? 'translate-x-0' : 'translate-x-full'}`}
+            className={`bg-white w-full sm:w-[400px] h-full shadow-2xl flex flex-col relative transition-transform duration-300 ease-in-out ${isCartAnimating ? 'translate-x-0' : 'translate-x-full'}`}
           >
             <div className="bg-[#1565C0] text-white px-3 py-2 flex justify-between items-center">
               <div className="flex items-center gap-2">
@@ -1564,7 +1564,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
           }}
           data-testid="customer360-modal-overlay"
         >
-          <div className={`bg-white w-[380px] h-full shadow-2xl flex flex-col overflow-hidden transition-transform duration-300 ease-in-out ${isCustomer360Animating ? 'translate-x-0' : 'translate-x-full'}`}>
+          <div className={`bg-white w-full sm:w-[380px] h-full shadow-2xl flex flex-col overflow-hidden transition-transform duration-300 ease-in-out ${isCustomer360Animating ? 'translate-x-0' : 'translate-x-full'}`}>
             <div className="bg-[#1565C0] text-white px-3 py-2 flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <div className="relative">
@@ -1655,7 +1655,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
           }}
           data-testid="context-insights-modal-overlay"
         >
-          <div className={`bg-white w-[380px] h-full shadow-2xl flex flex-col overflow-hidden transition-transform duration-300 ease-in-out ${isContextInsightsAnimating ? 'translate-x-0' : 'translate-x-full'}`}>
+          <div className={`bg-white w-full sm:w-[380px] h-full shadow-2xl flex flex-col overflow-hidden transition-transform duration-300 ease-in-out ${isContextInsightsAnimating ? 'translate-x-0' : 'translate-x-full'}`}>
             <div className="bg-[#1565C0] text-white px-3 py-2 flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
@@ -1795,7 +1795,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
           }}
           data-testid="agent-thinking-modal-overlay"
         >
-          <div className={`bg-white w-[420px] h-full shadow-2xl flex flex-col overflow-hidden transition-transform duration-300 ease-in-out ${isAgentThinkingAnimating ? 'translate-x-0' : 'translate-x-full'}`}>
+          <div className={`bg-white w-full sm:w-[420px] h-full shadow-2xl flex flex-col overflow-hidden transition-transform duration-300 ease-in-out ${isAgentThinkingAnimating ? 'translate-x-0' : 'translate-x-full'}`}>
             <div className="bg-[#1565C0] text-white px-3 py-2 flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
@@ -1866,7 +1866,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
           }}
           data-testid="scan-product-modal-overlay"
         >
-          <div className="bg-white rounded-[6px] w-[360px] shadow-2xl overflow-hidden">
+          <div className="bg-white rounded-[6px] w-[90vw] sm:w-[360px] max-w-[360px] shadow-2xl overflow-hidden">
             <div className="p-4 h-[380px] flex flex-col">
               <div className="flex items-center gap-2 mb-4">
                 <QrCode className="w-4 h-4 text-gray-600" />
@@ -2004,7 +2004,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
           }}
           data-testid="location-modal-overlay"
         >
-          <div className="bg-white rounded-[6px] w-[400px] shadow-2xl overflow-hidden">
+          <div className="bg-white rounded-[6px] w-[90vw] sm:w-[400px] max-w-[400px] shadow-2xl overflow-hidden">
             <div className="p-4">
               <div className="flex items-center gap-2 mb-4">
                 <svg className="w-4 h-4 text-gray-600" viewBox="0 0 24 24" fill="currentColor">

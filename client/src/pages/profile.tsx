@@ -187,7 +187,7 @@ export default function ProfilePage() {
             <div className="space-y-4">
               <h3 className="font-medium text-gray-700 border-b pb-2">Personal Information</h3>
               
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="firstName">First Name *</Label>
                   <Input
@@ -222,7 +222,7 @@ export default function ProfilePage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="phoneNumber">Phone Number</Label>
                   <Input
@@ -239,7 +239,7 @@ export default function ProfilePage() {
                     id="gender"
                     value={gender}
                     onChange={(e) => setGender(e.target.value)}
-                    className="w-full h-9 px-3 rounded-md border border-input bg-background text-sm"
+                    className="w-full h-11 sm:h-9 px-3 rounded-md border border-input bg-background text-sm"
                     data-testid="select-gender"
                   >
                     <option value="">Select gender</option>
@@ -298,7 +298,7 @@ export default function ProfilePage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="city">City</Label>
                   <Input
@@ -321,7 +321,7 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="postalCode">Postal Code</Label>
                   <Input

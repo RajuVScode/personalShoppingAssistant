@@ -45,9 +45,9 @@ export default function Header({ onSignUp, showAuthButtons = true }: HeaderProps
   };
 
   return (
-    <header className="w-full bg-[#1565C0] text-white py-3 px-6 flex items-center justify-between" style={{ fontFamily: 'Calibri, sans-serif' }} data-testid="header">
+    <header className="w-full bg-[#1565C0] text-white py-2 px-3 sm:py-3 sm:px-6 flex items-center justify-between" style={{ fontFamily: 'Calibri, sans-serif' }} data-testid="header">
       <div data-testid="header-logo">
-        <Logo className="h-10" />
+        <Logo className="h-8 sm:h-10" />
       </div>
       
       {showAuthButtons && (
@@ -57,14 +57,14 @@ export default function Header({ onSignUp, showAuthButtons = true }: HeaderProps
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="text-white hover:bg-white/10 text-[14px] flex items-center gap-2"
+                  className="text-white hover:bg-white/10 text-[12px] sm:text-[14px] flex items-center gap-1 sm:gap-2 px-2 sm:px-3"
                   data-testid="button-user-menu"
                 >
-                  <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-                    <User className="w-4 h-4 text-white" />
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/20 flex items-center justify-center">
+                    <User className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
                   </div>
-                  <span>{customerName}</span>
-                  <ChevronDown className="w-4 h-4" />
+                  <span className="hidden sm:inline max-w-[100px] truncate">{customerName}</span>
+                  <ChevronDown className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent 
@@ -81,7 +81,7 @@ export default function Header({ onSignUp, showAuthButtons = true }: HeaderProps
                   </div>
                 </div>
                 <div className="py-1">
-                  <DropdownMenuItem asChild className="cursor-pointer px-3 py-2">
+                  <DropdownMenuItem asChild className="cursor-pointer px-3 py-3 min-h-[44px]">
                     <a href="/profile" data-testid="menu-edit-profile">
                       <User className="w-4 h-4 mr-3 text-gray-500" />
                       <span>Edit Profile</span>
@@ -90,7 +90,7 @@ export default function Header({ onSignUp, showAuthButtons = true }: HeaderProps
                   <DropdownMenuSeparator />
                   <DropdownMenuItem 
                     onSelect={handleLogout}
-                    className="cursor-pointer px-3 py-2 text-red-600 focus:text-red-600"
+                    className="cursor-pointer px-3 py-3 min-h-[44px] text-red-600 focus:text-red-600"
                     data-testid="menu-logout"
                   >
                     <LogOut className="w-4 h-4 mr-3" />

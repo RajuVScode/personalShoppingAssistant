@@ -76,19 +76,19 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex-1 flex items-center justify-center p-6 bg-gray-50" style={{ fontFamily: 'Calibri, sans-serif' }}>
+    <div className="flex-1 flex items-center justify-center p-3 sm:p-6 bg-gray-50" style={{ fontFamily: 'Calibri, sans-serif' }}>
         <div className="w-full max-w-4xl grid md:grid-cols-2 gap-0 shadow-xl rounded-lg overflow-hidden">
           <div 
-            className="bg-gradient-to-br from-[#1565C0] to-[#0D47A1] text-white p-10 flex flex-col justify-center"
+            className="hidden md:flex bg-gradient-to-br from-[#1565C0] to-[#0D47A1] text-white p-6 sm:p-10 flex-col justify-center"
             data-testid="welcome-panel"
           >
-            <h1 className="text-3xl font-bold mb-4" style={{ fontFamily: 'Calibri, sans-serif' }}>
+            <h1 className="text-2xl sm:text-3xl font-bold mb-4" style={{ fontFamily: 'Calibri, sans-serif' }}>
               Welcome to PSA —
             </h1>
-            <h2 className="text-2xl font-semibold mb-6" style={{ fontFamily: 'Calibri, sans-serif' }}>
+            <h2 className="text-xl sm:text-2xl font-semibold mb-6" style={{ fontFamily: 'Calibri, sans-serif' }}>
               Your AI Shopping Assistant
             </h2>
-            <p className="text-white/90 text-lg leading-relaxed" style={{ fontFamily: 'Calibri, sans-serif' }}>
+            <p className="text-white/90 text-base sm:text-lg leading-relaxed" style={{ fontFamily: 'Calibri, sans-serif' }}>
               Find better items faster with personalized suggestions, smart price tracking and curated picks.
             </p>
           </div>
