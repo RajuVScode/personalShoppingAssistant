@@ -1,39 +1,40 @@
 import { Twitter, Linkedin } from "lucide-react";
+import "../styles/footer.css";
 
 export default function Footer() {
   return (
-    <footer className="w-full bg-gray-100 py-4 px-6 border-t" data-testid="footer">
-      <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <div className="bg-[#1565C0] text-white font-bold px-2 py-1 rounded text-sm">
+    <footer className="footer" id="footer" data-testid="footer">
+      <div className="footer-inner" id="footer-inner">
+        <div className="footer-brand" id="footer-brand">
+          <div className="footer-brand-logo">
             PSA
           </div>
-          <span className="text-xs text-gray-600" style={{ fontFamily: 'Calibri, sans-serif' }}>AI Shopping Assistant</span>
+          <span className="footer-brand-text">AI Shopping Assistant</span>
         </div>
         
-        <nav className="flex items-center gap-4 text-sm text-gray-600" style={{ fontFamily: 'Calibri, sans-serif' }}>
-          <a href="#" className="hover:text-[#1565C0] transition-colors" data-testid="link-about">About</a>
-          <a href="#" className="hover:text-[#1565C0] transition-colors" data-testid="link-pricing">Pricing</a>
-          <a href="#" className="hover:text-[#1565C0] transition-colors" data-testid="link-blog">Blog</a>
-          <a href="#" className="hover:text-[#1565C0] transition-colors" data-testid="link-help">Help Center</a>
-          <a href="#" className="hover:text-[#1565C0] transition-colors" data-testid="link-contact">Contact</a>
+        <nav className="footer-nav" id="footer-nav">
+          <a href="#" className="footer-nav-link" id="footer-link-about" data-testid="link-about">About</a>
+          <a href="#" className="footer-nav-link" id="footer-link-pricing" data-testid="link-pricing">Pricing</a>
+          <a href="#" className="footer-nav-link" id="footer-link-blog" data-testid="link-blog">Blog</a>
+          <a href="#" className="footer-nav-link" id="footer-link-help" data-testid="link-help">Help Center</a>
+          <a href="#" className="footer-nav-link" id="footer-link-contact" data-testid="link-contact">Contact</a>
         </nav>
         
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <a href="#" className="hover:text-[#1565C0] transition-colors flex items-center gap-1" data-testid="link-twitter">
-              <Twitter className="w-4 h-4" />
+        <div className="footer-social" id="footer-social">
+          <div className="footer-social-links">
+            <a href="#" className="footer-social-link" id="footer-link-twitter" data-testid="link-twitter">
+              <Twitter className="footer-social-icon" />
               Twitter
             </a>
-            <span className="text-gray-400">•</span>
-            <a href="#" className="hover:text-[#1565C0] transition-colors flex items-center gap-1" data-testid="link-linkedin">
-              <Linkedin className="w-4 h-4" />
+            <span className="footer-social-divider">•</span>
+            <a href="#" className="footer-social-link" id="footer-link-linkedin" data-testid="link-linkedin">
+              <Linkedin className="footer-social-icon" />
               LinkedIn
             </a>
           </div>
         </div>
       </div>
-      <div className="text-center text-xs text-gray-500 mt-3" style={{ fontFamily: 'Calibri, sans-serif' }}>
+      <div className="footer-copyright" id="footer-copyright">
         © 2025 PSA. All rights reserved.
       </div>
     </footer>

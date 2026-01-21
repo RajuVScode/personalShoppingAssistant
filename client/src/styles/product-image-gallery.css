@@ -1,0 +1,158 @@
+/* ==========================================================================
+   Product Image Gallery Styles
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. CSS Variables
+   -------------------------------------------------------------------------- */
+:root {
+  --gallery-thumbnail-size: 4rem;
+  --gallery-thumbnail-height: 5rem;
+  --gallery-border-selected: #3b82f6;
+  --gallery-border-default: #e5e7eb;
+  --gallery-favorite-active: #ef4444;
+  --gallery-bg-muted: #f3f4f6;
+  --gallery-text-muted: #9ca3af;
+}
+
+/* --------------------------------------------------------------------------
+   2. Container
+   -------------------------------------------------------------------------- */
+.gallery-container {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+/* --------------------------------------------------------------------------
+   3. Thumbnails
+   -------------------------------------------------------------------------- */
+.gallery-thumbnails {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: var(--gallery-thumbnail-size);
+}
+
+.gallery-thumbnail {
+  width: var(--gallery-thumbnail-size);
+  height: var(--gallery-thumbnail-height);
+  border: 2px solid var(--gallery-border-default);
+  border-radius: 0.25rem;
+  cursor: pointer;
+  overflow: hidden;
+  flex-shrink: 0;
+  transition: border-color 0.2s ease;
+}
+
+.gallery-thumbnail--selected {
+  border-color: var(--gallery-border-selected);
+}
+
+.gallery-thumbnail-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* --------------------------------------------------------------------------
+   4. Main Image Container
+   -------------------------------------------------------------------------- */
+.gallery-main {
+  flex: 1;
+  position: relative;
+}
+
+.gallery-main-image-wrapper {
+  width: 100%;
+  background-color: var(--gallery-bg-muted);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  cursor: none;
+  position: relative;
+}
+
+.gallery-main-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.2s ease;
+}
+
+.gallery-main-image--zooming {
+  transform: scale(1.5);
+}
+
+/* --------------------------------------------------------------------------
+   5. Zoom Indicator
+   -------------------------------------------------------------------------- */
+.gallery-zoom-indicator {
+  position: absolute;
+  pointer-events: none;
+  border: 2px solid #9ca3af;
+  background-color: rgba(255, 255, 255, 0.2);
+  width: 80px;
+  height: 100px;
+}
+
+/* --------------------------------------------------------------------------
+   6. Loading Spinner
+   -------------------------------------------------------------------------- */
+.gallery-loading-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+.gallery-loading-spinner {
+  width: 2rem;
+  height: 2rem;
+  border: 2px solid #3b82f6;
+  border-top-color: transparent;
+  border-radius: 9999px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   7. Favorite Button
+   -------------------------------------------------------------------------- */
+.gallery-favorite-btn {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  background-color: white;
+  border-radius: 9999px;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.gallery-favorite-btn:hover {
+  background-color: #f9fafb;
+}
+
+.gallery-favorite-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--gallery-text-muted);
+}
+
+.gallery-favorite-icon--active {
+  fill: var(--gallery-favorite-active);
+  color: var(--gallery-favorite-active);
+}

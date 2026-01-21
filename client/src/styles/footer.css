@@ -1,0 +1,140 @@
+/* ==========================================================================
+   Footer Styles
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. CSS Variables
+   -------------------------------------------------------------------------- */
+:root {
+  --footer-bg: #f3f4f6;
+  --footer-text: #4b5563;
+  --footer-text-muted: #6b7280;
+  --footer-accent: #1565C0;
+  --footer-font: 'Calibri', sans-serif;
+  --footer-border: #e5e7eb;
+}
+
+/* --------------------------------------------------------------------------
+   2. Footer Container
+   -------------------------------------------------------------------------- */
+.footer {
+  width: 100%;
+  background-color: var(--footer-bg);
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--footer-border);
+}
+
+/* --------------------------------------------------------------------------
+   3. Footer Inner Container
+   -------------------------------------------------------------------------- */
+.footer-inner {
+  max-width: 72rem;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .footer-inner {
+    flex-direction: row;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   4. Brand Section
+   -------------------------------------------------------------------------- */
+.footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.footer-brand-logo {
+  background-color: var(--footer-accent);
+  color: white;
+  font-weight: 700;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+}
+
+.footer-brand-text {
+  font-size: 0.75rem;
+  color: var(--footer-text);
+  font-family: var(--footer-font);
+}
+
+/* --------------------------------------------------------------------------
+   5. Navigation Links
+   -------------------------------------------------------------------------- */
+.footer-nav {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.875rem;
+  color: var(--footer-text);
+  font-family: var(--footer-font);
+}
+
+.footer-nav-link {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.footer-nav-link:hover {
+  color: var(--footer-accent);
+}
+
+/* --------------------------------------------------------------------------
+   6. Social Links
+   -------------------------------------------------------------------------- */
+.footer-social {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.footer-social-links {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--footer-text);
+}
+
+.footer-social-link {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.footer-social-link:hover {
+  color: var(--footer-accent);
+}
+
+.footer-social-icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.footer-social-divider {
+  color: #9ca3af;
+}
+
+/* --------------------------------------------------------------------------
+   7. Copyright
+   -------------------------------------------------------------------------- */
+.footer-copyright {
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--footer-text-muted);
+  margin-top: 0.75rem;
+  font-family: var(--footer-font);
+}

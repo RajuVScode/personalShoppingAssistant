@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { X } from "lucide-react";
+import "../styles/size-chart.css";
 
 interface SizeChartModalProps {
   isOpen: boolean;
@@ -24,67 +25,57 @@ export function SizeChartModal({ isOpen, onClose, selectedSize, onSelectSize }: 
 
   return (
     <div 
-      className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50"
+      className="size-chart-overlay"
+      id="size-chart-overlay"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
       data-testid="size-chart-modal-overlay"
     >
-      <div className="bg-white w-[420px] max-h-[380px] rounded-lg shadow-2xl flex flex-col overflow-hidden">
-        <div className="flex border-b">
+      <div className="size-chart-modal" id="size-chart-modal">
+        <div className="size-chart-tabs" id="size-chart-tabs">
           <button
             onClick={() => setActiveTab("chart")}
-            className={`flex-1 py-2.5 text-center text-sm font-semibold transition-colors ${
-              activeTab === "chart" 
-                ? 'text-pink-500 border-b-2 border-pink-500' 
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
+            className={`size-chart-tab ${activeTab === "chart" ? 'size-chart-tab--active' : ''}`}
+            id="size-chart-tab-chart"
             data-testid="tab-size-chart"
           >
             Size Chart
           </button>
           <button
             onClick={() => setActiveTab("measure")}
-            className={`flex-1 py-2.5 text-center text-sm font-semibold transition-colors ${
-              activeTab === "measure" 
-                ? 'text-pink-500 border-b-2 border-pink-500' 
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
+            className={`size-chart-tab ${activeTab === "measure" ? 'size-chart-tab--active' : ''}`}
+            id="size-chart-tab-measure"
             data-testid="tab-how-to-measure"
           >
             How to measure
           </button>
           <button 
             onClick={onClose}
-            className="px-3 text-gray-400 hover:text-gray-600"
+            className="size-chart-close-btn"
+            id="size-chart-close-btn"
             data-testid="btn-close-size-chart"
           >
-            <X className="w-4 h-4" />
+            <X className="size-chart-close-icon" />
           </button>
         </div>
         
         {activeTab === "chart" ? (
-          <div className="p-3 flex-1 overflow-auto">
-            <div className="flex justify-end mb-2">
-              <div className="flex items-center bg-gray-100 rounded-full p-0.5">
+          <div className="size-chart-content" id="size-chart-content">
+            <div className="size-chart-unit-toggle-wrapper">
+              <div className="size-chart-unit-toggle" id="size-chart-unit-toggle">
                 <button
                   onClick={() => setUnit("in")}
-                  className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
-                    unit === "in" 
-                      ? 'bg-gray-800 text-white' 
-                      : 'text-gray-600 hover:text-gray-800'
-                  }`}
+                  className={`size-chart-unit-btn ${unit === "in" ? 'size-chart-unit-btn--active' : ''}`}
+                  id="size-chart-unit-in"
                   data-testid="btn-unit-in"
                 >
                   in
                 </button>
                 <button
                   onClick={() => setUnit("cm")}
-                  className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
-                    unit === "cm" 
-                      ? 'bg-gray-800 text-white' 
-                      : 'text-gray-600 hover:text-gray-800'
-                  }`}
+                  className={`size-chart-unit-btn ${unit === "cm" ? 'size-chart-unit-btn--active' : ''}`}
+                  id="size-chart-unit-cm"
                   data-testid="btn-unit-cm"
                 >
                   cm
@@ -92,65 +83,62 @@ export function SizeChartModal({ isOpen, onClose, selectedSize, onSelectSize }: 
               </div>
             </div>
             
-            <table className="w-full text-xs">
+            <table className="size-chart-table" id="size-chart-table">
               <thead>
-                <tr className="text-gray-600">
-                  <th className="py-1.5 text-left font-medium w-8"></th>
-                  <th className="py-1.5 text-left font-medium">Size</th>
-                  <th className="py-1.5 text-center font-medium">Chest</th>
-                  <th className="py-1.5 text-center font-medium">Front</th>
-                  <th className="py-1.5 text-center font-medium">Shoulder</th>
-                  <th className="py-1.5 text-center font-medium">Sleeve</th>
+                <tr>
+                  <th></th>
+                  <th>Size</th>
+                  <th>Chest</th>
+                  <th>Front</th>
+                  <th>Shoulder</th>
+                  <th>Sleeve</th>
                 </tr>
               </thead>
               <tbody>
                 {sizeData.map((row) => (
                   <tr 
                     key={row.size} 
-                    className={`border-t ${selectedSize === row.size ? 'font-bold' : ''}`}
+                    className={selectedSize === row.size ? 'size-chart-row--selected' : ''}
                   >
-                    <td className="py-1.5">
+                    <td>
                       <div 
                         onClick={() => onSelectSize(row.size)}
-                        className={`w-4 h-4 rounded-full border-2 cursor-pointer flex items-center justify-center ${
-                          selectedSize === row.size 
-                            ? 'border-pink-500' 
-                            : 'border-gray-300'
-                        }`}
+                        className={`size-chart-radio ${selectedSize === row.size ? 'size-chart-radio--selected' : ''}`}
+                        id={`size-chart-radio-${row.size}`}
                       >
                         {selectedSize === row.size && (
-                          <div className="w-2 h-2 rounded-full bg-pink-500" />
+                          <div className="size-chart-radio-dot" />
                         )}
                       </div>
                     </td>
-                    <td className="py-1.5 font-medium">{row.size}</td>
-                    <td className="py-1.5 text-center">{row.chest[unit]}</td>
-                    <td className="py-1.5 text-center">{row.front[unit]}</td>
-                    <td className="py-1.5 text-center">{row.shoulder[unit]}</td>
-                    <td className="py-1.5 text-center">{row.sleeve[unit]}</td>
+                    <td className="size-chart-size-label">{row.size}</td>
+                    <td>{row.chest[unit]}</td>
+                    <td>{row.front[unit]}</td>
+                    <td>{row.shoulder[unit]}</td>
+                    <td>{row.sleeve[unit]}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         ) : (
-          <div className="p-3 flex-1 overflow-auto">
-            <div className="space-y-2 text-gray-600">
-              <div>
-                <h4 className="font-semibold text-gray-900 text-xs mb-1">Chest</h4>
-                <p className="text-xs">Measure around the fullest part of your chest, keeping the tape horizontal.</p>
+          <div className="size-chart-content" id="size-chart-measure-content">
+            <div className="size-chart-measure-content">
+              <div className="size-chart-measure-item">
+                <h4 className="size-chart-measure-title">Chest</h4>
+                <p className="size-chart-measure-text">Measure around the fullest part of your chest, keeping the tape horizontal.</p>
               </div>
-              <div>
-                <h4 className="font-semibold text-gray-900 text-xs mb-1">Front Length</h4>
-                <p className="text-xs">Measure from the highest point of your shoulder to the desired length.</p>
+              <div className="size-chart-measure-item">
+                <h4 className="size-chart-measure-title">Front Length</h4>
+                <p className="size-chart-measure-text">Measure from the highest point of your shoulder to the desired length.</p>
               </div>
-              <div>
-                <h4 className="font-semibold text-gray-900 text-xs mb-1">Across Shoulder</h4>
-                <p className="text-xs">Measure from the edge of one shoulder to the edge of the other shoulder.</p>
+              <div className="size-chart-measure-item">
+                <h4 className="size-chart-measure-title">Across Shoulder</h4>
+                <p className="size-chart-measure-text">Measure from the edge of one shoulder to the edge of the other shoulder.</p>
               </div>
-              <div>
-                <h4 className="font-semibold text-gray-900 text-xs mb-1">Sleeve Length</h4>
-                <p className="text-xs">Measure from the shoulder seam to the end of the sleeve.</p>
+              <div className="size-chart-measure-item">
+                <h4 className="size-chart-measure-title">Sleeve Length</h4>
+                <p className="size-chart-measure-text">Measure from the shoulder seam to the end of the sleeve.</p>
               </div>
             </div>
           </div>

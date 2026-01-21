@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Heart } from "lucide-react";
+import "../styles/product-image-gallery.css";
 
 interface ProductImageGalleryProps {
   images: string[];
@@ -42,30 +43,30 @@ export function ProductImageGallery({
   const thumbnailHeight = displayImages.length * 80 + (displayImages.length - 1) * 8;
 
   return (
-    <div className="flex gap-3 items-start">
-      <div className="flex flex-col gap-2 w-16">
+    <div className="gallery-container" id="gallery-container">
+      <div className="gallery-thumbnails" id="gallery-thumbnails">
         {displayImages.map((img, idx) => (
           <div
             key={idx}
             onClick={() => setSelectedImageIndex(idx)}
-            className={`w-16 h-20 border-2 rounded cursor-pointer overflow-hidden flex-shrink-0 ${
-              selectedImageIndex === idx ? 'border-blue-500' : 'border-gray-200'
-            }`}
+            className={`gallery-thumbnail ${selectedImageIndex === idx ? 'gallery-thumbnail--selected' : ''}`}
+            id={`gallery-thumbnail-${idx}`}
             data-testid={`thumbnail-${idx}`}
           >
             <img
               src={img}
               alt={`${productName} view ${idx + 1}`}
-              className="w-full h-full object-cover"
+              className="gallery-thumbnail-img"
               onError={handleThumbnailError}
             />
           </div>
         ))}
       </div>
       
-      <div className="flex-1 relative">
+      <div className="gallery-main" id="gallery-main">
         <div
-          className="w-full bg-gray-100 rounded-lg overflow-hidden cursor-none relative"
+          className="gallery-main-image-wrapper"
+          id="gallery-main-image-wrapper"
           style={{ height: `${thumbnailHeight}px` }}
           onMouseEnter={() => setIsZooming(true)}
           onMouseLeave={() => setIsZooming(false)}
@@ -74,9 +75,8 @@ export function ProductImageGallery({
           <img
             src={mainImage}
             alt={productName}
-            className={`w-full h-full object-cover transition-transform duration-200 ${
-              isZooming ? 'scale-150' : 'scale-100'
-            }`}
+            className={`gallery-main-image ${isZooming ? 'gallery-main-image--zooming' : ''}`}
+            id="gallery-main-image"
             style={isZooming ? {
               transformOrigin: `${zoomPosition.x}% ${zoomPosition.y}%`
             } : undefined}
@@ -84,28 +84,28 @@ export function ProductImageGallery({
           />
           {isZooming && (
             <div
-              className="absolute pointer-events-none border-2 border-gray-400 bg-white/20"
+              className="gallery-zoom-indicator"
+              id="gallery-zoom-indicator"
               style={{
-                width: '80px',
-                height: '100px',
                 left: `calc(${zoomPosition.x}% - 40px)`,
                 top: `calc(${zoomPosition.y}% - 50px)`,
               }}
             />
           )}
           {isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-white/50">
-              <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+            <div className="gallery-loading-overlay" id="gallery-loading-overlay">
+              <div className="gallery-loading-spinner" />
             </div>
           )}
         </div>
         
         <button
           onClick={() => setIsFavorite(!isFavorite)}
-          className="absolute top-3 right-3 w-10 h-10 bg-white rounded-full shadow-md flex items-center justify-center hover:bg-gray-50"
+          className="gallery-favorite-btn"
+          id="gallery-favorite-btn"
           data-testid="btn-favorite"
         >
-          <Heart className={`w-5 h-5 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-400'}`} />
+          <Heart className={`gallery-favorite-icon ${isFavorite ? 'gallery-favorite-icon--active' : ''}`} />
         </button>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import "../styles/image-slider.css";
 
 interface ImageSliderProps {
   productId: number;
@@ -13,7 +14,7 @@ export function ImageSlider({
   primaryImageUrl,
   imageCount = 4,
   slideInterval = 1800,
-  aspectRatio = "aspect-[4/3]"
+  aspectRatio = "4-3"
 }: ImageSliderProps) {
   const [isHovering, setIsHovering] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -53,14 +54,16 @@ export function ImageSlider({
 
   return (
     <div 
-      className={`w-full ${aspectRatio} bg-muted overflow-hidden relative`}
+      className={`image-slider image-slider--aspect-${aspectRatio}`}
+      id={`image-slider-${productId}`}
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
     >
       <img
         src={productImages[currentImageIndex]}
         alt="Product"
-        className="w-full h-full object-cover transition-opacity duration-300"
+        className="image-slider-img"
+        id={`image-slider-img-${productId}`}
         onError={(e) => {
           const target = e.target as HTMLImageElement;
           target.onerror = null;
@@ -69,13 +72,11 @@ export function ImageSlider({
       />
       
       {isHovering && (
-        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+        <div className="image-slider-dots" id={`image-slider-dots-${productId}`}>
           {productImages.map((_, idx) => (
             <div
               key={idx}
-              className={`w-1.5 h-1.5 rounded-full transition-colors ${
-                idx === currentImageIndex ? 'bg-white' : 'bg-white/50'
-              }`}
+              className={`image-slider-dot ${idx === currentImageIndex ? 'image-slider-dot--active' : ''}`}
             />
           ))}
         </div>
