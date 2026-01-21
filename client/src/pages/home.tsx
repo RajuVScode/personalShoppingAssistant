@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import ChatWidget from "@/components/ChatWidget";
+import "@/styles/home.css";
 
 export default function HomePage() {
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -41,61 +42,64 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: 'Calibri, sans-serif' }}>
-      <div className="bg-[#1a1a2e] text-white text-center py-2 text-sm" data-testid="promo-banner">
+      {/* Promo Banner */}
+      <div id="promo-banner" data-testid="promo-banner">
         LAST CALL® DESIGNER SALE: UP TO 70% OFF | FREE SHIPPING ON QUALIFYING ORDERS OF $300+
       </div>
-      <header className="bg-white border-b" data-testid="main-header">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center justify-between py-4">
-            <nav className="flex items-center gap-8" data-testid="main-nav">
-              <a href="#" className="text-sm font-medium text-gray-800 hover:text-gray-600" data-testid="nav-women">WOMEN</a>
-              <a href="#" className="text-sm font-medium text-gray-800 hover:text-gray-600" data-testid="nav-men">MEN</a>
-              <a href="#" className="text-sm font-medium text-gray-800 hover:text-gray-600" data-testid="nav-shoes">SHOES</a>
-              <a href="#" className="text-sm font-medium text-gray-800 hover:text-gray-600" data-testid="nav-handbags">HANDBAGS</a>
-              <a href="#" className="text-sm font-medium text-gray-800 hover:text-gray-600" data-testid="nav-beauty">BEAUTY</a>
-              <a href="#" className="text-sm font-medium text-gray-800 hover:text-gray-600" data-testid="nav-home">HOME</a>
+
+      {/* Header */}
+      <header id="main-header" data-testid="main-header">
+        <div className="header-container">
+          <div className="header-content">
+            <nav id="main-nav" data-testid="main-nav">
+              <a href="#" className="nav-link" data-testid="nav-women">WOMEN</a>
+              <a href="#" className="nav-link" data-testid="nav-men">MEN</a>
+              <a href="#" className="nav-link" data-testid="nav-shoes">SHOES</a>
+              <a href="#" className="nav-link" data-testid="nav-handbags">HANDBAGS</a>
+              <a href="#" className="nav-link" data-testid="nav-beauty">BEAUTY</a>
+              <a href="#" className="nav-link" data-testid="nav-home">HOME</a>
             </nav>
 
-            <div className="flex items-center gap-4" data-testid="header-icons">
-              <button className="flex items-center gap-1 text-sm text-gray-700 hover:text-gray-900" data-testid="btn-dashboard">
+            <div id="header-icons" data-testid="header-icons">
+              <button className="header-icon-btn" data-testid="btn-dashboard">
                 <BarChart3 className="w-4 h-4" />
                 <span>DASHBOARD</span>
               </button>
-              <button className="text-gray-700 hover:text-gray-900" data-testid="btn-search">
+              <button className="header-icon-btn" data-testid="btn-search">
                 <Search className="w-5 h-5" />
               </button>
               
               {customerName ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="flex items-center gap-1 text-gray-700 hover:text-gray-900" data-testid="btn-account">
+                    <button className="header-icon-btn" data-testid="btn-account">
                       <User className="w-5 h-5" />
                       <ChevronDown className="w-3 h-3" />
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56 mt-2">
-                    <div className="px-3 py-3 border-b">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-                          <User className="w-5 h-5 text-gray-600" />
+                    <div className="user-dropdown-header">
+                      <div className="user-dropdown-avatar-wrapper">
+                        <div className="user-dropdown-avatar">
+                          <User className="w-5 h-5" />
                         </div>
-                        <span className="font-medium text-gray-800">{customerName}</span>
+                        <span className="user-dropdown-name">{customerName}</span>
                       </div>
                     </div>
-                    <div className="py-1">
-                      <DropdownMenuItem asChild className="cursor-pointer px-3 py-2">
+                    <div className="user-dropdown-menu">
+                      <DropdownMenuItem asChild className="user-dropdown-item cursor-pointer">
                         <a href="/profile" data-testid="menu-edit-profile">
-                          <User className="w-4 h-4 mr-3 text-gray-500" />
+                          <User className="w-4 h-4" />
                           <span>Edit Profile</span>
                         </a>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem 
                         onSelect={handleLogout}
-                        className="cursor-pointer px-3 py-2 text-red-600 focus:text-red-600"
+                        className="user-dropdown-item user-dropdown-item--logout cursor-pointer"
                         data-testid="menu-logout"
                       >
-                        <LogOut className="w-4 h-4 mr-3" />
+                        <LogOut className="w-4 h-4" />
                         <span>Logout</span>
                       </DropdownMenuItem>
                     </div>
@@ -103,7 +107,7 @@ export default function HomePage() {
                 </DropdownMenu>
               ) : (
                 <button 
-                  className="text-gray-700 hover:text-gray-900" 
+                  className="header-icon-btn" 
                   data-testid="btn-account"
                   onClick={() => setIsChatOpen(true)}
                 >
@@ -111,93 +115,102 @@ export default function HomePage() {
                 </button>
               )}
               
-              <button className="text-gray-700 hover:text-gray-900" data-testid="btn-wishlist">
+              <button className="header-icon-btn" data-testid="btn-wishlist">
                 <Heart className="w-5 h-5" />
               </button>
-              <button className="text-gray-700 hover:text-gray-900" data-testid="btn-cart">
+              <button className="header-icon-btn" data-testid="btn-cart">
                 <ShoppingCart className="w-5 h-5" />
               </button>
             </div>
           </div>
         </div>
       </header>
-      <section className="relative" data-testid="hero-section">
-        <div className="bg-gradient-to-r from-gray-300 via-gray-400 to-gray-500 py-32">
-          <div className="absolute inset-0 flex items-start p-4">
-            <span className="text-xs text-gray-600">Last Call Designer Sale</span>
+
+      {/* Hero Section */}
+      <section id="hero-section" data-testid="hero-section">
+        <div className="hero-background">
+          <div className="hero-label">
+            <span className="hero-label-text">Last Call Designer Sale</span>
           </div>
-          <div className="max-w-7xl mx-auto px-4 text-center">
-            <h1 className="text-5xl font-bold text-gray-800 mb-2" data-testid="hero-title">LAST CALL®</h1>
-            <h2 className="text-4xl font-bold text-gray-800 mb-4">DESIGNER SALE</h2>
-            <p className="text-lg text-gray-700 mb-8">Up to 70% off luxury favorites</p>
-            <div className="flex items-center justify-center gap-4">
-              <Button variant="outline" className="bg-white border-gray-800 text-gray-800 hover:bg-gray-100 px-8" data-testid="btn-shop-women">
+          <div className="hero-content">
+            <h1 id="hero-title" data-testid="hero-title">LAST CALL®</h1>
+            <h2 className="hero-subtitle">DESIGNER SALE</h2>
+            <p className="hero-description">Up to 70% off luxury favorites</p>
+            <div className="hero-buttons">
+              <Button variant="outline" className="hero-btn hero-btn--outline" data-testid="btn-shop-women">
                 SHOP WOMEN
               </Button>
-              <Button className="bg-gray-800 text-white hover:bg-gray-700 px-8" data-testid="btn-shop-men">
+              <Button className="hero-btn hero-btn--solid" data-testid="btn-shop-men">
                 SHOP MEN
               </Button>
             </div>
           </div>
         </div>
       </section>
-      <section className="py-16 bg-[#fdf5f5]" data-testid="denim-section">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-start justify-between">
-            <div className="max-w-md">
-              <h3 className="text-3xl font-bold text-gray-900 mb-2" data-testid="denim-title">Denim Dreams</h3>
-              <p className="text-gray-600 mb-6">Shop the latest in premium denim</p>
-              <Button className="bg-[#1a1a2e] text-white hover:bg-[#2a2a4e] px-6" data-testid="btn-shop-denim">
+
+      {/* Denim Section */}
+      <section id="denim-section" data-testid="denim-section">
+        <div className="denim-container">
+          <div className="denim-content">
+            <div className="denim-text">
+              <h3 id="denim-title" data-testid="denim-title">Denim Dreams</h3>
+              <p className="denim-description">Shop the latest in premium denim</p>
+              <Button className="denim-btn" data-testid="btn-shop-denim">
                 SHOP DENIM
               </Button>
             </div>
-            <div className="text-center">
-              <div className="w-48 h-48 bg-gray-200 rounded flex items-center justify-center text-gray-500 text-sm">
-                Denim Collection
-              </div>
+            <div className="denim-image-placeholder">
+              Denim Collection
             </div>
           </div>
         </div>
       </section>
-      <section className="py-16" data-testid="featured-section">
-        <div className="max-w-7xl mx-auto px-4">
-          <h3 className="text-2xl font-bold text-gray-900 mb-8 text-center">Featured Categories</h3>
-          <div className="grid grid-cols-4 gap-6">
+
+      {/* Featured Categories */}
+      <section id="featured-section" data-testid="featured-section">
+        <div className="featured-container">
+          <h3 className="featured-title">Featured Categories</h3>
+          <div className="category-grid">
             {["Dresses", "Handbags", "Shoes", "Accessories"].map((category) => (
-              <div key={category} className="text-center" data-testid={`category-${category.toLowerCase()}`}>
-                <div className="w-full aspect-square bg-gray-100 rounded-lg mb-4 flex items-center justify-center">
-                  <span className="text-gray-500">{category}</span>
+              <div key={category} className="category-card" data-testid={`category-${category.toLowerCase()}`}>
+                <div className="category-image-placeholder">
+                  <span>{category}</span>
                 </div>
-                <h4 className="font-medium text-gray-800">{category}</h4>
-                <p className="text-sm text-gray-500">Shop Now</p>
+                <h4 className="category-name">{category}</h4>
+                <p className="category-cta">Shop Now</p>
               </div>
             ))}
           </div>
         </div>
       </section>
-      <section className="py-16 bg-gray-50" data-testid="brands-section">
-        <div className="max-w-7xl mx-auto px-4">
-          <h3 className="text-2xl font-bold text-gray-900 mb-8 text-center">Shop by Brand</h3>
-          <div className="grid grid-cols-6 gap-4">
+
+      {/* Brands Section */}
+      <section id="brands-section" data-testid="brands-section">
+        <div className="brands-container">
+          <h3 className="brands-title">Shop by Brand</h3>
+          <div className="brands-grid">
             {["Gucci", "Prada", "Versace", "Dior", "Chanel", "Louis Vuitton"].map((brand) => (
-              <div key={brand} className="bg-white p-4 rounded-lg text-center shadow-sm" data-testid={`brand-${brand.toLowerCase().replace(' ', '-')}`}>
-                <span className="text-sm font-medium text-gray-700">{brand}</span>
+              <div key={brand} className="brand-card" data-testid={`brand-${brand.toLowerCase().replace(' ', '-')}`}>
+                <span className="brand-name">{brand}</span>
               </div>
             ))}
           </div>
         </div>
       </section>
+
+      {/* Chat Widget Trigger */}
       <button
+        id="chat-widget-trigger"
         onClick={() => setIsChatOpen(true)}
-        className="fixed bottom-8 right-8 bg-[#1a1a2e] text-white px-6 py-4 rounded-full shadow-lg hover:bg-[#2a2a3e] transition-all duration-300 z-50 flex items-center gap-2 group pl-[12px] pr-[12px] pt-[5px] pb-[5px]"
         data-testid="chat-widget-button"
       >
-        <MessageCircle className="w-5 h-5 mr-2" />
-        <span className="text-[14px] font-thin">Personal Shopping</span>
-        <div className="absolute -top-2 -right-2 bg-[#c9a227] text-white text-xs rounded-full w-6 h-6 flex items-center justify-center animate-pulse">
+        <MessageCircle className="w-5 h-5 chat-trigger-icon" />
+        <span className="chat-trigger-text">Personal Shopping</span>
+        <div className="chat-trigger-badge">
           AI
         </div>
       </button>
+
       <ChatWidget isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
     </div>
   );
