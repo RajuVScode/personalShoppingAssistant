@@ -446,7 +446,7 @@
 
 .chat-bubble--assistant {
   background-color: var(--chat-gray-100);
-  border-radius: 0.3rem;
+  border-radius: 9999px;
   padding-top: 0.3rem;
   padding-bottom: 0.3rem;
 }
