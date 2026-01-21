@@ -421,6 +421,23 @@
   color: white;
 }
 
+.chat-user-avatar {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9999px;
+  background-color: var(--chat-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.chat-user-avatar-icon {
+  width: 1rem;
+  height: 1rem;
+  color: white;
+}
+
 .chat-message-content {
   max-width: 95%;
 }
