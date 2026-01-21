@@ -1461,12 +1461,14 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                 # Handle non-informative follow-ups after recommendations were shown
                 # BUT only when NOT awaiting a confirmation or other explicit follow-up
                 is_non_informative = llm_intent_result.get("is_non_informative_followup", False)
+                # Check for actual pending responses, not just "was asked" flags
+                # _asked_* flags stay True permanently, so we need to check for unresolved states
                 is_awaiting_response = (
                     existing_intent.get("_awaiting_shopping_confirm") or
-                    existing_intent.get("_asked_product_attributes") or
-                    existing_intent.get("_asked_product_category") or
-                    existing_intent.get("_asked_activities") or
-                    existing_intent.get("_asked_optional")
+                    # Product attributes asked but not yet received
+                    (existing_intent.get("_asked_product_attributes") and not existing_intent.get("_product_attributes_received")) or
+                    # Product category asked but not yet received
+                    (existing_intent.get("_asked_product_category") and not existing_intent.get("_product_category_received"))
                 )
                 has_prior_context = (
                     existing_intent.get("_shopping_flow_complete") or
@@ -1474,6 +1476,8 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                     existing_intent.get("destination") or
                     existing_intent.get("travel_date")
                 )
+                
+                print(f"[DEBUG] Non-informative check: is_non_informative={is_non_informative}, has_prior_context={has_prior_context}, is_awaiting_response={is_awaiting_response}, has_conversation_history={bool(conversation_history)}")
                 
                 # Only trigger non-informative handling when NOT awaiting a specific response
                 # This prevents intercepting valid yes/no answers to confirmation questions
