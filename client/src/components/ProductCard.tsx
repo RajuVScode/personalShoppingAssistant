@@ -37,11 +37,11 @@ export function ProductCard({ product, onProductClick, shoppingMode, children }:
 
   return (
     <Card
-      className="product-card"
+      className="overflow-hidden hover:shadow-lg transition-shadow flex flex-col rounded-[6px]"
       data-testid={`card-product-${product.id}`}
     >
       <div 
-        className="product-card__image-container"
+        className="relative cursor-pointer"
         onClick={() => onProductClick(product)}
         data-testid={`product-image-${product.id}`}
       >
@@ -52,42 +52,42 @@ export function ProductCard({ product, onProductClick, shoppingMode, children }:
 
         <button
           onClick={handleWishlistClick}
-          className="product-card__wishlist-btn"
+          className="absolute top-2 right-2 w-7 h-7 bg-white rounded-full shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
           data-testid={`btn-wishlist-${product.id}`}
         >
           <Heart 
-            className={`icon ${isWishlisted ? 'icon--active' : ''}`} 
+            className={`w-4 h-4 ${isWishlisted ? 'fill-red-500 text-red-500' : 'text-gray-400'}`} 
           />
         </button>
 
         <button
           onClick={handleViewSimilarClick}
-          className="product-card__similar-btn"
+          className="absolute bottom-2 right-2 w-8 h-8 bg-white rounded-full shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
           data-testid={`btn-view-similar-${product.id}`}
         >
-          <Copy className="icon" />
+          <Copy className="w-4 h-4 text-gray-500" />
         </button>
 
         {product.rating && (
-          <div className="product-card__rating">
-            <span className="product-card__rating-value">{product.rating}</span>
-            <span className="product-card__rating-star">★</span>
-            <span className="product-card__rating-divider">|</span>
-            <span className="product-card__rating-count">250</span>
+          <div className="absolute bottom-2 left-2 bg-white px-2 py-1 rounded-[4px] shadow-sm flex items-center gap-1">
+            <span className="text-sm font-medium">{product.rating}</span>
+            <span className="text-teal-500 text-sm">★</span>
+            <span className="text-gray-400 text-xs">|</span>
+            <span className="text-xs text-gray-500">250</span>
           </div>
         )}
       </div>
       
-      <div className="product-card__content">
-        <p className="product-card__brand">
+      <div className="p-3 flex flex-col flex-1">
+        <p className="font-semibold text-sm line-clamp-1">
           {product.brand}
         </p>
-        <span className="product-card__name">
+        <span className="text-xs text-muted-foreground mt-1 line-clamp-1">
           {product.name}
         </span>
-        <div className="product-card__price-row">
+        <div className="flex items-center gap-2 mt-2">
           {product.price && (
-            <span className="product-card__price">
+            <span className="font-bold text-sm">
               ${product.price}
             </span>
           )}
