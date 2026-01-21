@@ -439,7 +439,7 @@
   background-color: var(--chat-primary);
   color: white;
   margin-left: auto;
-  border-radius: 0.3rem;
+  border-radius: 9999px;
   padding-top: 0.3rem;
   padding-bottom: 0.3rem;
 }
