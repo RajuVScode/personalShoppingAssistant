@@ -252,6 +252,14 @@ Analyze the user's message semantically and extract:
 5. **No Preference Response**: Is the user declining to specify a preference?
    Detect "no preference", "any", "doesn't matter", "skip", "no" as declining preference questions.
 
+6. **Product Preferences**: If the user mentions size, color, style, quantity, brand, or budget, extract them.
+   - preferred_size: Any size mentioned (S, M, L, XL, 9, 10, UK 9, EU 42, etc.)
+   - preferred_color: Any color mentioned (black, blue, red, etc.)
+   - preferred_style: Any style mentioned (casual, formal, sporty, etc.)
+   - preferred_brand: Any brand mentioned
+   - budget_amount: Any budget mentioned (under $100, around 50, etc.)
+   - quantity: How many items (1, 2, a pair, etc.)
+
 Respond ONLY with a JSON object (no markdown, no explanation):
 {
   "has_shopping_intent": true/false,
@@ -259,7 +267,13 @@ Respond ONLY with a JSON object (no markdown, no explanation):
   "activity_mentioned": "activity" or null,
   "is_affirmative": true/false,
   "is_negative": true/false,
-  "is_no_preference": true/false
+  "is_no_preference": true/false,
+  "preferred_size": "size" or null,
+  "preferred_color": "color" or null,
+  "preferred_style": "style" or null,
+  "preferred_brand": "brand" or null,
+  "budget_amount": "budget" or null,
+  "quantity": "quantity" or null
 }"""
 
     try:
@@ -290,7 +304,13 @@ Respond ONLY with a JSON object (no markdown, no explanation):
             "activity_mentioned": None,
             "is_affirmative": False,
             "is_negative": False,
-            "is_no_preference": False
+            "is_no_preference": False,
+            "preferred_size": None,
+            "preferred_color": None,
+            "preferred_style": None,
+            "preferred_brand": None,
+            "budget_amount": None,
+            "quantity": None
         }
 
 
@@ -317,7 +337,13 @@ def validate_llm_intent_result(result: dict) -> dict:
             "activity_mentioned": None,
             "is_affirmative": False,
             "is_negative": False,
-            "is_no_preference": False
+            "is_no_preference": False,
+            "preferred_size": None,
+            "preferred_color": None,
+            "preferred_style": None,
+            "preferred_brand": None,
+            "budget_amount": None,
+            "quantity": None
         }
     
     return {
@@ -326,7 +352,13 @@ def validate_llm_intent_result(result: dict) -> dict:
         "activity_mentioned": result.get("activity_mentioned") if isinstance(result.get("activity_mentioned"), str) else None,
         "is_affirmative": bool(result.get("is_affirmative", False)),
         "is_negative": bool(result.get("is_negative", False)),
-        "is_no_preference": bool(result.get("is_no_preference", False))
+        "is_no_preference": bool(result.get("is_no_preference", False)),
+        "preferred_size": result.get("preferred_size") if isinstance(result.get("preferred_size"), str) else None,
+        "preferred_color": result.get("preferred_color") if isinstance(result.get("preferred_color"), str) else None,
+        "preferred_style": result.get("preferred_style") if isinstance(result.get("preferred_style"), str) else None,
+        "preferred_brand": result.get("preferred_brand") if isinstance(result.get("preferred_brand"), str) else None,
+        "budget_amount": result.get("budget_amount") if isinstance(result.get("budget_amount"), str) else None,
+        "quantity": result.get("quantity") if isinstance(result.get("quantity"), str) else None
     }
 
 
@@ -440,6 +472,14 @@ Tailor your question dynamically to be relevant to the activities they mentioned
 Do NOT list products or provide examples. Just ask what they need for their activities.
 Return ONLY the question.""",
 
+                "product_attributes": f"""Generate a SHORT, friendly question (max 25 words) asking about the user's preferences for the product they mentioned.
+The user mentioned product: {extra.get('product', 'item')}
+Context: {context_str}
+User said: "{query}"
+Ask about key attributes such as size, color, style, quantity, or budget range for this product.
+Do NOT list options or give examples. Just ask what preferences they have.
+Return ONLY the question.""",
+
                 "invalid_date": f"""Generate a SHORT, friendly response (max 25 words) explaining that the date provided doesn't exist on the calendar and asking for a valid date.
 Context: {context_str}
 Reason the date is invalid: {extra.get('reason', 'The date does not exist on the calendar')}
@@ -475,6 +515,70 @@ Return ONLY the response asking for a valid date."""
             return result
         destination = intent.get("destination") or ""
         return self._generate_dynamic_question("product", query, intent) or ""
+    
+    def _should_ask_product_attributes(self, merged_intent: dict, existing_intent: dict) -> bool:
+        """
+        Centralized check to determine if product attribute questions should be asked.
+        Returns True if product attributes have not been asked and user hasn't provided preferences or declined.
+        """
+        already_asked = (
+            existing_intent.get("_asked_product_attributes", False) or 
+            merged_intent.get("_asked_product_attributes", False)
+        )
+        
+        # Check if user explicitly declined/skipped product preferences
+        declined_preferences = (
+            existing_intent.get("_declined_product_preferences", False) or
+            merged_intent.get("_declined_product_preferences", False)
+        )
+        
+        # Check if user has any product preferences already (from either intent source)
+        # Includes all relevant fields: size, color, style, brand, budget, quantity
+        has_preferences = (
+            merged_intent.get("preferred_size") or 
+            merged_intent.get("preferred_brand") or 
+            merged_intent.get("budget_amount") or
+            merged_intent.get("preferred_color") or
+            merged_intent.get("preferred_style") or
+            merged_intent.get("quantity") or
+            existing_intent.get("preferred_size") or
+            existing_intent.get("preferred_brand") or
+            existing_intent.get("budget_amount") or
+            existing_intent.get("preferred_color") or
+            existing_intent.get("preferred_style") or
+            existing_intent.get("quantity")
+        )
+        
+        return not already_asked and not has_preferences and not declined_preferences
+    
+    def _ask_product_attributes(self, query: str, product: str, merged_intent: dict, 
+                                 existing_intent: dict, change_acknowledgment: str, 
+                                 detected_changes: list) -> dict:
+        """
+        Centralized method to generate product attribute questions.
+        Returns clarification response dict, or None if question couldn't be generated.
+        """
+        if not self._should_ask_product_attributes(merged_intent, existing_intent):
+            return None
+        
+        merged_intent["_asked_product_attributes"] = True
+        product_attr_question = self._generate_dynamic_question(
+            "product_attributes", query, merged_intent,
+            {"product": product}
+        )
+        
+        if product_attr_question:
+            print(f"[DEBUG] Asking about product attributes for: {product}")
+            return {
+                "needs_clarification": True,
+                "clarification_question": product_attr_question,
+                "assistant_message": change_acknowledgment + product_attr_question if change_acknowledgment else product_attr_question,
+                "updated_intent": merged_intent,
+                "clarified_query": query,
+                "ready_for_recommendations": False,
+                "detected_changes": detected_changes
+            }
+        return None
 
     def _detect_invalid_date_response(self, message: str) -> bool:
         """
@@ -1183,13 +1287,125 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             already_asked_product_category = existing_intent.get(
                 "_asked_product_category", False)
 
-            if already_asked_product_category and not existing_intent.get(
+            # Check if we're waiting for product attribute response
+            already_asked_product_attributes = existing_intent.get("_asked_product_attributes", False)
+            if already_asked_product_attributes and not existing_intent.get("_product_attributes_received", False):
+                # User is responding to product attribute question
+                merged_intent["_product_attributes_received"] = True
+                
+                # Use LLM to detect preferences or decline response
+                llm_attr_result = detect_intent_with_llm(query, self.llm)
+                is_no_preference = llm_attr_result.get("is_no_preference", False) if llm_attr_result else False
+                is_negative = llm_attr_result.get("is_negative", False) if llm_attr_result else False
+                
+                if is_no_preference or is_negative:
+                    # User declined to provide preferences - mark as declined and complete
+                    merged_intent["_declined_product_preferences"] = True
+                    merged_intent["_shopping_flow_complete"] = True
+                    print(f"[DEBUG] User declined product preferences")
+                else:
+                    # User may have provided preferences - capture all fields from LLM detection
+                    captured_any_preference = False
+                    if llm_attr_result:
+                        if llm_attr_result.get("preferred_size"):
+                            merged_intent["preferred_size"] = llm_attr_result.get("preferred_size")
+                            captured_any_preference = True
+                        if llm_attr_result.get("preferred_color"):
+                            merged_intent["preferred_color"] = llm_attr_result.get("preferred_color")
+                            captured_any_preference = True
+                        if llm_attr_result.get("preferred_style"):
+                            merged_intent["preferred_style"] = llm_attr_result.get("preferred_style")
+                            captured_any_preference = True
+                        if llm_attr_result.get("preferred_brand"):
+                            merged_intent["preferred_brand"] = llm_attr_result.get("preferred_brand")
+                            captured_any_preference = True
+                        if llm_attr_result.get("budget_amount"):
+                            merged_intent["budget_amount"] = llm_attr_result.get("budget_amount")
+                            captured_any_preference = True
+                        if llm_attr_result.get("quantity"):
+                            merged_intent["quantity"] = llm_attr_result.get("quantity")
+                            captured_any_preference = True
+                    
+                    if captured_any_preference:
+                        # Successfully captured preferences - complete flow
+                        current_notes = merged_intent.get("notes") or ""
+                        merged_intent["notes"] = f"{current_notes}; Preferences: {query}" if current_notes else f"Preferences: {query}"
+                        merged_intent["_shopping_flow_complete"] = True
+                        print(f"[DEBUG] Captured product preferences: {llm_attr_result}")
+                    else:
+                        # No structured preferences extracted - ask for clarification
+                        merged_intent["_product_attributes_received"] = False  # Reset to allow re-asking
+                        clarification = self._generate_dynamic_question("product_attributes", query, merged_intent, {"product": merged_intent.get("notes", "your product")})
+                        if clarification:
+                            print(f"[DEBUG] No preferences captured, asking for clarification")
+                            return {
+                                "needs_clarification": True,
+                                "clarification_question": clarification,
+                                "assistant_message": clarification,
+                                "updated_intent": merged_intent,
+                                "clarified_query": query,
+                                "ready_for_recommendations": False,
+                                "detected_changes": detected_changes
+                            }
+                        else:
+                            # Can't generate clarification - treat as implicit "no preference"
+                            merged_intent["_declined_product_preferences"] = True
+                            merged_intent["_shopping_flow_complete"] = True
+                            print(f"[DEBUG] No preferences captured, treating as implicit skip")
+                # Continue to recommendations
+                direct_shopping_intent = False
+                direct_non_shopping_activity = None
+                llm_intent_result = llm_attr_result
+            elif already_asked_product_category and not existing_intent.get(
                     "_product_category_received", False):
-                # User is answering what products they want - capture and proceed
+                # User is answering what products they want - use LLM to detect product from response
                 merged_intent["_product_category_received"] = True
+                
+                # Use LLM to detect product mentioned in response
+                llm_product_result = detect_intent_with_llm(query, self.llm)
+                detected_product = llm_product_result.get("product_mentioned") if llm_product_result else None
+                
+                # If no product detected, ask for clarification - do not use raw query as product
+                if not detected_product:
+                    product_question = self._generate_dynamic_question("product", query, merged_intent)
+                    if not product_question:
+                        product_question = self._generate_dynamic_question("product", query, merged_intent)
+                    if product_question:
+                        return {
+                            "needs_clarification": True,
+                            "clarification_question": product_question,
+                            "assistant_message": change_acknowledgment + product_question if change_acknowledgment else product_question,
+                            "updated_intent": merged_intent,
+                            "clarified_query": query,
+                            "ready_for_recommendations": False,
+                            "detected_changes": detected_changes
+                        }
+                    else:
+                        # Still can't generate question - keep in clarification state
+                        return {
+                            "needs_clarification": True,
+                            "clarification_question": "What specific products are you looking for?",
+                            "assistant_message": "What specific products are you looking for?",
+                            "updated_intent": merged_intent,
+                            "clarified_query": query,
+                            "ready_for_recommendations": False,
+                            "detected_changes": detected_changes
+                        }
+                
+                product_name = detected_product
+                merged_intent["notes"] = product_name if not merged_intent.get(
+                    "notes") else f"{merged_intent.get('notes')}; {product_name}"
+                
+                # Ask about product attributes - do NOT set _shopping_flow_complete yet
+                attr_response = self._ask_product_attributes(
+                    query, product_name, merged_intent, existing_intent, 
+                    change_acknowledgment, detected_changes
+                )
+                if attr_response:
+                    return attr_response
+                
+                # Attributes already asked or have preferences - complete flow
                 merged_intent["_shopping_flow_complete"] = True
-                merged_intent["notes"] = query if not merged_intent.get(
-                    "notes") else f"{merged_intent.get('notes')}; {query}"
                 # Skip shopping/activity detection for this response
                 direct_shopping_intent = False
                 direct_non_shopping_activity = None
@@ -1259,18 +1475,30 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                     merged_intent["_awaiting_shopping_confirm"] = False
                     merged_intent["_confirmed_shopping"] = True
                     
-                    # If user mentioned a product (e.g., "yes, like to buy shoes"), capture it and proceed
+                    # If user mentioned a product (e.g., "yes, like to buy shoes"), capture it
                     if product_in_confirmation:
                         merged_intent["_asked_product_category"] = True
                         merged_intent["_product_category_received"] = True
-                        merged_intent["_shopping_flow_complete"] = True
                         merged_intent["notes"] = product_in_confirmation if not merged_intent.get(
                             "notes") else f"{merged_intent.get('notes')}; {product_in_confirmation}"
+                        
+                        # Ask about product attributes before completing flow
+                        attr_response = self._ask_product_attributes(
+                            query, product_in_confirmation, merged_intent, existing_intent, 
+                            change_acknowledgment, detected_changes
+                        )
+                        if attr_response:
+                            return attr_response
+                        
+                        # Attributes asked or have preferences - complete flow
+                        merged_intent["_shopping_flow_complete"] = True
                         # Proceed to recommendations with the product
                         activity_name = existing_intent.get("_pending_activity", "your trip")
                         proceed_message = self._generate_dynamic_question("proceed_message", query, merged_intent, {"product": product_in_confirmation, "activity": activity_name})
                         if not proceed_message:
-                            proceed_message = f"Great! I'll find {product_in_confirmation} recommendations for {activity_name}."
+                            proceed_message = self._generate_dynamic_question("proceed_message", query, merged_intent)
+                        if not proceed_message:
+                            proceed_message = "Let me find recommendations for you."
                         return {
                             "needs_clarification": False,
                             "clarification_question": None,
@@ -1334,11 +1562,21 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                 merged_intent["_asked_product_category"] = True
                 merged_intent["_asked_activities"] = True
                 
-                # If user already mentioned a product, don't ask - mark complete and continue
+                # If user already mentioned a product, capture it but ask about attributes first
                 if product_mention:
-                    merged_intent["_shopping_flow_complete"] = True
                     merged_intent["notes"] = f"Looking for {product_mention}" if not merged_intent.get("notes") else f"{merged_intent.get('notes')}; Looking for {product_mention}"
-                    print(f"[DEBUG] Product already mentioned: {product_mention} - skipping product question")
+                    print(f"[DEBUG] Product mentioned: {product_mention}")
+                    
+                    # Use centralized method to ask about product attributes
+                    attr_response = self._ask_product_attributes(
+                        query, product_mention, merged_intent, existing_intent, 
+                        change_acknowledgment, detected_changes
+                    )
+                    if attr_response:
+                        return attr_response
+                    
+                    # Attributes asked or already have preferences - complete shopping flow
+                    merged_intent["_shopping_flow_complete"] = True
                     # Don't return - let the flow continue to ask destination/date if needed
                 else:
                     # No product mentioned, ask what they want (use LLM to generate dynamic question)
@@ -1393,12 +1631,23 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             # NOTE: product_mention already detected earlier (before shopping intent handling)
             # If product was mentioned but we didn't go through shopping flow, set it up now
             if product_mention and not merged_intent.get("_shopping_flow_complete"):
-                # User mentioned a specific product - treat as shopping intent
+                # User mentioned a specific product - capture it in notes
                 direct_shopping_intent = True
-                merged_intent["_shopping_flow_complete"] = True
                 if not merged_intent.get("notes") or product_mention not in str(merged_intent.get("notes", "")):
                     merged_intent["notes"] = f"Looking for {product_mention}" if not merged_intent.get("notes") else f"{merged_intent.get('notes')}; Looking for {product_mention}"
-                print(f"[DEBUG] Late product mention detection: {product_mention} - treating as shopping intent")
+                print(f"[DEBUG] Late product mention detection: {product_mention}")
+                
+                # Use centralized method to ask about product attributes
+                attr_response = self._ask_product_attributes(
+                    query, product_mention, merged_intent, existing_intent, 
+                    change_acknowledgment, detected_changes
+                )
+                if attr_response:
+                    return attr_response
+                
+                # Product attributes asked or skipped - now complete shopping flow
+                merged_intent["_shopping_flow_complete"] = True
+                print(f"[DEBUG] Shopping flow complete for: {product_mention}")
             
             if not direct_shopping_intent and not direct_non_shopping_activity:
                 if not existing_intent.get("_asked_ambiguous_intent", False):
