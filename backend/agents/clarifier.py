@@ -211,7 +211,7 @@ CRITICAL:
 
 # NOTE: Hardcoded activity lists removed - now handled by LLM semantic detection
 
-def detect_intent_with_llm(query: str, llm) -> dict:
+def detect_intent_with_llm(query: str, llm, conversation_history: list = None) -> dict:
     """
     Use LLM to detect shopping intent, product mentions, and activities from user query.
     
@@ -221,6 +221,7 @@ def detect_intent_with_llm(query: str, llm) -> dict:
     Args:
         query: The user's message text
         llm: The LangChain LLM instance to use for detection
+        conversation_history: Optional list of previous messages for context analysis
         
     Returns:
         Dictionary containing:
@@ -229,10 +230,17 @@ def detect_intent_with_llm(query: str, llm) -> dict:
         - activity_mentioned: str|None - any activity mentioned (e.g., "hiking", "swimming")
         - is_affirmative: bool - whether this is a yes/confirmation response
         - is_negative: bool - whether this is a no/decline response
+        - is_non_informative_followup: bool - whether this is a greeting/acknowledgment after prior conversation
     """
     from langchain_core.messages import HumanMessage, SystemMessage
     
-    detection_prompt = """You are an intent detection system for a shopping assistant.
+    # Build conversation context for the LLM to analyze
+    conv_context = ""
+    if conversation_history and len(conversation_history) > 0:
+        recent = conversation_history[-5:] if len(conversation_history) > 5 else conversation_history
+        conv_context = "\n".join([f"- {msg.get('role', 'user')}: {msg.get('content', '')[:150]}" for msg in recent])
+    
+    detection_prompt = f"""You are an intent detection system for a shopping assistant.
 Analyze the user's message semantically and extract:
 
 1. **Shopping Intent**: Does the user express desire to buy, purchase, or acquire any product?
@@ -260,8 +268,21 @@ Analyze the user's message semantically and extract:
    - budget_amount: Any budget mentioned (under $100, around 50, etc.)
    - quantity: How many items (1, 2, a pair, etc.)
 
+7. **Non-Informative Follow-up Detection**: Analyze if this message is a non-informative follow-up.
+   Look at the conversation history below. If the assistant has previously provided recommendations, 
+   product information, or detailed responses, and the current user message is:
+   - A greeting (Hi, Hello, Hey)
+   - A simple acknowledgment (Yes, Okay, Thanks, Sure, Got it)
+   - A vague re-engagement (Show me, I want something, What do you have)
+   - Any message that adds NO new travel/product/preference information
+   Then set is_non_informative_followup to true.
+   This helps detect when users re-engage after recommendations without providing new context.
+
+Recent conversation history:
+{conv_context if conv_context else "No prior conversation - this is the first message"}
+
 Respond ONLY with a JSON object (no markdown, no explanation):
-{
+{{
   "has_shopping_intent": true/false,
   "product_mentioned": "product_type" or null,
   "activity_mentioned": "activity" or null,
@@ -273,8 +294,9 @@ Respond ONLY with a JSON object (no markdown, no explanation):
   "preferred_style": "style" or null,
   "preferred_brand": "brand" or null,
   "budget_amount": "budget" or null,
-  "quantity": "quantity" or null
-}"""
+  "quantity": "quantity" or null,
+  "is_non_informative_followup": true/false
+}}"""
 
     try:
         messages = [
@@ -310,7 +332,8 @@ Respond ONLY with a JSON object (no markdown, no explanation):
             "preferred_style": None,
             "preferred_brand": None,
             "budget_amount": None,
-            "quantity": None
+            "quantity": None,
+            "is_non_informative_followup": False
         }
 
 
@@ -343,7 +366,8 @@ def validate_llm_intent_result(result: dict) -> dict:
             "preferred_style": None,
             "preferred_brand": None,
             "budget_amount": None,
-            "quantity": None
+            "quantity": None,
+            "is_non_informative_followup": False
         }
     
     return {
@@ -358,7 +382,8 @@ def validate_llm_intent_result(result: dict) -> dict:
         "preferred_style": result.get("preferred_style") if isinstance(result.get("preferred_style"), str) else None,
         "preferred_brand": result.get("preferred_brand") if isinstance(result.get("preferred_brand"), str) else None,
         "budget_amount": result.get("budget_amount") if isinstance(result.get("budget_amount"), str) else None,
-        "quantity": result.get("quantity") if isinstance(result.get("quantity"), str) else None
+        "quantity": result.get("quantity") if isinstance(result.get("quantity"), str) else None,
+        "is_non_informative_followup": bool(result.get("is_non_informative_followup", False))
     }
 
 
@@ -485,7 +510,25 @@ Context: {context_str}
 Reason the date is invalid: {extra.get('reason', 'The date does not exist on the calendar')}
 User said: "{query}"
 Be helpful and explain why the date is invalid (e.g., February only has 28 or 29 days).
-Return ONLY the response asking for a valid date."""
+Return ONLY the response asking for a valid date.""",
+
+                "post_recommendation_followup": f"""Generate a SHORT, friendly follow-up question (max 30 words) for a user who has re-engaged after receiving product recommendations.
+The user previously received recommendations based on the context below.
+Now they sent a non-informative message (greeting, acknowledgment, or vague statement).
+Instead of repeating recommendations, ask if their context has changed or if they want to proceed.
+
+Current context: {context_str}
+Previously discussed products: {extra.get('products', 'products')}
+User said: "{query}"
+
+Generate a contextual question that:
+- Asks if there are any changes to their travel plans, preferences, or requirements
+- Offers to proceed with previously shown recommendations if no changes
+- Mentions proceeding to purchase if they're ready
+- Is warm and helpful, not robotic
+
+Do NOT repeat product recommendations. Just ask about context changes or next steps.
+Return ONLY the question."""
             }
             
             prompt = prompts.get(question_type)
@@ -1412,7 +1455,49 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                 llm_intent_result = None
             else:
                 # Use LLM-based intent detection (fully dynamic, no keyword fallback)
-                llm_intent_result = detect_intent_with_llm(query, self.llm)
+                # Pass conversation history for context-aware detection
+                llm_intent_result = detect_intent_with_llm(query, self.llm, conversation_history)
+                
+                # Handle non-informative follow-ups after recommendations were shown
+                # BUT only when NOT awaiting a confirmation or other explicit follow-up
+                is_non_informative = llm_intent_result.get("is_non_informative_followup", False)
+                is_awaiting_response = (
+                    existing_intent.get("_awaiting_shopping_confirm") or
+                    existing_intent.get("_asked_product_attributes") or
+                    existing_intent.get("_asked_product_category") or
+                    existing_intent.get("_asked_activities") or
+                    existing_intent.get("_asked_optional")
+                )
+                has_prior_context = (
+                    existing_intent.get("_shopping_flow_complete") or
+                    existing_intent.get("notes") or
+                    existing_intent.get("destination") or
+                    existing_intent.get("travel_date")
+                )
+                
+                # Only trigger non-informative handling when NOT awaiting a specific response
+                # This prevents intercepting valid yes/no answers to confirmation questions
+                if is_non_informative and has_prior_context and conversation_history and not is_awaiting_response:
+                    # User sent a non-informative message after prior recommendations/context
+                    # Generate a dynamic follow-up question instead of repeating
+                    products_discussed = existing_intent.get("notes", "products")
+                    followup_question = self._generate_dynamic_question(
+                        "post_recommendation_followup", 
+                        query, 
+                        merged_intent,
+                        {"products": products_discussed}
+                    )
+                    if followup_question:
+                        print(f"[DEBUG] Non-informative follow-up detected, asking about context changes")
+                        return {
+                            "needs_clarification": True,
+                            "clarification_question": followup_question,
+                            "assistant_message": followup_question,
+                            "updated_intent": merged_intent,
+                            "clarified_query": query,
+                            "ready_for_recommendations": False,
+                            "detected_changes": detected_changes
+                        }
                 
                 # Extract LLM results - pure LLM-driven detection
                 direct_shopping_intent = llm_intent_result.get("has_shopping_intent", False)
