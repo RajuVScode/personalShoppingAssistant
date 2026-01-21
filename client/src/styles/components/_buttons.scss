@@ -1,0 +1,174 @@
+// ===========================================
+// BUTTONS
+// Button variations and styles
+// ===========================================
+
+@use '../variables' as *;
+@use '../mixins' as *;
+
+.btn {
+  @include button-base;
+  @include focus-ring;
+  gap: $spacing-2;
+  
+  .icon {
+    width: 18px;
+    height: 18px;
+  }
+  
+  // Sizes
+  &--sm {
+    height: 32px;
+    padding: 0 $spacing-3;
+    font-size: $font-size-sm;
+    border-radius: $radius-md;
+    
+    .icon {
+      width: 14px;
+      height: 14px;
+    }
+  }
+  
+  &--md {
+    height: 40px;
+    padding: 0 $spacing-4;
+    font-size: $font-size-sm;
+    border-radius: $radius-lg;
+  }
+  
+  &--lg {
+    height: 48px;
+    padding: 0 $spacing-6;
+    font-size: $font-size-base;
+    border-radius: $radius-lg;
+    
+    .icon {
+      width: 20px;
+      height: 20px;
+    }
+  }
+  
+  // Variants
+  &--primary {
+    @include button-primary;
+  }
+  
+  &--secondary {
+    @include button-secondary;
+  }
+  
+  &--ghost {
+    @include button-ghost;
+  }
+  
+  &--outline {
+    @include button-base;
+    background-color: transparent;
+    border: 1px solid $color-border;
+    
+    &:hover:not(:disabled) {
+      background-color: $color-bg-light;
+    }
+  }
+  
+  &--danger {
+    @include button-base;
+    background-color: $color-destructive;
+    color: $color-bg-white;
+    
+    &:hover:not(:disabled) {
+      background-color: darken($color-destructive, 10%);
+    }
+  }
+  
+  // Icon only
+  &--icon-only {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border-radius: $radius-lg;
+    
+    &.btn--sm {
+      width: 32px;
+      height: 32px;
+    }
+    
+    &.btn--lg {
+      width: 48px;
+      height: 48px;
+    }
+  }
+  
+  &--icon-circle {
+    border-radius: $radius-full;
+  }
+  
+  // Full width
+  &--full {
+    width: 100%;
+  }
+  
+  // Loading state
+  &--loading {
+    position: relative;
+    color: transparent;
+    pointer-events: none;
+    
+    &::after {
+      content: '';
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      border: 2px solid transparent;
+      border-top-color: currentColor;
+      border-radius: $radius-full;
+      animation: btnSpinner 0.8s linear infinite;
+    }
+  }
+  
+  @keyframes btnSpinner {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+}
+
+// Icon button (for simpler icon-only buttons)
+.icon-btn {
+  @include button-ghost;
+  @include focus-ring;
+  width: 36px;
+  height: 36px;
+  border-radius: $radius-full;
+  padding: 0;
+  
+  .icon {
+    width: 20px;
+    height: 20px;
+    color: $color-text-secondary;
+  }
+  
+  &:hover .icon {
+    color: $color-text-primary;
+  }
+  
+  &--sm {
+    width: 28px;
+    height: 28px;
+    
+    .icon {
+      width: 16px;
+      height: 16px;
+    }
+  }
+  
+  &--lg {
+    width: 44px;
+    height: 44px;
+    
+    .icon {
+      width: 24px;
+      height: 24px;
+    }
+  }
+}

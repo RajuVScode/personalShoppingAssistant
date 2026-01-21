@@ -1,0 +1,95 @@
+// ===========================================
+// VARIABLES
+// Design tokens for the shopping assistant
+// ===========================================
+
+// Colors
+$color-primary: hsl(262, 83%, 58%);
+$color-primary-light: hsl(262, 83%, 95%);
+$color-primary-dark: hsl(262, 83%, 35%);
+
+$color-accent: hsl(262, 83%, 95%);
+$color-destructive: hsl(0, 84%, 60%);
+
+$color-text-primary: hsl(224, 71%, 4%);
+$color-text-secondary: hsl(220, 9%, 46%);
+$color-text-muted: hsl(220, 9%, 60%);
+
+$color-bg-white: #ffffff;
+$color-bg-light: hsl(220, 14%, 96%);
+$color-bg-gray: hsl(220, 13%, 91%);
+
+$color-border: hsl(220, 13%, 91%);
+$color-border-light: hsl(220, 13%, 95%);
+
+$color-success: hsl(142, 76%, 36%);
+$color-warning: hsl(45, 93%, 47%);
+$color-error: hsl(0, 84%, 60%);
+$color-info: hsl(199, 89%, 48%);
+
+$color-amber: hsl(38, 92%, 50%);
+$color-teal: hsl(168, 76%, 42%);
+
+// Typography
+$font-family-base: 'Calibri', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+$font-family-mono: 'Consolas', 'Courier New', monospace;
+
+$font-size-xs: 0.75rem;    // 12px
+$font-size-sm: 0.875rem;   // 14px
+$font-size-base: 1rem;     // 16px
+$font-size-lg: 1.125rem;   // 18px
+$font-size-xl: 1.25rem;    // 20px
+$font-size-2xl: 1.5rem;    // 24px
+$font-size-3xl: 1.875rem;  // 30px
+
+$font-weight-normal: 400;
+$font-weight-medium: 500;
+$font-weight-semibold: 600;
+$font-weight-bold: 700;
+
+$line-height-tight: 1.25;
+$line-height-normal: 1.5;
+$line-height-relaxed: 1.75;
+
+// Spacing
+$spacing-1: 0.25rem;   // 4px
+$spacing-2: 0.5rem;    // 8px
+$spacing-3: 0.75rem;   // 12px
+$spacing-4: 1rem;      // 16px
+$spacing-5: 1.25rem;   // 20px
+$spacing-6: 1.5rem;    // 24px
+$spacing-8: 2rem;      // 32px
+$spacing-10: 2.5rem;   // 40px
+$spacing-12: 3rem;     // 48px
+
+// Border radius
+$radius-sm: 0.25rem;   // 4px
+$radius-md: 0.375rem;  // 6px
+$radius-lg: 0.5rem;    // 8px
+$radius-xl: 0.75rem;   // 12px
+$radius-2xl: 1rem;     // 16px
+$radius-full: 9999px;
+
+// Shadows
+$shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+$shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+$shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+$shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+
+// Transitions
+$transition-fast: 150ms ease;
+$transition-normal: 300ms ease;
+$transition-slow: 500ms ease;
+
+// Z-index layers
+$z-index-dropdown: 100;
+$z-index-modal-backdrop: 200;
+$z-index-modal: 300;
+$z-index-tooltip: 400;
+$z-index-notification: 500;
+
+// Breakpoints
+$breakpoint-sm: 640px;
+$breakpoint-md: 768px;
+$breakpoint-lg: 1024px;
+$breakpoint-xl: 1280px;

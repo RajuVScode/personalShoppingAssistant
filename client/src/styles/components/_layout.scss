@@ -1,0 +1,252 @@
+// ===========================================
+// LAYOUT
+// Page layout, containers, and structure
+// ===========================================
+
+@use '../variables' as *;
+@use '../mixins' as *;
+
+// Main app container
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: $color-bg-light;
+}
+
+// Header
+.header {
+  position: sticky;
+  top: 0;
+  z-index: $z-index-dropdown;
+  background-color: $color-bg-white;
+  border-bottom: 1px solid $color-border-light;
+  
+  &__container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: $spacing-4;
+    @include flex-between;
+    
+    @include mobile {
+      padding: $spacing-3;
+    }
+  }
+  
+  &__logo {
+    display: flex;
+    align-items: center;
+    gap: $spacing-2;
+    
+    &-image {
+      height: 32px;
+    }
+    
+    &-text {
+      font-size: $font-size-lg;
+      font-weight: $font-weight-bold;
+    }
+  }
+  
+  &__nav {
+    display: flex;
+    align-items: center;
+    gap: $spacing-4;
+    
+    @include mobile {
+      display: none;
+    }
+  }
+  
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: $spacing-2;
+  }
+}
+
+// Footer
+.footer {
+  margin-top: auto;
+  background-color: $color-bg-white;
+  border-top: 1px solid $color-border-light;
+  padding: $spacing-6 0;
+  
+  &__container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 $spacing-4;
+  }
+  
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: $spacing-8;
+    
+    @include tablet {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    
+    @include mobile {
+      grid-template-columns: 1fr;
+      gap: $spacing-6;
+    }
+  }
+  
+  &__section-title {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    margin-bottom: $spacing-4;
+    color: $color-text-primary;
+  }
+  
+  &__links {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-2;
+  }
+  
+  &__link {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+    text-decoration: none;
+    
+    &:hover {
+      color: $color-primary;
+    }
+  }
+  
+  &__copyright {
+    margin-top: $spacing-6;
+    padding-top: $spacing-6;
+    border-top: 1px solid $color-border-light;
+    text-align: center;
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+  }
+}
+
+// Main content area
+.main {
+  flex: 1;
+  
+  &__container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: $spacing-6 $spacing-4;
+    
+    @include mobile {
+      padding: $spacing-4;
+    }
+  }
+}
+
+// Page sections
+.section {
+  margin-bottom: $spacing-8;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+  
+  &__header {
+    @include flex-between;
+    margin-bottom: $spacing-4;
+  }
+  
+  &__title {
+    font-size: $font-size-xl;
+    font-weight: $font-weight-bold;
+  }
+  
+  &__subtitle {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+    margin-top: $spacing-1;
+  }
+}
+
+// Grid layouts
+.grid {
+  display: grid;
+  gap: $spacing-4;
+  
+  &--cols-2 {
+    grid-template-columns: repeat(2, 1fr);
+    
+    @include mobile {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  &--cols-3 {
+    grid-template-columns: repeat(3, 1fr);
+    
+    @include tablet {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    
+    @include mobile {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  &--cols-4 {
+    grid-template-columns: repeat(4, 1fr);
+    
+    @include tablet {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    
+    @include mobile {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+
+// Flex utilities
+.flex {
+  display: flex;
+  
+  &--center {
+    align-items: center;
+    justify-content: center;
+  }
+  
+  &--between {
+    justify-content: space-between;
+  }
+  
+  &--column {
+    flex-direction: column;
+  }
+  
+  &--wrap {
+    flex-wrap: wrap;
+  }
+  
+  &--gap-1 { gap: $spacing-1; }
+  &--gap-2 { gap: $spacing-2; }
+  &--gap-3 { gap: $spacing-3; }
+  &--gap-4 { gap: $spacing-4; }
+}
+
+// Container
+.container {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 $spacing-4;
+  
+  @include mobile {
+    padding: 0 $spacing-3;
+  }
+  
+  &--narrow {
+    max-width: 800px;
+  }
+  
+  &--wide {
+    max-width: 1440px;
+  }
+}

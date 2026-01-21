@@ -1,0 +1,254 @@
+// ===========================================
+// CART
+// Shopping cart modal and item components
+// ===========================================
+
+@use '../variables' as *;
+@use '../mixins' as *;
+
+.cart-modal {
+  position: fixed;
+  inset: 0;
+  z-index: $z-index-modal;
+  
+  &__backdrop {
+    @include modal-backdrop;
+    transition: opacity $transition-normal;
+    
+    &--entering {
+      opacity: 0;
+    }
+    
+    &--entered {
+      opacity: 1;
+    }
+  }
+  
+  &__panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    max-width: 400px;
+    background-color: $color-bg-white;
+    box-shadow: $shadow-xl;
+    z-index: $z-index-modal;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform $transition-normal;
+    
+    &--open {
+      transform: translateX(0);
+    }
+    
+    @include mobile {
+      max-width: 100%;
+    }
+  }
+}
+
+.cart-header {
+  @include flex-between;
+  padding: $spacing-4;
+  border-bottom: 1px solid $color-border-light;
+  
+  &__title {
+    font-size: $font-size-lg;
+    font-weight: $font-weight-semibold;
+  }
+  
+  &__close-btn {
+    @include button-ghost;
+    width: 32px;
+    height: 32px;
+    border-radius: $radius-full;
+    padding: 0;
+    
+    .icon {
+      width: 20px;
+      height: 20px;
+    }
+  }
+}
+
+.cart-items {
+  flex: 1;
+  overflow-y: auto;
+  @include custom-scrollbar;
+}
+
+.cart-item {
+  padding: $spacing-4;
+  transition: background-color $transition-fast;
+  
+  &:hover {
+    background-color: $color-bg-light;
+  }
+  
+  &__row {
+    display: flex;
+    gap: $spacing-3;
+  }
+  
+  &__checkbox {
+    padding-top: $spacing-1;
+  }
+  
+  &__image {
+    width: 56px;
+    height: 56px;
+    border-radius: $radius-lg;
+    overflow: hidden;
+    background-color: $color-bg-light;
+    flex-shrink: 0;
+    
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+  
+  &__details {
+    flex: 1;
+    min-width: 0;
+  }
+  
+  &__name {
+    font-weight: $font-weight-medium;
+    font-size: $font-size-sm;
+    color: $color-text-primary;
+    @include line-clamp(1);
+  }
+  
+  &__brand {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+  }
+  
+  &__price {
+    font-weight: $font-weight-semibold;
+    font-size: $font-size-sm;
+    color: $color-amber;
+    margin-top: $spacing-1;
+  }
+  
+  &__actions {
+    @include flex-between;
+    margin-top: $spacing-2;
+    padding-top: $spacing-1;
+  }
+  
+  &__quantity {
+    display: flex;
+    align-items: center;
+    border: 1px solid $color-border;
+    border-radius: $radius-sm;
+    
+    &-btn {
+      width: 24px;
+      height: 24px;
+      @include flex-center;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: $color-text-secondary;
+      font-size: $font-size-xs;
+      
+      &:hover {
+        background-color: $color-bg-light;
+      }
+      
+      &:first-child {
+        border-right: 1px solid $color-border;
+      }
+      
+      &:last-child {
+        border-left: 1px solid $color-border;
+      }
+    }
+    
+    &-value {
+      width: 24px;
+      height: 24px;
+      @include flex-center;
+      font-size: $font-size-xs;
+      font-weight: $font-weight-medium;
+      background-color: $color-bg-light;
+    }
+  }
+  
+  &__remove-btn {
+    @include button-ghost;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    color: $color-destructive;
+    
+    &:hover {
+      color: darken($color-destructive, 10%);
+    }
+    
+    .icon {
+      width: 16px;
+      height: 16px;
+    }
+  }
+}
+
+.cart-empty {
+  @include flex-center;
+  @include flex-column;
+  flex: 1;
+  padding: $spacing-8;
+  text-align: center;
+  
+  &__icon {
+    width: 64px;
+    height: 64px;
+    color: $color-text-muted;
+    margin-bottom: $spacing-4;
+  }
+  
+  &__title {
+    font-size: $font-size-lg;
+    font-weight: $font-weight-semibold;
+    margin-bottom: $spacing-2;
+  }
+  
+  &__message {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+  }
+}
+
+.cart-footer {
+  padding: $spacing-4;
+  border-top: 1px solid $color-border-light;
+  background-color: $color-bg-white;
+  
+  &__summary {
+    @include flex-between;
+    margin-bottom: $spacing-4;
+  }
+  
+  &__label {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+  }
+  
+  &__total {
+    font-size: $font-size-xl;
+    font-weight: $font-weight-bold;
+  }
+  
+  &__checkout-btn {
+    @include button-primary;
+    width: 100%;
+    height: 48px;
+    border-radius: $radius-lg;
+    font-size: $font-size-base;
+  }
+}

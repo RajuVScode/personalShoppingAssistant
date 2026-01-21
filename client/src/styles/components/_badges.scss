@@ -1,0 +1,172 @@
+// ===========================================
+// BADGES
+// Status badges, tags, and labels
+// ===========================================
+
+@use '../variables' as *;
+@use '../mixins' as *;
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-1;
+  padding: $spacing-1 $spacing-2;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  border-radius: $radius-full;
+  
+  .icon {
+    width: 12px;
+    height: 12px;
+  }
+  
+  // Variants
+  &--default {
+    background-color: $color-bg-light;
+    color: $color-text-primary;
+  }
+  
+  &--primary {
+    background-color: $color-primary-light;
+    color: $color-primary-dark;
+  }
+  
+  &--success {
+    background-color: hsl(142, 76%, 90%);
+    color: $color-success;
+  }
+  
+  &--warning {
+    background-color: hsl(45, 93%, 90%);
+    color: hsl(45, 93%, 30%);
+  }
+  
+  &--error {
+    background-color: hsl(0, 84%, 95%);
+    color: $color-error;
+  }
+  
+  &--info {
+    background-color: hsl(199, 89%, 90%);
+    color: hsl(199, 89%, 35%);
+  }
+  
+  // Solid variants
+  &--solid-primary {
+    background-color: $color-primary;
+    color: $color-bg-white;
+  }
+  
+  &--solid-success {
+    background-color: $color-success;
+    color: $color-bg-white;
+  }
+  
+  &--solid-warning {
+    background-color: $color-warning;
+    color: $color-text-primary;
+  }
+  
+  &--solid-error {
+    background-color: $color-error;
+    color: $color-bg-white;
+  }
+  
+  // Sizes
+  &--sm {
+    padding: 2px $spacing-1;
+    font-size: 10px;
+    
+    .icon {
+      width: 10px;
+      height: 10px;
+    }
+  }
+  
+  &--lg {
+    padding: $spacing-2 $spacing-3;
+    font-size: $font-size-sm;
+    
+    .icon {
+      width: 14px;
+      height: 14px;
+    }
+  }
+  
+  // Outline style
+  &--outline {
+    background-color: transparent;
+    border: 1px solid currentColor;
+  }
+}
+
+// Tag (removable badge)
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-1;
+  padding: $spacing-1 $spacing-2;
+  background-color: $color-bg-light;
+  border-radius: $radius-md;
+  font-size: $font-size-xs;
+  
+  &__text {
+    color: $color-text-primary;
+  }
+  
+  &__remove {
+    @include button-ghost;
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    border-radius: $radius-sm;
+    margin-left: $spacing-1;
+    
+    .icon {
+      width: 12px;
+      height: 12px;
+      color: $color-text-secondary;
+    }
+    
+    &:hover .icon {
+      color: $color-destructive;
+    }
+  }
+}
+
+// Status indicator
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: $radius-full;
+  
+  &--online {
+    background-color: $color-success;
+  }
+  
+  &--offline {
+    background-color: $color-text-muted;
+  }
+  
+  &--busy {
+    background-color: $color-error;
+  }
+  
+  &--away {
+    background-color: $color-warning;
+  }
+  
+  // Animated pulse
+  &--pulse {
+    animation: statusPulse 2s infinite;
+    
+    @keyframes statusPulse {
+      0%, 100% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.5;
+      }
+    }
+  }
+}
