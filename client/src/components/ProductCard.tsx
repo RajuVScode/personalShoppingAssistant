@@ -14,6 +14,7 @@ interface Product {
   image_url?: string;
   rating?: number;
   colors?: string[];
+  [key: string]: unknown;
 }
 
 interface ProductCardProps {

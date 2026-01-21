@@ -1,0 +1,549 @@
+/* ==========================================================================
+   Basket (Cart) Component Styles
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. CSS Variables
+   -------------------------------------------------------------------------- */
+:root {
+  --basket-primary: #1565C0;
+  --basket-primary-dark: #0D47A1;
+  --basket-text-dark: #1f2937;
+  --basket-text-muted: #6b7280;
+  --basket-text-light: #9ca3af;
+  --basket-border: #e5e7eb;
+  --basket-bg-light: #f9fafb;
+  --basket-bg-muted: #f3f4f6;
+  --basket-price-color: #d97706;
+  --basket-danger: #ef4444;
+  --basket-danger-dark: #dc2626;
+  --basket-overlay-bg: rgba(0, 0, 0, 0.5);
+  --basket-modal-width: 400px;
+  --basket-transition: 0.3s ease-in-out;
+}
+
+/* --------------------------------------------------------------------------
+   2. Overlay
+   -------------------------------------------------------------------------- */
+.basket-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  background-color: var(--basket-overlay-bg);
+  opacity: 0;
+  transition: opacity var(--basket-transition);
+}
+
+.basket-overlay--visible {
+  opacity: 1;
+}
+
+/* --------------------------------------------------------------------------
+   3. Modal
+   -------------------------------------------------------------------------- */
+.basket-modal {
+  background-color: white;
+  width: 100%;
+  height: 100%;
+  box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transform: translateX(100%);
+  transition: transform var(--basket-transition);
+}
+
+@media (min-width: 640px) {
+  .basket-modal {
+    width: var(--basket-modal-width);
+  }
+}
+
+.basket-modal--visible {
+  transform: translateX(0);
+}
+
+/* --------------------------------------------------------------------------
+   4. Header
+   -------------------------------------------------------------------------- */
+.basket-header {
+  background-color: var(--basket-primary);
+  color: white;
+  padding: 0.5rem 0.75rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.basket-header-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.basket-header-icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.basket-header-text {
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.basket-header-count {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.basket-close-btn {
+  color: white;
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.basket-close-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.basket-close-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+/* --------------------------------------------------------------------------
+   5. Body
+   -------------------------------------------------------------------------- */
+.basket-body {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.basket-items-list {
+  border-top: 1px solid var(--basket-border);
+}
+
+.basket-items-list > * + * {
+  border-top: 1px solid var(--basket-border);
+}
+
+/* --------------------------------------------------------------------------
+   6. Empty State
+   -------------------------------------------------------------------------- */
+.basket-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--basket-text-muted);
+}
+
+.basket-empty-icon {
+  width: 4rem;
+  height: 4rem;
+  margin-bottom: 1rem;
+  opacity: 0.3;
+}
+
+.basket-empty-title {
+  font-size: 1rem;
+  margin: 0;
+}
+
+.basket-empty-subtitle {
+  font-size: 0.875rem;
+  color: var(--basket-text-light);
+  margin-top: 0.25rem;
+}
+
+/* --------------------------------------------------------------------------
+   7. Cart Item
+   -------------------------------------------------------------------------- */
+.basket-item {
+  padding: 1rem;
+  transition: background-color 0.2s ease;
+}
+
+.basket-item:hover {
+  background-color: var(--basket-bg-light);
+}
+
+.basket-item-content {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.basket-item-checkbox {
+  display: flex;
+  align-items: flex-start;
+  padding-top: 0.25rem;
+}
+
+.basket-checkbox {
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 3px;
+}
+
+.basket-item-image {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background-color: var(--basket-bg-muted);
+  flex-shrink: 0;
+}
+
+.basket-item-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.basket-item-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.basket-item-info {
+  margin-bottom: 0.25rem;
+}
+
+.basket-item-name {
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: var(--basket-text-dark);
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.basket-item-brand {
+  font-size: 0.75rem;
+  color: var(--basket-text-muted);
+  margin: 0;
+}
+
+.basket-item-price-row {
+  margin-top: 0.25rem;
+}
+
+.basket-item-price {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--basket-price-color);
+}
+
+.basket-item-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.5rem;
+  padding-top: 0.25rem;
+}
+
+/* --------------------------------------------------------------------------
+   8. Quantity Control
+   -------------------------------------------------------------------------- */
+.basket-quantity-control {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--basket-border);
+  border-radius: 0.25rem;
+}
+
+.basket-quantity-btn {
+  width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--basket-text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: background-color 0.2s ease;
+}
+
+.basket-quantity-btn:hover {
+  background-color: var(--basket-bg-muted);
+}
+
+.basket-quantity-btn--decrease {
+  border-right: 1px solid var(--basket-border);
+}
+
+.basket-quantity-btn--increase {
+  border-left: 1px solid var(--basket-border);
+}
+
+.basket-quantity-value {
+  width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background-color: var(--basket-bg-light);
+}
+
+/* --------------------------------------------------------------------------
+   9. Remove Button
+   -------------------------------------------------------------------------- */
+.basket-remove-btn {
+  color: var(--basket-danger);
+  padding: 0.25rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.basket-remove-btn:hover {
+  color: var(--basket-danger-dark);
+}
+
+.basket-remove-icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* --------------------------------------------------------------------------
+   10. Footer
+   -------------------------------------------------------------------------- */
+.basket-footer {
+  border-top: 1px solid var(--basket-border);
+  padding: 1rem;
+  background-color: var(--basket-bg-light);
+}
+
+.basket-summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.basket-summary-label {
+  font-size: 0.875rem;
+  color: var(--basket-text-muted);
+}
+
+.basket-summary-value {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--basket-text-dark);
+}
+
+.basket-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.basket-total-label {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--basket-text-dark);
+}
+
+.basket-total-value {
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: var(--basket-text-dark);
+}
+
+.basket-checkout-btn {
+  width: 100%;
+  background-color: var(--basket-primary);
+  color: white;
+  height: 2.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.basket-checkout-btn:hover {
+  background-color: var(--basket-primary-dark);
+}
+
+.basket-checkout-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.basket-checkout-icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* --------------------------------------------------------------------------
+   11. Checkout Sheet
+   -------------------------------------------------------------------------- */
+.basket-checkout-sheet {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: white;
+  border-top: 1px solid var(--basket-border);
+  box-shadow: 0 -10px 15px -3px rgb(0 0 0 / 0.1);
+  transform: translateY(100%);
+  transition: transform var(--basket-transition);
+}
+
+.basket-checkout-sheet--visible {
+  transform: translateY(0);
+}
+
+.basket-checkout-content {
+  padding: 1rem;
+}
+
+.basket-checkout-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.basket-checkout-title {
+  font-weight: 700;
+  font-size: 1.125rem;
+  color: var(--basket-text-dark);
+  margin: 0;
+}
+
+.basket-checkout-toggle {
+  color: var(--basket-text-light);
+  padding: 0.25rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.basket-checkout-toggle:hover {
+  color: var(--basket-text-muted);
+}
+
+.basket-checkout-toggle-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.basket-checkout-info {
+  font-size: 0.875rem;
+  color: var(--basket-text-muted);
+  margin-bottom: 1rem;
+  background-color: var(--basket-bg-light);
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  border-left: 4px solid var(--basket-primary);
+}
+
+/* --------------------------------------------------------------------------
+   12. Checkout Options
+   -------------------------------------------------------------------------- */
+.basket-checkout-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.basket-option-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.basket-option-btn--primary {
+  background-color: var(--basket-primary);
+  color: white;
+  border: none;
+}
+
+.basket-option-btn--primary:hover {
+  background-color: var(--basket-primary-dark);
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+.basket-option-btn--secondary {
+  background-color: white;
+  border: 1px solid var(--basket-border);
+}
+
+.basket-option-btn--secondary:hover {
+  background-color: #eff6ff;
+  border-color: var(--basket-primary);
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+.basket-option-content {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.basket-option-icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.basket-option-icon--gray {
+  color: var(--basket-text-muted);
+}
+
+.basket-option-text {
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+.basket-option-text--dark {
+  color: var(--basket-text-dark);
+}
+
+.basket-option-hint {
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+.basket-option-btn--secondary .basket-option-hint {
+  color: var(--basket-text-muted);
+}
+
+.basket-cancel-btn {
+  width: 100%;
+  margin-top: 0.75rem;
+  padding: 0.25rem 0;
+  color: var(--basket-text-muted);
+  font-size: 0.875rem;
+  font-weight: 500;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.basket-cancel-btn:hover {
+  color: var(--basket-text-dark);
+}

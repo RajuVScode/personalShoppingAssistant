@@ -32,6 +32,7 @@ interface Product {
   brand?: string;
   image_url?: string;
   rating?: number;
+  [key: string]: unknown;
 }
 
 /**

@@ -73,6 +73,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import Logo from "@/components/Logo";
 import { Html5Qrcode } from "html5-qrcode";
+import { useBasket } from "@/components/Basket";
 import "@/styles/chat-widget.css";
 
 /**
@@ -113,6 +114,7 @@ interface Product {
   brand?: string;
   image_url?: string;
   rating?: number;
+  [key: string]: unknown;
 }
 
 interface TripSegment {
@@ -178,86 +180,6 @@ interface Customer360Data {
   favorite_brands: string[];
 }
 
-interface CartItemRowProps {
-  item: CartItem;
-  isSelected: boolean;
-  onToggleSelect: (productId: number) => void;
-  onUpdateQuantity: (productId: number, delta: number) => void;
-  onRemove: (productId: number) => void;
-}
-
-const CartItemRow = memo(function CartItemRow({ item, isSelected, onToggleSelect, onUpdateQuantity, onRemove }: CartItemRowProps) {
-  return (
-    <div className="p-4 hover:bg-gray-50" data-testid={`cart-item-${item.product.id}`}>
-      <div className="flex gap-3">
-        <div className="flex items-start pt-1">
-          <Checkbox
-            checked={isSelected}
-            onCheckedChange={() => onToggleSelect(item.product.id)}
-            className="w-5 h-5 rounded-[3px]"
-            data-testid={`checkbox-cart-${item.product.id}`}
-          />
-        </div>
-        {item.product.image_url && (
-          <div className="w-14 h-14 rounded-lg overflow-hidden bg-gray-100 shrink-0">
-            <img
-              src={item.product.image_url}
-              alt={item.product.name}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.onerror = null;
-                target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Crect fill='%23f3f4f6' width='64' height='64'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='system-ui' font-size='8' fill='%239ca3af'%3ENo image%3C/text%3E%3C/svg%3E";
-              }}
-            />
-          </div>
-        )}
-        <div className="flex-1 min-w-0">
-          <div>
-            <p className="font-medium text-sm text-gray-800 line-clamp-1">{item.product.name}</p>
-            {item.product.brand && (
-              <p className="text-xs text-gray-500">{item.product.brand}</p>
-            )}
-          </div>
-          <div className="mt-1">
-            <span className="font-semibold text-sm text-amber-600">
-              ${((item.product.price || 0) * item.quantity).toFixed(2)}
-            </span>
-          </div>
-          <div className="flex items-center justify-between mt-2 pt-1">
-            <div className="flex items-center border rounded">
-              <button
-                onClick={() => onUpdateQuantity(item.product.id, -1)}
-                className="w-6 h-6 flex items-center justify-center text-gray-600 hover:bg-gray-100 border-r text-xs"
-                data-testid={`btn-decrease-${item.product.id}`}
-              >
-                −
-              </button>
-              <span className="w-6 h-6 flex items-center justify-center text-xs font-medium bg-gray-50">
-                {item.quantity}
-              </span>
-              <button
-                onClick={() => onUpdateQuantity(item.product.id, 1)}
-                className="w-6 h-6 flex items-center justify-center text-gray-600 hover:bg-gray-100 border-l text-xs"
-                data-testid={`btn-increase-${item.product.id}`}
-              >
-                +
-              </button>
-            </div>
-            <button
-              onClick={() => onRemove(item.product.id)}
-              className="text-red-500 hover:text-red-700 p-1"
-              data-testid={`btn-remove-cart-${item.product.id}`}
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-});
-
 interface ChatWidgetProps {
   isOpen: boolean;
   onClose: () => void;
@@ -272,15 +194,8 @@ const isTravelIntent = (context: ContextInfo | null): boolean => {
 
 export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [cartItems, setCartItems] = useState<Map<number, CartItem>>(new Map());
-  const [selectedCartItems, setSelectedCartItems] = useState<Set<number>>(new Set());
-  const [showCartModal, setShowCartModal] = useState(false);
-  const [isCartAnimating, setIsCartAnimating] = useState(false);
-  const [shouldRenderCart, setShouldRenderCart] = useState(false);
-  const [showCheckoutSheet, setShowCheckoutSheet] = useState(false);
-  const [isCheckoutAnimating, setIsCheckoutAnimating] = useState(false);
-  const [shouldRenderCheckout, setShouldRenderCheckout] = useState(false);
   const [input, setInput] = useState("");
+  const { addToCart, isInCart, totalItems, openBasket } = useBasket();
   const [currentContext, setCurrentContext] = useState<ContextInfo | null>(null);
   const [currentIntent, setCurrentIntent] = useState<Record<string, unknown>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -327,105 +242,6 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
     } catch (error) {
       console.error("Failed to fetch customer 360 data:", error);
     }
-  };
-
-  const addToCart = (product: Product) => {
-    setCartItems((prev) => {
-      const newMap = new Map(prev);
-      if (newMap.has(product.id)) {
-        newMap.delete(product.id);
-        setSelectedCartItems((prevSelected) => {
-          const newSelected = new Set(prevSelected);
-          newSelected.delete(product.id);
-          return newSelected;
-        });
-      } else {
-        newMap.set(product.id, { product, quantity: 1 });
-        setSelectedCartItems((prevSelected) => {
-          const newSelected = new Set(prevSelected);
-          newSelected.add(product.id);
-          return newSelected;
-        });
-      }
-      return newMap;
-    });
-  };
-
-  const removeFromCart = useCallback((productId: number) => {
-    setCartItems((prev) => {
-      const newMap = new Map(prev);
-      newMap.delete(productId);
-      return newMap;
-    });
-    setSelectedCartItems((prev) => {
-      const newSelected = new Set(prev);
-      newSelected.delete(productId);
-      return newSelected;
-    });
-  }, []);
-
-  const toggleCartItemSelection = useCallback((productId: number) => {
-    setSelectedCartItems((prev) => {
-      const newSelected = new Set(prev);
-      if (newSelected.has(productId)) {
-        newSelected.delete(productId);
-      } else {
-        newSelected.add(productId);
-      }
-      return newSelected;
-    });
-  }, []);
-
-  const updateQuantity = useCallback((productId: number, delta: number) => {
-    setCartItems((prev) => {
-      const item = prev.get(productId);
-      if (!item) return prev;
-      const newQuantity = item.quantity + delta;
-      if (newQuantity < 1) return prev;
-      const newMap = new Map(prev);
-      newMap.set(productId, { ...item, quantity: newQuantity });
-      return newMap;
-    });
-  }, []);
-
-  const cartItemsArray = useMemo(() => Array.from(cartItems.values()), [cartItems]);
-
-  const totalItems = useMemo(() => 
-    cartItemsArray.reduce((sum, item) => sum + item.quantity, 0),
-    [cartItemsArray]
-  );
-
-  const totalPrice = useMemo(() => 
-    cartItemsArray
-      .filter(item => selectedCartItems.has(item.product.id))
-      .reduce((sum, item) => sum + (item.product.price || 0) * item.quantity, 0),
-    [cartItemsArray, selectedCartItems]
-  );
-
-  const selectedItemsCount = useMemo(() => 
-    cartItemsArray
-      .filter(item => selectedCartItems.has(item.product.id))
-      .reduce((sum, item) => sum + item.quantity, 0),
-    [cartItemsArray, selectedCartItems]
-  );
-
-  const openCartModal = () => {
-    setShowCartModal(true);
-    setShouldRenderCart(true);
-    setTimeout(() => {
-      setIsCartAnimating(true);
-    }, 50);
-  };
-
-  const closeCartModal = () => {
-    setIsCartAnimating(false);
-    setIsCheckoutAnimating(false);
-    setTimeout(() => {
-      setShouldRenderCart(false);
-      setShowCartModal(false);
-      setShouldRenderCheckout(false);
-      setShowCheckoutSheet(false);
-    }, 300);
   };
 
   const openContextInsightsModal = () => {
@@ -659,22 +475,6 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
       }
     };
   }, [scanningState, toast]);
-
-  const openCheckoutSheet = () => {
-    setShowCheckoutSheet(true);
-    setShouldRenderCheckout(true);
-    setTimeout(() => {
-      setIsCheckoutAnimating(true);
-    }, 50);
-  };
-
-  const closeCheckoutSheet = () => {
-    setIsCheckoutAnimating(false);
-    setTimeout(() => {
-      setShouldRenderCheckout(false);
-      setShowCheckoutSheet(false);
-    }, 300);
-  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -997,7 +797,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
             <button 
               className="chat-header-btn chat-header-btn--relative" 
               data-testid="btn-cart"
-              onClick={openCartModal}
+              onClick={openBasket}
             >
               <ShoppingCart className="chat-header-btn-icon" />
               {totalItems > 0 && (
@@ -1213,7 +1013,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                                     className={`text-xs h-7 text-white border-0 rounded-[6px] px-2 min-w-0 ${
                                       shoppingMode === "instore" ? "flex-1 basis-[calc(50%-0.1875rem)]" : "flex-1"
                                     } ${
-                                      cartItems.has(product.id)
+                                      isInCart(product.id)
                                         ? "bg-green-600 hover:bg-green-700"
                                         : "bg-[#0D6EFD] hover:bg-[#0B5ED7]"
                                     }`}
@@ -1221,7 +1021,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                                     data-testid={`button-add-cart-${product.id}`}
                                   >
                                     <ShoppingCart className="h-3 w-3 mr-0.5 shrink-0" />
-                                    <span className="truncate">{cartItems.has(product.id) ? "Added" : "Cart"}</span>
+                                    <span className="truncate">{isInCart(product.id) ? "Added" : "Cart"}</span>
                                   </Button>
                                   <Button
                                     size="sm"
@@ -1351,148 +1151,6 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
           </div>
         </div>
       </div>
-      {shouldRenderCart && (
-        <div 
-          className={`fixed inset-0 z-[60] flex items-center justify-end bg-black/50 transition-opacity duration-300 ${isCartAnimating ? 'opacity-100' : 'opacity-0'}`}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) closeCartModal();
-          }}
-          data-testid="cart-modal-overlay"
-        >
-          <div 
-            className={`bg-white w-full sm:w-[400px] h-full shadow-2xl flex flex-col relative transition-transform duration-300 ease-in-out ${isCartAnimating ? 'translate-x-0' : 'translate-x-full'}`}
-          >
-            <div className="bg-[#1565C0] text-white px-3 py-2 flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <ShoppingCart className="w-4 h-4" />
-                <span className="font-semibold text-sm">Shopping Cart</span>
-                <span className="bg-white/20 text-white text-xs rounded-full px-2 py-0.5">
-                  {totalItems} items
-                </span>
-              </div>
-              <button 
-                onClick={closeCartModal}
-                className="text-white hover:bg-white/10 p-1 rounded"
-                data-testid="btn-close-cart"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto">
-              {cartItems.size === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-gray-500">
-                  <ShoppingCart className="w-16 h-16 mb-4 opacity-30" />
-                  <p className="text-base">Your cart is empty</p>
-                  <p className="text-sm text-gray-400 mt-1">Add products from recommendations</p>
-                </div>
-              ) : (
-                <div className="divide-y">
-                  {cartItemsArray.map((item) => (
-                    <CartItemRow
-                      key={item.product.id}
-                      item={item}
-                      isSelected={selectedCartItems.has(item.product.id)}
-                      onToggleSelect={toggleCartItemSelection}
-                      onUpdateQuantity={updateQuantity}
-                      onRemove={removeFromCart}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-            {cartItems.size > 0 && (
-              <div className="border-t p-4 bg-gray-50">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm text-gray-600">Selected Items:</span>
-                  <span className="text-sm font-medium text-gray-800">{selectedItemsCount} of {totalItems}</span>
-                </div>
-                <div className="flex justify-between items-center mb-4">
-                  <span className="text-base font-medium text-gray-800">Total</span>
-                  <span className="font-bold text-xl text-gray-800">
-                    ${totalPrice.toFixed(2)}
-                  </span>
-                </div>
-                <Button 
-                  className="w-full bg-[#1565C0] hover:bg-[#0D47A1] text-white h-9 flex items-center justify-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                  data-testid="btn-checkout"
-                  onClick={openCheckoutSheet}
-                  disabled={selectedItemsCount === 0}
-                >
-                  <ShoppingBag className="w-4 h-4" />
-                  Proceed to Checkout ({selectedItemsCount})
-                </Button>
-              </div>
-            )}
-
-            {shouldRenderCheckout && (
-              <div 
-                className={`absolute bottom-0 left-0 right-0 bg-white border-t shadow-lg transition-transform duration-300 ease-in-out ${isCheckoutAnimating ? 'translate-y-0' : 'translate-y-full'}`}
-                data-testid="checkout-sheet"
-              >
-                <div className="p-4">
-                  <div className="flex justify-between items-center mb-3">
-                    <h3 className="font-bold text-lg text-gray-800">Flexible Fulfillment Options</h3>
-                    <button
-                      onClick={closeCheckoutSheet}
-                      className="text-gray-400 hover:text-gray-600 p-1"
-                      data-testid="btn-toggle-checkout"
-                    >
-                      <ChevronDown className="w-5 h-5" />
-                    </button>
-                  </div>
-                  
-                  <p className="text-sm text-gray-500 mb-4 bg-gray-50 p-3 rounded-lg border-l-4 border-[#1565C0]">
-                    Select items above to customize your order, or choose an option below:
-                  </p>
-
-                  <div className="space-y-2">
-                    <button
-                      className="w-full flex items-center justify-between py-2 px-3 bg-[#1565C0] text-white rounded-lg hover:bg-[#0D47A1] hover:shadow-md transition-all duration-200"
-                      data-testid="btn-place-order"
-                    >
-                      <div className="flex items-center gap-2">
-                        <Package className="w-4 h-4" />
-                        <span className="font-medium text-sm">Place Order</span>
-                      </div>
-                      <span className="text-xs opacity-80">Select items first</span>
-                    </button>
-
-                    <button
-                      className="w-full flex items-center justify-between py-2 px-3 bg-white border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-[#1565C0] hover:shadow-md transition-all duration-200"
-                      data-testid="btn-click-collect"
-                    >
-                      <div className="flex items-center gap-2">
-                        <Store className="w-4 h-4 text-gray-600" />
-                        <span className="font-medium text-sm text-gray-800">Click & Collect</span>
-                      </div>
-                      <span className="text-xs text-gray-500">All items to store</span>
-                    </button>
-
-                    <button
-                      className="w-full flex items-center justify-between py-2 px-3 bg-white border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-[#1565C0] hover:shadow-md transition-all duration-200"
-                      data-testid="btn-book-session"
-                    >
-                      <div className="flex items-center gap-2">
-                        <CalendarDays className="w-4 h-4 text-gray-600" />
-                        <span className="font-medium text-sm text-gray-800">Book Style Session</span>
-                      </div>
-                      <span className="text-xs text-gray-500">Meet with stylist</span>
-                    </button>
-                  </div>
-
-                  <button
-                    onClick={closeCheckoutSheet}
-                    className="w-full mt-3 py-1 text-gray-500 hover:text-gray-700 text-sm font-medium"
-                    data-testid="btn-cancel-checkout"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
       {showLoginModal && (
         <div 
           className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50"
@@ -2082,7 +1740,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
         isAnimating={isProductDetailAnimating}
         onClose={closeProductDetail}
         onAddToCart={addToCart}
-        isInCart={(id) => cartItems.has(id)}
+        isInCart={isInCart}
       />
     </div>
   );

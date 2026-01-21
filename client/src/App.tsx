@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { BasketProvider } from "@/components/Basket";
 import { routes } from "@/routes";
 
 function AppRoutes() {
@@ -39,10 +40,12 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <BrowserRouter>
-          <AppContent />
-          <Toaster />
-        </BrowserRouter>
+        <BasketProvider>
+          <BrowserRouter>
+            <AppContent />
+            <Toaster />
+          </BrowserRouter>
+        </BasketProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );
