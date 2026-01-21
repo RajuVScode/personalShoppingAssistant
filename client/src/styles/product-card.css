@@ -25,6 +25,7 @@
    2. Card Container
    -------------------------------------------------------------------------- */
 .product-card {
+  width: 90%;
   overflow: hidden;
   border-radius: var(--product-card-radius);
   display: flex;
