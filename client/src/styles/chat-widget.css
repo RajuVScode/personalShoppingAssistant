@@ -32,6 +32,7 @@
   --chat-purple-600: #9333ea;
   --chat-blue-50: #eff6ff;
   --chat-blue-300: #93c5fd;
+  --chat-gold: #d4af37;
   
   /* Shadows */
   --chat-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
@@ -406,8 +407,8 @@
 .chat-assistant-avatar {
   width: 2rem;
   height: 2rem;
-  border-radius: 0.5rem;
-  background-color: var(--chat-primary);
+  border-radius: 9999px;
+  background-color: var(--chat-gold);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -415,8 +416,8 @@
 }
 
 .chat-assistant-avatar-icon {
-  width: 1rem;
-  height: 1rem;
+  width: 0.875rem;
+  height: 0.875rem;
   color: white;
 }
 
