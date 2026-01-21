@@ -15,9 +15,9 @@
 
 import { useState, useEffect } from "react";
 import { X, ShoppingCart, Check, Zap, Package } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { SizeChartModal } from "./SizeChartModal";
 import { ProductImageGallery } from "./ProductImageGallery";
+import "../styles/product-detail.css";
 
 /**
  * Basic product info passed from the product card.
@@ -128,32 +128,66 @@ export function ProductDetailPanel({
   const displayImages = currentImages.length > 0 ? currentImages : [product.image_url || ""];
   const colors = productDetails?.colors || [];
 
+  const colorMap: Record<string, string> = {
+    'black': '#000000',
+    'white': '#ffffff',
+    'navy': '#001f3f',
+    'navy blue': '#001f3f',
+    'brown': '#8b4513',
+    'burgundy': '#800020',
+    'charcoal': '#36454f',
+    'cream': '#fffdd0',
+    'camel': '#c19a6b',
+    'tan': '#d2b48c',
+    'olive': '#808000',
+    'forest green': '#228b22',
+    'yellow': '#ffff00',
+    'red': '#ff0000',
+    'khaki': '#f0e68c',
+    'stone': '#928e85',
+    'champagne': '#f7e7ce',
+    'gray': '#808080',
+    'sage': '#bcb88a',
+    'gold/green': '#b8860b',
+    'silver/blue': '#87ceeb',
+    'black/gray': '#2f2f2f',
+    'forest': '#228b22',
+    'default': '#e5e7eb',
+  };
+
+  const lightColors = ['white', 'cream', 'yellow', 'champagne', 'khaki'];
+
   return (
     <>
       <div 
-        className={`fixed inset-0 z-[60] flex items-center justify-end bg-black/50 transition-opacity duration-300 ${isAnimating ? 'opacity-100' : 'opacity-0'}`}
+        className={`product-detail-overlay ${isAnimating ? 'product-detail-overlay--visible' : 'product-detail-overlay--hidden'}`}
+        id="product-detail-overlay"
         onClick={(e) => {
           if (e.target === e.currentTarget) onClose();
         }}
         data-testid="product-detail-modal-overlay"
       >
-        <div className={`bg-white w-full sm:w-[400px] h-full shadow-2xl flex flex-col overflow-hidden transition-transform duration-300 ease-in-out ${isAnimating ? 'translate-x-0' : 'translate-x-full'}`}>
-          <div className="bg-[#1565C0] text-white px-3 py-2 flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <Package className="w-4 h-4" />
-              <span className="font-semibold text-sm">Product Details</span>
+        <div 
+          className={`product-detail-panel ${isAnimating ? 'product-detail-panel--visible' : 'product-detail-panel--hidden'}`}
+          id="product-detail-panel"
+        >
+          <div className="product-detail-header" id="product-detail-header">
+            <div className="product-detail-header-title">
+              <Package className="product-detail-header-icon" id="product-detail-header-icon" />
+              <span className="product-detail-header-text">Product Details</span>
             </div>
             <button 
               onClick={onClose}
-              className="text-white hover:bg-white/10 p-1 rounded"
+              className="product-detail-close-btn"
+              id="product-detail-close-btn"
               data-testid="btn-close-product-detail"
             >
-              <X className="w-5 h-5" />
+              <X className="product-detail-close-icon" id="product-detail-close-icon" />
             </button>
           </div>
           
-          <div className="flex-1 overflow-y-auto">
-            <div className="p-4">
+          <div className="product-detail-content" id="product-detail-content">
+            <div className="product-detail-image-section">
               <ProductImageGallery
                 images={displayImages}
                 productName={product.name}
@@ -161,85 +195,64 @@ export function ProductDetailPanel({
               />
             </div>
             
-            <div className="px-4 pb-4 space-y-4">
+            <div className="product-detail-info" id="product-detail-info">
               <div>
-                <p className="text-xs text-gray-500 uppercase tracking-wide">{productDetails?.brand || product.brand}</p>
-                <h2 className="text-sm font-bold text-gray-900 mt-0.5">{product.name}</h2>
+                <p className="product-detail-brand" id="product-detail-brand">
+                  {productDetails?.brand || product.brand}
+                </p>
+                <h2 className="product-detail-name" id="product-detail-name">
+                  {product.name}
+                </h2>
               </div>
               
               {(productDetails?.rating || product.rating) && (
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1">
+                <div className="product-detail-rating" id="product-detail-rating">
+                  <div className="product-detail-stars">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <span 
                         key={star} 
-                        className={`text-lg ${star <= (productDetails?.rating || product.rating || 0) ? 'text-yellow-400' : 'text-gray-300'}`}
+                        className={`product-detail-star ${star <= (productDetails?.rating || product.rating || 0) ? 'product-detail-star--filled' : 'product-detail-star--empty'}`}
                       >
                         ★
                       </span>
                     ))}
                   </div>
-                  <span className="text-sm text-gray-500">{productDetails?.rating || product.rating} out of 5</span>
+                  <span className="product-detail-rating-text">
+                    {productDetails?.rating || product.rating} out of 5
+                  </span>
                 </div>
               )}
               
               {(productDetails?.price || product.price) && (
-                <div className="text-base font-bold text-gray-900">
+                <div className="product-detail-price" id="product-detail-price">
                   ${(productDetails?.price || product.price || 0).toFixed(2)}
                 </div>
               )}
               
               {colors.length > 0 && (
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="font-semibold text-xs text-gray-900">SELECT COLOR</span>
-                    <span className="text-xs text-gray-500">{selectedColor}</span>
+                <div className="product-detail-section" id="product-detail-color-section">
+                  <div className="product-detail-section-header">
+                    <span className="product-detail-section-label">SELECT COLOR</span>
+                    <span className="product-detail-section-value">{selectedColor}</span>
                   </div>
-                  <div className="flex gap-1.5 flex-wrap">
+                  <div className="product-detail-colors">
                     {colors.map((color) => {
-                      const colorMap: Record<string, string> = {
-                        'black': '#000000',
-                        'white': '#ffffff',
-                        'navy': '#001f3f',
-                        'navy blue': '#001f3f',
-                        'brown': '#8b4513',
-                        'burgundy': '#800020',
-                        'charcoal': '#36454f',
-                        'cream': '#fffdd0',
-                        'camel': '#c19a6b',
-                        'tan': '#d2b48c',
-                        'olive': '#808000',
-                        'forest green': '#228b22',
-                        'yellow': '#ffff00',
-                        'red': '#ff0000',
-                        'khaki': '#f0e68c',
-                        'stone': '#928e85',
-                        'champagne': '#f7e7ce',
-                        'gray': '#808080',
-                        'sage': '#bcb88a',
-                        'gold/green': '#b8860b',
-                        'silver/blue': '#87ceeb',
-                        'black/gray': '#2f2f2f',
-                        'forest': '#228b22',
-                        'default': '#e5e7eb',
-                      };
                       const bgColor = colorMap[color.toLowerCase()] || '#e5e7eb';
                       const isSelected = selectedColor === color;
-                      const isLight = ['white', 'cream', 'yellow', 'champagne', 'khaki'].includes(color.toLowerCase());
+                      const isLight = lightColors.includes(color.toLowerCase());
                       
                       return (
                         <button
                           key={color}
                           onClick={() => setSelectedColor(color)}
-                          className={`w-7 h-7 rounded-full border-2 transition-all ${
-                            isSelected ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-300'
-                          }`}
+                          className={`product-detail-color-btn ${isSelected ? 'product-detail-color-btn--selected' : ''}`}
+                          id={`product-detail-color-${color.toLowerCase().replace(/\s+/g, '-')}`}
                           style={{ backgroundColor: bgColor }}
                           title={color}
                           data-testid={`color-${color.toLowerCase().replace(/\s+/g, '-')}`}
                         >
                           {isSelected && (
-                            <Check className={`w-3.5 h-3.5 mx-auto ${isLight ? 'text-gray-800' : 'text-white'}`} />
+                            <Check className={`product-detail-color-check ${isLight ? 'product-detail-color-check--light' : 'product-detail-color-check--dark'}`} />
                           )}
                         </button>
                       );
@@ -248,27 +261,25 @@ export function ProductDetailPanel({
                 </div>
               )}
               
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="font-semibold text-xs text-gray-900">SELECT SIZE</span>
+              <div className="product-detail-section" id="product-detail-size-section">
+                <div className="product-detail-section-header">
+                  <span className="product-detail-section-label">SELECT SIZE</span>
                   <button 
-                    className="text-xs text-pink-500 hover:underline font-medium" 
+                    className="product-detail-size-chart-link" 
+                    id="product-detail-size-chart-link"
                     onClick={() => setShowSizeChart(true)}
                     data-testid="btn-size-chart"
                   >
                     Size Chart
                   </button>
                 </div>
-                <div className="flex gap-1.5 flex-wrap">
+                <div className="product-detail-sizes">
                   {['S', 'M', 'L', 'XL', 'XXL'].map((size) => (
                     <button
                       key={size}
                       onClick={() => setSelectedSize(size)}
-                      className={`w-10 h-8 border rounded-md text-xs font-medium transition-colors ${
-                        selectedSize === size 
-                          ? 'border-pink-500 bg-pink-50 text-pink-600' 
-                          : 'border-gray-300 text-gray-700 hover:border-gray-900 hover:bg-gray-50'
-                      }`}
+                      className={`product-detail-size-btn ${selectedSize === size ? 'product-detail-size-btn--selected' : ''}`}
+                      id={`product-detail-size-${size}`}
                       data-testid={`btn-size-${size}`}
                     >
                       {size}
@@ -277,75 +288,72 @@ export function ProductDetailPanel({
                 </div>
               </div>
               
-              <div className="flex gap-2 flex-wrap">
+              <div className="product-detail-tags" id="product-detail-tags">
                 {(productDetails?.category || product.category) && (
-                  <span className="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full">
+                  <span className="product-detail-tag">
                     {productDetails?.category || product.category}
                   </span>
                 )}
                 {(productDetails?.subcategory || product.subcategory) && (
-                  <span className="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full">
+                  <span className="product-detail-tag">
                     {productDetails?.subcategory || product.subcategory}
                   </span>
                 )}
               </div>
               
               {(productDetails?.description || product.description) && (
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">Description</h3>
-                  <p className="text-gray-600 text-sm leading-relaxed">
+                <div className="product-detail-description-section" id="product-detail-description">
+                  <h3 className="product-detail-description-title">Description</h3>
+                  <p className="product-detail-description-text">
                     {productDetails?.description || product.description}
                   </p>
                 </div>
               )}
               
               {productDetails?.material && (
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-1">Material</h3>
-                  <p className="text-gray-600 text-sm">{productDetails.material}</p>
+                <div className="product-detail-description-section" id="product-detail-material">
+                  <h3 className="product-detail-spec-title">Material</h3>
+                  <p className="product-detail-spec-text">{productDetails.material}</p>
                 </div>
               )}
               
               {productDetails?.care_instructions && (
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-1">Care Instructions</h3>
-                  <p className="text-gray-600 text-sm">{productDetails.care_instructions}</p>
+                <div className="product-detail-description-section" id="product-detail-care">
+                  <h3 className="product-detail-spec-title">Care Instructions</h3>
+                  <p className="product-detail-spec-text">{productDetails.care_instructions}</p>
                 </div>
               )}
             </div>
           </div>
           
-          <div className="p-3 border-t bg-white">
-            <div className="flex gap-2">
-              <Button
-                className={`flex-1 h-9 text-white text-xs font-semibold rounded-[6px] ${
-                  isInCart(product.id) 
-                    ? 'bg-green-600 hover:bg-green-700' 
-                    : 'bg-blue-600 hover:bg-blue-700'
-                }`}
+          <div className="product-detail-footer" id="product-detail-footer">
+            <div className="product-detail-footer-buttons">
+              <button
+                className={`product-detail-action-btn product-detail-cart-btn ${isInCart(product.id) ? 'product-detail-cart-btn--added' : ''}`}
+                id="product-detail-add-cart-btn"
                 onClick={() => onAddToCart(product)}
                 data-testid="btn-add-cart-detail"
               >
                 {isInCart(product.id) ? (
                   <>
-                    <Check className="h-4 w-4 mr-1.5" />
+                    <Check className="product-detail-btn-icon" />
                     Added to Cart
                   </>
                 ) : (
                   <>
-                    <ShoppingCart className="h-4 w-4 mr-1.5" />
+                    <ShoppingCart className="product-detail-btn-icon" />
                     Add to Cart
                   </>
                 )}
-              </Button>
-              <Button
-                className="flex-1 h-9 text-white text-xs font-semibold rounded-[6px] hover:opacity-90 border-0"
-                style={{ backgroundColor: '#C9A961' }}
+              </button>
+              <button
+                className="product-detail-action-btn product-detail-buy-btn"
+                id="product-detail-buy-btn"
                 data-testid="btn-buy-now"
               >
-                <Zap className="h-4 w-4 mr-1.5" />
+                <Zap className="product-detail-btn-icon" />
                 Buy Now
-              </Button>
+              </button>
             </div>
           </div>
         </div>
