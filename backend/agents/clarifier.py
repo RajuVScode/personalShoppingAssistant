@@ -427,6 +427,14 @@ Context: {context_str}
 User said: "{query}"
 Return ONLY the response.""",
 
+                "activity_product": f"""Generate a SHORT, friendly question (max 25 words) asking what products the user needs for their planned activities.
+The user has specified activities: {extra.get('activities', [])}
+Context: {context_str}
+User said: "{query}"
+Tailor your question dynamically to be relevant to the activities they mentioned.
+Do NOT list products or provide examples. Just ask what they need for their activities.
+Return ONLY the question.""",
+
                 "invalid_date": f"""Generate a SHORT, friendly response (max 25 words) explaining that the date provided doesn't exist on the calendar and asking for a valid date.
 Context: {context_str}
 Reason the date is invalid: {extra.get('reason', 'The date does not exist on the calendar')}
@@ -934,7 +942,37 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                         "detected_changes": detected_changes
                     }
                 
-                # Activities already captured or asked - proceed to generate requested content
+                # When activities are specified, proactively ask about products for those activities
+                # This is LLM-driven behavior based on user's expressed intent
+                already_asked_activity_products = existing_intent.get("_asked_activity_products", False) or merged_intent.get("_asked_activity_products", False)
+                specific_activities = self._filter_specific_activities(captured_activities) if captured_activities else []
+                
+                if has_specific_activities and not already_asked_activity_products:
+                    # User specified activities - dynamically generate product question using LLM
+                    merged_intent["_asked_activity_products"] = True
+                    activity_product_question = self._generate_dynamic_question(
+                        "activity_product", query, merged_intent,
+                        {"activities": specific_activities}
+                    )
+                    # If LLM fails, retry with simpler prompt (fully LLM-driven, no hardcoded text)
+                    if not activity_product_question:
+                        activity_product_question = self._generate_dynamic_question(
+                            "product", query, merged_intent
+                        )
+                    # Only ask if we got a valid question from LLM
+                    if activity_product_question:
+                        print(f"[DEBUG] Activities specified: {specific_activities} - asking about products")
+                        return {
+                            "needs_clarification": True,
+                            "clarification_question": activity_product_question,
+                            "assistant_message": change_acknowledgment + activity_product_question if change_acknowledgment else activity_product_question,
+                            "updated_intent": merged_intent,
+                            "clarified_query": query,
+                            "ready_for_recommendations": False,
+                            "detected_changes": detected_changes
+                        }
+                
+                # Activities already captured or asked (or no activities) - proceed to generate requested content
                 print(f"[DEBUG] Dynamic content request: {requested_content} with location and date - proceeding")
                 base_message = result.get("assistant_message", "Let me get that information for you!")
                 return {
@@ -1463,7 +1501,31 @@ Extract travel intent and respond with the JSON structure. If key details are mi
 
                 if has_specific_activities:
                     merged_intent["_asked_activities"] = True
-                    # Activities already captured by early detection, continue to optional
+                    # Activities captured - now dynamically ask about products for those activities
+                    # Use LLM to generate product question tailored to the activities
+                    already_asked_activity_products = existing_intent.get("_asked_activity_products", False) or merged_intent.get("_asked_activity_products", False)
+                    if not shopping_flow_complete and not already_asked_activity_products:
+                        merged_intent["_asked_activity_products"] = True
+                        activity_product_question = self._generate_dynamic_question(
+                            "activity_product", query, merged_intent, 
+                            {"activities": specific_activities}
+                        )
+                        # If LLM fails, retry with simpler prompt (fully LLM-driven, no hardcoded text)
+                        if not activity_product_question:
+                            activity_product_question = self._generate_dynamic_question(
+                                "product", query, merged_intent
+                            )
+                        # Only ask if we got a valid question from LLM
+                        if activity_product_question:
+                            return {
+                                "needs_clarification": True,
+                                "clarification_question": activity_product_question,
+                                "assistant_message": change_acknowledgment + activity_product_question if change_acknowledgment else activity_product_question,
+                                "updated_intent": merged_intent,
+                                "clarified_query": query,
+                                "ready_for_recommendations": False,
+                                "detected_changes": detected_changes
+                            }
                 else:
                     merged_intent["_asked_activities"] = True
                     merged_intent["_last_question_type"] = "optional"
