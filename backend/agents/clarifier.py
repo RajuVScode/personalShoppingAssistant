@@ -528,6 +528,14 @@ Generate a contextual question that:
 - Is warm and helpful, not robotic
 
 Do NOT repeat product recommendations. Just ask about context changes or next steps.
+Return ONLY the question.""",
+
+                "ask_what_changed": f"""Generate a SHORT, friendly question (max 20 words) asking the user what specifically they want to change about their preferences.
+
+Current context: {context_str}
+User indicated they want to make changes but didn't specify what.
+
+Generate a warm question asking what they'd like to update (size, color, style, destination, dates, etc.).
 Return ONLY the question."""
             }
             
@@ -958,9 +966,63 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             )
             is_awaiting_response = (
                 existing_intent.get("_awaiting_shopping_confirm") or
+                existing_intent.get("_awaiting_context_confirm") or
                 (existing_intent.get("_asked_product_attributes") and not existing_intent.get("_product_attributes_received")) or
                 (existing_intent.get("_asked_product_category") and not existing_intent.get("_product_category_received"))
             )
+            
+            # Handle response to "Have your preferences changed?" question
+            awaiting_context_confirm = existing_intent.get("_awaiting_context_confirm", False)
+            if awaiting_context_confirm:
+                # User is responding to our context change question
+                # Check if LLM detected any NEW shopping intent or context changes
+                has_new_product = bool(llm_intent_result.get("product_mentioned")) if llm_intent_result else False
+                has_new_context = detected_changes.get("has_changes", False)
+                is_affirmative = llm_intent_result.get("is_affirmative", False) if llm_intent_result else False
+                is_negative = llm_intent_result.get("is_negative", False) if llm_intent_result else False
+                
+                print(f"[DEBUG] Awaiting context confirm response: has_new_product={has_new_product}, has_new_context={has_new_context}, is_affirmative={is_affirmative}, is_negative={is_negative}")
+                
+                # If user provides NEW context (product, destination, dates, etc.), process it normally
+                if has_new_product or has_new_context:
+                    print(f"[DEBUG] User provided new context, continuing with normal flow")
+                    merged_intent["_awaiting_context_confirm"] = False
+                    # Don't return here - let the normal flow process the new info
+                elif is_affirmative and not is_negative:
+                    # User says "yes" without providing details - ask what changed
+                    # Keep _awaiting_context_confirm True to handle the next response
+                    clarify_msg = self._generate_dynamic_question(
+                        "ask_what_changed", 
+                        query, 
+                        merged_intent,
+                        {}
+                    ) or "What would you like to change about your preferences?"
+                    
+                    print(f"[DEBUG] User said yes but no details, asking what changed")
+                    return {
+                        "needs_clarification": True,
+                        "clarification_question": clarify_msg,
+                        "assistant_message": clarify_msg,
+                        "updated_intent": merged_intent,
+                        "clarified_query": query,
+                        "ready_for_recommendations": False,
+                        "detected_changes": detected_changes
+                    }
+                else:
+                    # User says "no" (no changes) or gives proceed confirmation - proceed to recommendations
+                    merged_intent["_awaiting_context_confirm"] = False
+                    merged_intent["_context_confirmed"] = True
+                    
+                    confirmation_msg = "Perfect! Let me refresh your personalized recommendations."
+                    return {
+                        "needs_clarification": False,
+                        "clarification_question": None,
+                        "assistant_message": confirmation_msg,
+                        "updated_intent": merged_intent,
+                        "clarified_query": query,
+                        "ready_for_recommendations": True,
+                        "detected_changes": detected_changes
+                    }
             
             if has_prior_context and conversation_history and not is_awaiting_response:
                 # Use LLM to detect non-informative follow-ups
@@ -981,6 +1043,8 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                     )
                     if followup_question:
                         print(f"[DEBUG] Non-informative follow-up detected, asking about context changes")
+                        # Set flag to track we're awaiting response to this question
+                        merged_intent["_awaiting_context_confirm"] = True
                         return {
                             "needs_clarification": True,
                             "clarification_question": followup_question,
