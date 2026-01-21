@@ -947,6 +947,49 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                                                     new_intent, merged_intent)
             change_acknowledgment = self._generate_change_acknowledgment(
                 detected_changes)
+            
+            # EARLY NON-INFORMATIVE FOLLOW-UP DETECTION
+            # Must happen before any other processing to catch "Hi" after recommendations
+            has_prior_context = (
+                existing_intent.get("_shopping_flow_complete") or
+                existing_intent.get("notes") or
+                existing_intent.get("destination") or
+                existing_intent.get("travel_date")
+            )
+            is_awaiting_response = (
+                existing_intent.get("_awaiting_shopping_confirm") or
+                (existing_intent.get("_asked_product_attributes") and not existing_intent.get("_product_attributes_received")) or
+                (existing_intent.get("_asked_product_category") and not existing_intent.get("_product_category_received"))
+            )
+            
+            if has_prior_context and conversation_history and not is_awaiting_response:
+                # Use LLM to detect non-informative follow-ups
+                llm_followup_check = detect_intent_with_llm(query, self.llm, conversation_history)
+                is_non_informative = llm_followup_check.get("is_non_informative_followup", False)
+                
+                print(f"[DEBUG] Early non-informative check: is_non_informative={is_non_informative}, has_prior_context={has_prior_context}, is_awaiting_response={is_awaiting_response}")
+                
+                if is_non_informative:
+                    # User sent a non-informative message after prior recommendations/context
+                    # Generate a dynamic follow-up question instead of repeating
+                    products_discussed = existing_intent.get("notes", "products")
+                    followup_question = self._generate_dynamic_question(
+                        "post_recommendation_followup", 
+                        query, 
+                        merged_intent,
+                        {"products": products_discussed}
+                    )
+                    if followup_question:
+                        print(f"[DEBUG] Non-informative follow-up detected, asking about context changes")
+                        return {
+                            "needs_clarification": True,
+                            "clarification_question": followup_question,
+                            "assistant_message": followup_question,
+                            "updated_intent": merged_intent,
+                            "clarified_query": query,
+                            "ready_for_recommendations": False,
+                            "detected_changes": detected_changes
+                        }
 
             if detected_changes["has_changes"]:
                 merged_intent["_context_refresh_needed"] = True
@@ -1332,6 +1375,7 @@ Extract travel intent and respond with the JSON structure. If key details are mi
 
             # Check if we're waiting for product attribute response
             already_asked_product_attributes = existing_intent.get("_asked_product_attributes", False)
+            print(f"[DEBUG] Flow check: already_asked_product_attributes={already_asked_product_attributes}, _product_attributes_received={existing_intent.get('_product_attributes_received', False)}, already_asked_product_category={already_asked_product_category}, _product_category_received={existing_intent.get('_product_category_received', False)}")
             if already_asked_product_attributes and not existing_intent.get("_product_attributes_received", False):
                 # User is responding to product attribute question
                 merged_intent["_product_attributes_received"] = True
