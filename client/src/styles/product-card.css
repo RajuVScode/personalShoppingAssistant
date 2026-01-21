@@ -1,0 +1,183 @@
+/* ==========================================================================
+   Product Card Styles
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. CSS Variables
+   -------------------------------------------------------------------------- */
+:root {
+  --product-card-radius: 6px;
+  --product-card-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+  --product-card-shadow-hover: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --product-card-transition: box-shadow 0.2s ease;
+  --product-badge-radius: 4px;
+  --product-btn-size: 1.75rem;
+  --product-btn-size-lg: 2rem;
+  --product-rating-color: #14b8a6;
+  --product-wishlist-active: #ef4444;
+  --product-text-muted: #6b7280;
+  --product-text-light: #9ca3af;
+  --product-bg-white: #ffffff;
+  --product-bg-hover: #f9fafb;
+}
+
+/* --------------------------------------------------------------------------
+   2. Card Container
+   -------------------------------------------------------------------------- */
+.product-card {
+  overflow: hidden;
+  border-radius: var(--product-card-radius);
+  display: flex;
+  flex-direction: column;
+  transition: var(--product-card-transition);
+  background-color: var(--product-bg-white);
+  border: 1px solid hsl(var(--border));
+}
+
+.product-card:hover {
+  box-shadow: var(--product-card-shadow-hover);
+}
+
+/* --------------------------------------------------------------------------
+   3. Image Section
+   -------------------------------------------------------------------------- */
+.product-card-image-container {
+  position: relative;
+  cursor: pointer;
+}
+
+/* --------------------------------------------------------------------------
+   4. Action Buttons (Wishlist, View Similar)
+   -------------------------------------------------------------------------- */
+.product-card-btn {
+  position: absolute;
+  background-color: var(--product-bg-white);
+  border-radius: 9999px;
+  box-shadow: var(--product-card-shadow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+  border: none;
+  cursor: pointer;
+}
+
+.product-card-btn:hover {
+  background-color: var(--product-bg-hover);
+}
+
+.product-card-wishlist-btn {
+  top: 0.5rem;
+  right: 0.5rem;
+  width: var(--product-btn-size);
+  height: var(--product-btn-size);
+}
+
+.product-card-wishlist-icon {
+  width: 1rem;
+  height: 1rem;
+  color: var(--product-text-light);
+}
+
+.product-card-wishlist-icon--active {
+  fill: var(--product-wishlist-active);
+  color: var(--product-wishlist-active);
+}
+
+.product-card-similar-btn {
+  bottom: 0.5rem;
+  right: 0.5rem;
+  width: var(--product-btn-size-lg);
+  height: var(--product-btn-size-lg);
+}
+
+.product-card-similar-icon {
+  width: 1rem;
+  height: 1rem;
+  color: var(--product-text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   5. Rating Badge
+   -------------------------------------------------------------------------- */
+.product-card-rating {
+  position: absolute;
+  bottom: 0.5rem;
+  left: 0.5rem;
+  background-color: var(--product-bg-white);
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--product-badge-radius);
+  box-shadow: var(--product-card-shadow);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.product-card-rating-value {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.product-card-rating-star {
+  color: var(--product-rating-color);
+  font-size: 0.875rem;
+}
+
+.product-card-rating-divider {
+  color: var(--product-text-light);
+  font-size: 0.75rem;
+}
+
+.product-card-rating-count {
+  font-size: 0.75rem;
+  color: var(--product-text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   6. Content Section
+   -------------------------------------------------------------------------- */
+.product-card-content {
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.product-card-brand {
+  font-weight: 600;
+  font-size: 0.875rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin: 0;
+}
+
+.product-card-name {
+  font-size: 0.75rem;
+  color: var(--product-text-muted);
+  margin-top: 0.25rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.product-card-price-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.product-card-price {
+  font-weight: 700;
+  font-size: 0.875rem;
+}
+
+/* --------------------------------------------------------------------------
+   7. Utility Classes
+   -------------------------------------------------------------------------- */
+.product-card-actions {
+  padding: 0 0.75rem 0.75rem;
+}
