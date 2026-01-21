@@ -73,6 +73,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import Logo from "@/components/Logo";
 import { Html5Qrcode } from "html5-qrcode";
+import "@/styles/chat-widget.css";
 
 /**
  * Represents a step in the AI agent's thinking process.
@@ -905,7 +906,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
 
   return (
     <div 
-      className={`fixed inset-0 z-50 flex items-center justify-end sm:pr-[1%] bg-black/50 transition-opacity duration-500 ${isAnimating ? 'opacity-100' : 'opacity-0'}`} 
+      className={`chat-overlay ${isAnimating ? 'chat-overlay--visible' : 'chat-overlay--hidden'}`} 
       data-testid="chat-overlay"
       onClick={(e) => {
         if (e.target === e.currentTarget) handleClose();
@@ -913,51 +914,47 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
     >
       <div 
         ref={chatModalRef}
-        className={`bg-white w-full h-full sm:w-[97vw] sm:h-[95vh] sm:rounded-[5px] shadow-2xl flex flex-col overflow-hidden transition-transform duration-500 ease-in-out ${isAnimating ? 'translate-x-0' : 'translate-x-[105%]'}`} 
+        className={`chat-modal-container ${isAnimating ? 'chat-modal--visible' : 'chat-modal--hidden'}`} 
         data-testid="chat-modal"
       >
-        <div className="bg-white text-gray-800 px-2 sm:px-4 py-1.5 flex items-center justify-between sm:rounded-t-[5px] border-b border-gray-200" data-testid="chat-header">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="h-7 w-7 sm:h-8 sm:w-8 bg-[#C9A961] rounded-full flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white">
+        <div className="chat-header-bar" data-testid="chat-header">
+          <div className="chat-header-left">
+            <div className="chat-header-avatar">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="chat-header-avatar-icon">
                 <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
                 <circle cx="12" cy="7" r="4"></circle>
               </svg>
             </div>
-            <Logo className="h-8 sm:h-10" />
+            <Logo className="chat-header-logo" />
           </div>
 
-          <div className="flex items-center gap-1 sm:gap-4">
+          <div className="chat-header-right">
             <button
               onClick={() => setShoppingMode(shoppingMode === "online" ? "instore" : "online")}
-              className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-[6px] text-xs sm:text-sm font-medium transition-all ${
-                shoppingMode === "online" 
-                  ? "bg-green-500 text-white" 
-                  : "bg-[#C9A961] text-white"
-              }`}
+              className={`chat-mode-btn ${shoppingMode === "online" ? "chat-mode-btn--online" : "chat-mode-btn--instore"}`}
               data-testid="toggle-shopping-mode"
             >
               {shoppingMode === "online" ? (
                 <>
-                  <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg className="chat-mode-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="10" />
                     <line x1="2" y1="12" x2="22" y2="12" />
                     <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
                   </svg>
-                  <span className="hidden sm:inline">Online</span>
+                  <span className="chat-mode-btn-text">Online</span>
                 </>
               ) : (
                 <>
-                  <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg className="chat-mode-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
                     <polyline points="9 22 9 12 15 12 15 22" />
                   </svg>
-                  <span className="hidden sm:inline">In-Store</span>
+                  <span className="chat-mode-btn-text">In-Store</span>
                 </>
               )}
             </button>
             <button 
-              className="hover:bg-gray-100 p-1 rounded text-gray-700" 
+              className="chat-header-btn chat-c360-btn" 
               data-testid="btn-globe"
               onClick={() => {
                 if (customerId && customer360Data) {
@@ -970,57 +967,51 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                 }
               }}
             >
-              <div className="relative">
-                <div className="w-5 h-5 rounded-full border-[1.5px] border-gray-700 flex items-center justify-center">
-                  <User className="w-3 h-3" />
-                </div>
-                <div className="absolute -bottom-0.5 -right-1 bg-gray-700 text-white text-[5px] font-bold px-0.5 rounded leading-tight">
-                  360
-                </div>
+              <div className="chat-c360-circle">
+                <User className="chat-c360-icon" />
               </div>
+              <div className="chat-c360-badge">360</div>
             </button>
             <button 
-              className="hover:bg-gray-100 p-1 rounded text-gray-700" 
+              className="chat-header-btn" 
               data-testid="btn-settings"
               onClick={openAgentThinkingModal}
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className="chat-header-btn-icon">
                 <path fillRule="evenodd" d="M14.269 1.322a3.751 3.751 0 0 1 4.456 3.25 4.753 4.753 0 0 1 3.022 4.62 4.757 4.757 0 0 1-.318 1.522 4.75 4.75 0 0 1-.537 7.055c-.047.036-.096.07-.144.104a4.752 4.752 0 0 1-4.44 4.863A4.753 4.753 0 0 1 12 20.555a4.752 4.752 0 0 1-7.667.459 4.75 4.75 0 0 1-1.082-3.14 4.751 4.751 0 0 1-.682-7.16 4.756 4.756 0 0 1 .079-3.62 4.75 4.75 0 0 1 2.626-2.52A3.752 3.752 0 0 1 12 2.751a3.748 3.748 0 0 1 2.269-1.43Zm-4.83 1.471a2.252 2.252 0 0 0-2.387 3.332.75.75 0 0 1-1.299.75 3.762 3.762 0 0 1-.32-.722 3.25 3.25 0 0 0-1.411 1.543 3.251 3.251 0 0 0-.171 2.108.748.748 0 0 1 .524 1.382A3.252 3.252 0 0 0 2.86 14.84 3.252 3.252 0 0 0 6 17.251a.75.75 0 0 1 0 1.5 4.75 4.75 0 0 1-1.194-.154 3.276 3.276 0 0 0 .685 1.464 3.251 3.251 0 0 0 5.76-2.062v-5.467a4.92 4.92 0 0 1-2.04 1.188.75.75 0 0 1-.42-1.44 3.421 3.421 0 0 0 2.447-3.004L11.25 9V5a2.252 2.252 0 0 0-1.81-2.207Zm6.143.034a2.252 2.252 0 0 0-1.952.388 2.25 2.25 0 0 0-.865 1.527L12.75 5v4l.01.276a3.42 3.42 0 0 0 2.45 3.005.75.75 0 0 1-.42 1.439 4.92 4.92 0 0 1-2.04-1.187V18a3.252 3.252 0 0 0 2.154 3.056 3.253 3.253 0 0 0 3.605-.994 3.251 3.251 0 0 0 .683-1.464A4.75 4.75 0 0 1 18 18.75a.75.75 0 0 1 0-1.5 3.251 3.251 0 0 0 1.625-6.064.747.747 0 0 1 .522-1.382 3.235 3.235 0 0 0-1.581-3.652c-.082.25-.186.494-.319.723a.75.75 0 0 1-1.299-.75 2.252 2.252 0 0 0-.465-2.816 2.251 2.251 0 0 0-.9-.482Z" clipRule="evenodd"></path>
               </svg>
             </button>
             <button 
-              className="hover:bg-gray-100 p-1 rounded text-gray-700" 
+              className="chat-header-btn" 
               data-testid="btn-info"
               onClick={openContextInsightsModal}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="chat-header-btn-icon">
                 <circle cx="12" cy="12" r="10"></circle>
                 <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path>
                 <path d="M2 12h20"></path>
               </svg>
             </button>
             <button 
-              className="hover:bg-gray-100 p-1 rounded relative text-gray-700" 
+              className="chat-header-btn chat-header-btn--relative" 
               data-testid="btn-cart"
               onClick={openCartModal}
             >
-              <ShoppingCart className="w-5 h-5" />
+              <ShoppingCart className="chat-header-btn-icon" />
               {totalItems > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center font-medium">
-                  {totalItems}
-                </span>
+                <span className="chat-cart-badge">{totalItems}</span>
               )}
             </button>
             {customerName ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button 
-                    className="hover:bg-gray-100 p-1 rounded flex items-center gap-1 text-gray-700" 
+                    className="chat-user-menu-btn" 
                     data-testid="btn-user"
                   >
-                    <User className="w-5 h-5" />
-                    <span className="text-xs max-w-[80px] truncate">{customerName.split(' ')[0]}</span>
-                    <ChevronDown className="w-3 h-3" />
+                    <User className="chat-header-btn-icon" />
+                    <span className="chat-user-menu-name">{customerName.split(' ')[0]}</span>
+                    <ChevronDown className="chat-user-menu-chevron" />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" side="bottom" sideOffset={8} className="w-48" container={chatModalRef.current || undefined}>
@@ -1057,13 +1048,13 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
               </DropdownMenu>
             ) : (
               <button 
-                className="hover:bg-gray-100 p-1 rounded flex items-center gap-1 text-gray-700" 
+                className="chat-header-btn chat-login-link" 
                 data-testid="btn-user"
                 onClick={() => setShowLoginModal(true)}
                 title="Login"
               >
                 <svg 
-                  className="w-5 h-5" 
+                  className="chat-header-btn-icon" 
                   viewBox="0 0 24 24" 
                   fill="currentColor"
                 >
@@ -1073,26 +1064,26 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                 </svg>
               </button>
             )}
-            <button onClick={handleClose} className="hover:bg-white/10 p-1 rounded" data-testid="btn-close-chat">
-              <X className="w-5 h-5" />
+            <button onClick={handleClose} className="chat-close-btn" data-testid="btn-close-chat">
+              <X className="chat-header-btn-icon" />
             </button>
           </div>
         </div>
 
-        <div className="flex flex-1 overflow-hidden">
-          <div className="hidden md:block w-48 bg-gray-100 p-4 border-r flex-shrink-0" data-testid="chat-sidebar">
+        <div className="chat-main-content">
+          <div className="chat-sidebar" data-testid="chat-sidebar">
             <button
               onClick={resetConversation}
-              className="flex items-center gap-2 w-full px-3 py-1.5 mb-4 text-gray-700 bg-white hover:bg-blue-50 hover:border-blue-300 hover:shadow-md rounded-[6px] border border-gray-300 transition-all"
+              className="chat-new-btn"
               data-testid="button-reset"
             >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg className="chat-new-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
               </svg>
-              <span className="text-sm font-medium">New Chat</span>
+              <span className="chat-new-btn-text">New Chat</span>
             </button>
-            <h3 className="text-xs font-semibold text-gray-600 mb-4">CONVERSATION PROGRESS</h3>
+            <h3 className="chat-sidebar-title">CONVERSATION PROGRESS</h3>
             <div className="space-y-3">
               <div className={`flex items-center gap-2 ${currentStep >= 1 ? 'text-purple-600' : 'text-gray-400'}`}>
                 <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${currentStep >= 1 ? 'bg-purple-600 text-white' : 'bg-gray-300'}`}>
@@ -1155,46 +1146,41 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
             </div>
           </div>
 
-          <div className="flex-1 flex flex-col">
-            <ScrollArea className="flex-1 p-6" data-testid="chat-messages">
-              <div className="space-y-6">
+          <div className="chat-messages-container">
+            <ScrollArea className="chat-messages-scroll" data-testid="chat-messages">
+              <div className="chat-messages-list">
                 {messages.map((message, index) => (
                   <div
                     key={index}
-                    className={`flex gap-3 ${message.role === "user" ? "justify-end" : ""}`}
+                    className={`chat-message-row ${message.role === "user" ? "chat-message-row--user" : ""}`}
                   >
                     {message.role === "assistant" && (
-                      <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
-                        <Sparkles className="h-4 w-4 text-primary-foreground" />
+                      <div className="chat-assistant-avatar">
+                        <Sparkles className="chat-assistant-avatar-icon" />
                       </div>
                     )}
                     <div
-                      className={`max-w-[95%] ${message.role === "user" ? "order-first max-w-[80%]" : ""}`}
+                      className={`chat-message-content ${message.role === "user" ? "chat-message-content--user" : ""}`}
                     >
                       <div
-                        className={`px-4 ${
-                          message.role === "user"
-                            ? "bg-primary text-primary-foreground ml-auto"
-                            : "bg-muted rounded-2xl py-3"
-                        }`}
-                        style={message.role === "user" ? { borderRadius: "10px", paddingTop: "3px", paddingBottom: "3px" } : undefined}
+                        className={`chat-bubble ${message.role === "user" ? "chat-bubble--user" : "chat-bubble--assistant"}`}
                         data-testid={`message-${message.role}-${index}`}
                       >
                         {message.role === "assistant" ? (
-                          <div className="prose prose-sm dark:prose-invert max-w-none prose-headings:mt-2 prose-headings:mb-1 prose-p:my-1 prose-ul:my-1 prose-li:my-0 prose-hr:my-2">
+                          <div className="chat-prose">
                             <ReactMarkdown remarkPlugins={[remarkGfm]}>
                               {message.content}
                             </ReactMarkdown>
                           </div>
                         ) : (
-                          <p className="whitespace-pre-wrap">
+                          <p className="chat-user-text">
                             {message.content}
                           </p>
                         )}
                       </div>
 
                       {message.products && message.products.length > 0 && (
-                        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
+                        <div className="chat-products-grid">
                           {message.products.slice(0, 6).map((product) => (
                             <ProductCard
                               key={product.id}
@@ -1270,15 +1256,15 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                 ))}
 
                 {chatMutation.isPending && (
-                  <div className="flex gap-3">
-                    <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
-                      <Sparkles className="h-4 w-4 text-primary-foreground" />
+                  <div className="chat-typing-row">
+                    <div className="chat-assistant-avatar">
+                      <Sparkles className="chat-assistant-avatar-icon" />
                     </div>
-                    <div className="bg-muted rounded-2xl px-4 py-3">
-                      <div className="flex gap-1">
-                        <span className="h-2 w-2 rounded-full bg-muted-foreground animate-bounce" />
-                        <span className="h-2 w-2 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: "0.1s" }} />
-                        <span className="h-2 w-2 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: "0.2s" }} />
+                    <div className="chat-typing-bubble">
+                      <div className="chat-typing-dots">
+                        <span className="chat-typing-dot" />
+                        <span className="chat-typing-dot" style={{ animationDelay: "0.1s" }} />
+                        <span className="chat-typing-dot" style={{ animationDelay: "0.2s" }} />
                       </div>
                     </div>
                   </div>
@@ -1287,29 +1273,28 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
               </div>
             </ScrollArea>
 
-            <div className="border-t px-3 sm:px-6 py-3 sm:py-4">
+            <div className="chat-input-area">
               {shoppingMode === "instore" && (
-                <div className="flex gap-2 mb-3">
+                <div className="chat-instore-actions">
                   <button
                     onClick={() => setShowScanProductModal(true)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white rounded"
-                    style={{ backgroundColor: '#C5A572' }}
+                    className="chat-scan-btn"
                     data-testid="btn-scan-product"
                   >
-                    <QrCode className="w-3.5 h-3.5" />
+                    <QrCode className="chat-action-icon" />
                     <span>Scan Product</span>
                   </button>
                   <button
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-gray-600 rounded"
+                    className="chat-help-btn"
                     data-testid="btn-get-help"
                   >
-                    <Phone className="w-3.5 h-3.5" />
+                    <Phone className="chat-action-icon" />
                     <span>Get Help</span>
                   </button>
                 </div>
               )}
-              <div className="relative flex items-center gap-3 bg-muted/30 border border-muted-foreground/10 p-3 pl-[5px] pr-[5px] pt-[0px] pb-[0px]" style={{ borderRadius: '12px' }}>
-                <div className="flex-1">
+              <div className="chat-input-wrapper">
+                <div className="chat-input-container">
                   <Textarea
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
@@ -1327,8 +1312,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                       }
                     }}
                     placeholder="What are you looking for today?"
-                    className="min-h-[40px] max-h-[120px] resize-none border-none bg-transparent p-[10px] shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:outline-none text-sm"
-                    style={{ border: 'none', outline: 'none' }}
+                    className="chat-input-field"
                     disabled={chatMutation.isPending}
                     data-testid="input-message"
                     rows={1}
@@ -1338,14 +1322,10 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                   onClick={handleSend}
                   disabled={!input.trim() || chatMutation.isPending}
                   size="icon"
-                  className="rounded-full h-7 w-7 shrink-0 disabled:opacity-100 disabled:pointer-events-auto"
-                  style={{ 
-                    backgroundColor: '#0d6efd',
-                    cursor: (!input.trim() || chatMutation.isPending) ? 'not-allowed' : 'pointer'
-                  }}
+                  className="chat-send-btn"
                   data-testid="button-send"
                 >
-                  <Send className="h-3.5 w-3.5" />
+                  <Send className="chat-send-icon" />
                 </Button>
               </div>
             </div>
