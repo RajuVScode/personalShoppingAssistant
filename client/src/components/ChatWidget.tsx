@@ -954,7 +954,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
               )}
             </button>
             <button 
-              className="chat-header-btn chat-c360-btn" 
+              className="hover:bg-gray-100 p-1 rounded text-gray-700" 
               data-testid="btn-globe"
               onClick={() => {
                 if (customerId && customer360Data) {
@@ -967,10 +967,12 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                 }
               }}
             >
-              <div className="chat-c360-circle">
-                <User className="chat-c360-icon" />
+              <div className="relative">
+                <div className="w-5 h-5 rounded-full border-[1.5px] border-gray-700 flex items-center justify-center">
+                  <User className="w-3 h-3" />
+                </div>
+                <div className="absolute -bottom-0.5 -right-1 bg-gray-700 text-white text-[5px] font-bold px-0.5 rounded leading-tight">360</div>
               </div>
-              <div className="chat-c360-badge">360</div>
             </button>
             <button 
               className="chat-header-btn" 
