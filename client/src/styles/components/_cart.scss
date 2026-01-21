@@ -188,7 +188,7 @@
     color: $color-destructive;
     
     &:hover {
-      color: darken($color-destructive, 10%);
+      color: hsl(0, 84%, 50%);
     }
     
     .icon {
