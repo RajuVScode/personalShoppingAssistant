@@ -1286,13 +1286,23 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             assistant_msg = result.get("assistant_message", "")
             
             # Use LLM to detect if this is a non-informative follow-up (greeting/acknowledgment after products shown)
-            # Only check if we have prior shopping context
+            # Check if we have evidence of prior product recommendations:
+            # - _shopping_flow_complete flag set, OR
+            # - notes contain product info (e.g., "Looking for footwear"), OR
+            # - conversation history contains product-related responses
+            has_prior_product_context = (
+                existing_intent.get("_shopping_flow_complete") or
+                existing_intent.get("notes") or
+                existing_intent.get("clothes") or
+                (existing_intent.get("_asked_product_attributes") and existing_intent.get("_product_attributes_received"))
+            )
+            
             is_non_informative_reengagement = False
-            if existing_intent.get("_shopping_flow_complete") and conversation_history:
+            if has_prior_product_context and conversation_history:
                 # Use the same LLM-based detection that's used elsewhere in the flow
                 followup_check = detect_intent_with_llm(query, self.llm, conversation_history)
                 is_non_informative_reengagement = followup_check.get("is_non_informative_followup", False)
-                print(f"[DEBUG] Non-informative re-engagement check: {is_non_informative_reengagement}")
+                print(f"[DEBUG] Non-informative re-engagement check: has_prior_product_context={has_prior_product_context}, is_non_informative={is_non_informative_reengagement}")
             
             if ready_for_recs and mentions_product and not is_non_informative_reengagement:
                 # LLM determined we have enough info - trust it and proceed
