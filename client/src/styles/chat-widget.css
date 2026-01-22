@@ -468,6 +468,21 @@
   padding-bottom: 0.2rem;
 }
 
+/* Message Timestamp */
+.chat-message-time {
+  display: block;
+  font-size: 0.625rem;
+  color: var(--chat-gray-400);
+  margin-top: 0.25rem;
+  padding-left: 0.25rem;
+}
+
+.chat-message-time--user {
+  text-align: right;
+  padding-right: 0.25rem;
+  padding-left: 0;
+}
+
 .chat-prose {
   font-size: 0.875rem;
   line-height: 1.625;

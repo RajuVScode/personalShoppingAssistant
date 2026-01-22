@@ -99,6 +99,7 @@ interface Message {
   products?: Product[];
   context?: ContextInfo;
   agentThinking?: AgentThinkingStep[];
+  timestamp?: Date;
 }
 
 /**
@@ -525,7 +526,8 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
     const greetingData = await greetingRes.json();
     const greetingMessage: Message = { 
       role: "assistant", 
-      content: greetingData.greeting || "How may I assist you?" 
+      content: greetingData.greeting || "How may I assist you?",
+      timestamp: new Date()
     };
     
     const convRes = await fetch(`/api/conversation/${userId}`);
@@ -568,6 +570,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
         products: data.products,
         context: data.context,
         agentThinking: data.agent_thinking,
+        timestamp: new Date()
       };
       setMessages((prev) => [...prev, assistantMessage]);
       if (data.agent_thinking && data.agent_thinking.length > 0) {
@@ -590,7 +593,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
   const handleSend = () => {
     if (!input.trim() || chatMutation.isPending) return;
 
-    const userMessage: Message = { role: "user", content: input };
+    const userMessage: Message = { role: "user", content: input, timestamp: new Date() };
     setMessages((prev) => [...prev, userMessage]);
     chatMutation.mutate(input);
     setInput("");
@@ -616,7 +619,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
       const res = await fetch(`/api/greeting/${storedId}`);
       const data = await res.json();
       setMessages(
-        data.greeting ? [{ role: "assistant", content: data.greeting }] : [],
+        data.greeting ? [{ role: "assistant", content: data.greeting, timestamp: new Date() }] : [],
       );
     } else {
       setMessages([]);
@@ -985,6 +988,14 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                           </p>
                         )}
                       </div>
+                      {message.timestamp && (
+                        <span 
+                          className={`chat-message-time ${message.role === "user" ? "chat-message-time--user" : ""}`}
+                          data-testid={`message-time-${index}`}
+                        >
+                          {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      )}
 
                       {message.products && message.products.length > 0 && (
                         <div className="chat-products-grid">
