@@ -964,11 +964,21 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                 existing_intent.get("destination") or
                 existing_intent.get("travel_date")
             )
+            # Check if LLM clarifier detected date info - if so, this is an informative response
+            llm_detected_date_info = result.get("has_date_info", False)
+            llm_ready_for_recs = result.get("ready_for_recommendations", False)
+            # Awaiting travel date: has destination but no travel_date yet
+            is_awaiting_travel_date = (
+                existing_intent.get("destination") and 
+                not existing_intent.get("travel_date") and
+                not merged_intent.get("travel_date")
+            )
             is_awaiting_response = (
                 existing_intent.get("_awaiting_shopping_confirm") or
                 existing_intent.get("_awaiting_context_confirm") or
                 (existing_intent.get("_asked_product_attributes") and not existing_intent.get("_product_attributes_received")) or
-                (existing_intent.get("_asked_product_category") and not existing_intent.get("_product_category_received"))
+                (existing_intent.get("_asked_product_category") and not existing_intent.get("_product_category_received")) or
+                is_awaiting_travel_date  # Include when waiting for travel date response
             )
             
             # Handle response to "Have your preferences changed?" question
@@ -1024,12 +1034,15 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                         "detected_changes": detected_changes
                     }
             
-            if has_prior_context and conversation_history and not is_awaiting_response:
+            # Skip non-informative check if clarifier already detected meaningful info (date, ready for recs)
+            skip_non_informative_check = llm_detected_date_info or llm_ready_for_recs
+            
+            if has_prior_context and conversation_history and not is_awaiting_response and not skip_non_informative_check:
                 # Use LLM to detect non-informative follow-ups
                 llm_followup_check = detect_intent_with_llm(query, self.llm, conversation_history)
                 is_non_informative = llm_followup_check.get("is_non_informative_followup", False)
                 
-                print(f"[DEBUG] Early non-informative check: is_non_informative={is_non_informative}, has_prior_context={has_prior_context}, is_awaiting_response={is_awaiting_response}")
+                print(f"[DEBUG] Early non-informative check: is_non_informative={is_non_informative}, has_prior_context={has_prior_context}, is_awaiting_response={is_awaiting_response}, skip={skip_non_informative_check}")
                 
                 if is_non_informative:
                     # User sent a non-informative message after prior recommendations/context
@@ -1571,12 +1584,19 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                 is_non_informative = llm_intent_result.get("is_non_informative_followup", False)
                 # Check for actual pending responses, not just "was asked" flags
                 # _asked_* flags stay True permanently, so we need to check for unresolved states
+                # Awaiting travel date: has destination but no travel_date yet
+                is_awaiting_travel_date_inner = (
+                    existing_intent.get("destination") and 
+                    not existing_intent.get("travel_date") and
+                    not merged_intent.get("travel_date")
+                )
                 is_awaiting_response = (
                     existing_intent.get("_awaiting_shopping_confirm") or
                     # Product attributes asked but not yet received
                     (existing_intent.get("_asked_product_attributes") and not existing_intent.get("_product_attributes_received")) or
                     # Product category asked but not yet received
-                    (existing_intent.get("_asked_product_category") and not existing_intent.get("_product_category_received"))
+                    (existing_intent.get("_asked_product_category") and not existing_intent.get("_product_category_received")) or
+                    is_awaiting_travel_date_inner  # Include when waiting for travel date response
                 )
                 has_prior_context = (
                     existing_intent.get("_shopping_flow_complete") or
@@ -1587,9 +1607,12 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                 
                 print(f"[DEBUG] Non-informative check: is_non_informative={is_non_informative}, has_prior_context={has_prior_context}, is_awaiting_response={is_awaiting_response}, has_conversation_history={bool(conversation_history)}")
                 
+                # Skip if clarifier already detected meaningful info
+                skip_non_informative_inner = llm_detected_date_info or llm_ready_for_recs
+                
                 # Only trigger non-informative handling when NOT awaiting a specific response
                 # This prevents intercepting valid yes/no answers to confirmation questions
-                if is_non_informative and has_prior_context and conversation_history and not is_awaiting_response:
+                if is_non_informative and has_prior_context and conversation_history and not is_awaiting_response and not skip_non_informative_inner:
                     # User sent a non-informative message after prior recommendations/context
                     # Generate a dynamic follow-up question instead of repeating
                     products_discussed = existing_intent.get("notes", "products")
