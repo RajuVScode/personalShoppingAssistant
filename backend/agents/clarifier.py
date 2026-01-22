@@ -1193,6 +1193,33 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             is_info_only_request = len(requested_content) > 0 and "products" not in requested_content
             
             if is_info_only_request and has_destination and (has_date or result.get("has_date_info")):
+                # FIRST: Check for PAST DATE - block invalid dates before proceeding
+                is_past_date = result.get("is_past_date", False)
+                if is_past_date:
+                    dest = merged_intent.get("destination", "your destination")
+                    # Use LLM's message if it mentions past dates, otherwise generate
+                    llm_message = result.get("assistant_message", "")
+                    if "past" in llm_message.lower() or "passed" in llm_message.lower() or "already" in llm_message.lower():
+                        past_date_message = llm_message
+                    else:
+                        past_date_message = f"Those dates have already passed. Could you please provide future travel dates for your trip to {dest}?"
+                    
+                    # Clear the invalid date and reset flag so we can ask again
+                    merged_intent["travel_date"] = None
+                    merged_intent["_has_partial_date"] = False
+                    merged_intent["_asked_date"] = False
+                    
+                    print(f"[DEBUG] Past date detected in info request flow, blocking")
+                    return {
+                        "needs_clarification": True,
+                        "clarification_question": past_date_message,
+                        "assistant_message": past_date_message,
+                        "updated_intent": merged_intent,
+                        "clarified_query": query,
+                        "ready_for_recommendations": False,
+                        "detected_changes": detected_changes
+                    }
+                
                 # Info-only request with location and date - but check if activities were asked first
                 # For travel planning, we want to know activities to provide relevant context
                 already_asked_activities_check = existing_intent.get("_asked_activities", False) or merged_intent.get("_asked_activities", False)
@@ -1269,17 +1296,20 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                     "detected_changes": detected_changes
                 }
             elif is_info_only_request and has_destination and not has_date and not result.get("has_date_info"):
-                # Info request but missing date - ask for it
-                date_question = self._generate_dynamic_question("date", query, merged_intent) or result.get("next_question") or result.get("assistant_message")
-                return {
-                    "needs_clarification": True,
-                    "clarification_question": date_question,
-                    "assistant_message": date_question,
-                    "updated_intent": merged_intent,
-                    "clarified_query": query,
-                    "ready_for_recommendations": False,
-                    "detected_changes": detected_changes
-                }
+                # Info request but missing date - ask for it (but only if not already asked)
+                already_asked_date = existing_intent.get("_asked_date", False) or merged_intent.get("_asked_date", False)
+                if not already_asked_date:
+                    merged_intent["_asked_date"] = True
+                    date_question = self._generate_dynamic_question("date", query, merged_intent) or result.get("next_question") or result.get("assistant_message")
+                    return {
+                        "needs_clarification": True,
+                        "clarification_question": date_question,
+                        "assistant_message": date_question,
+                        "updated_intent": merged_intent,
+                        "clarified_query": query,
+                        "ready_for_recommendations": False,
+                        "detected_changes": detected_changes
+                    }
             
             # Trust LLM when it says ready_for_recommendations AND has product mention
             # BUT check if this is a non-informative follow-up using LLM detection
@@ -1445,9 +1475,10 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                 else:
                     past_date_message = f"Those dates have already passed. Could you please provide future travel dates for your trip to {dest}?"
                 
-                # Clear the invalid date
+                # Clear the invalid date and reset flag so we can ask again
                 merged_intent["travel_date"] = None
                 merged_intent["_has_partial_date"] = False
+                merged_intent["_asked_date"] = False
                 
                 return {
                     "needs_clarification": True,
@@ -1948,24 +1979,28 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                         }
 
             if has_destination and not has_dates_info:
-                date_question = self._generate_dynamic_question("date", query, merged_intent) or result.get("assistant_message") or result.get("next_question")
-                return {
-                    "needs_clarification":
-                    True,
-                    "clarification_question":
-                    date_question,
-                    "assistant_message":
-                    change_acknowledgment +
-                    date_question if change_acknowledgment else date_question,
-                    "updated_intent":
-                    merged_intent,
-                    "clarified_query":
-                    query,
-                    "ready_for_recommendations":
-                    False,
-                    "detected_changes":
-                    detected_changes
-                }
+                # Ask for date only if not already asked
+                already_asked_date = existing_intent.get("_asked_date", False) or merged_intent.get("_asked_date", False)
+                if not already_asked_date:
+                    merged_intent["_asked_date"] = True
+                    date_question = self._generate_dynamic_question("date", query, merged_intent) or result.get("assistant_message") or result.get("next_question")
+                    return {
+                        "needs_clarification":
+                        True,
+                        "clarification_question":
+                        date_question,
+                        "assistant_message":
+                        change_acknowledgment +
+                        date_question if change_acknowledgment else date_question,
+                        "updated_intent":
+                        merged_intent,
+                        "clarified_query":
+                        query,
+                        "ready_for_recommendations":
+                        False,
+                        "detected_changes":
+                        detected_changes
+                    }
             
             # Check for partial date (month only) - ask for specific days
             pending_month = merged_intent.get("_pending_month") or existing_intent.get("_pending_month")
