@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import api from "@/lib/api";
 
 interface CustomerData {
   customer_id: string;
@@ -60,25 +61,22 @@ export default function ProfilePage() {
     
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/customers/${customerId}`);
-      if (response.ok) {
-        const data: CustomerData = await response.json();
-        setFirstName(data.first_name || "");
-        setLastName(data.last_name || "");
-        setEmail(data.email || "");
-        setPhoneNumber(data.phone_number || "");
-        setGender(data.gender || "");
-        setDateOfBirth(data.date_of_birth || "");
-        
-        if (data.address) {
-          setAddressLabel(data.address.label || "");
-          setAddressLine1(data.address.address_line1 || "");
-          setAddressLine2(data.address.address_line2 || "");
-          setCity(data.address.city || "");
-          setState(data.address.state || "");
-          setPostalCode(data.address.postal_code || "");
-          setCountry(data.address.country || "");
-        }
+      const data = await api.getCustomer<CustomerData>(customerId);
+      setFirstName(data.first_name || "");
+      setLastName(data.last_name || "");
+      setEmail(data.email || "");
+      setPhoneNumber(data.phone_number || "");
+      setGender(data.gender || "");
+      setDateOfBirth(data.date_of_birth || "");
+      
+      if (data.address) {
+        setAddressLabel(data.address.label || "");
+        setAddressLine1(data.address.address_line1 || "");
+        setAddressLine2(data.address.address_line2 || "");
+        setCity(data.address.city || "");
+        setState(data.address.state || "");
+        setPostalCode(data.address.postal_code || "");
+        setCountry(data.address.country || "");
       }
     } catch (error) {
       toast({
@@ -123,27 +121,13 @@ export default function ProfilePage() {
         },
       };
 
-      const response = await fetch(`/api/customers/${customerId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+      await api.updateCustomer<CustomerData>(customerId!, payload);
+      localStorage.setItem("customer_name", `${firstName} ${lastName}`);
+      toast({
+        title: "Profile Updated",
+        description: "Your profile has been updated successfully.",
       });
-
-      if (response.ok) {
-        localStorage.setItem("customer_name", `${firstName} ${lastName}`);
-        toast({
-          title: "Profile Updated",
-          description: "Your profile has been updated successfully.",
-        });
-        navigate(-1);
-      } else {
-        const error = await response.json();
-        toast({
-          title: "Update Failed",
-          description: error.message || "Failed to update profile.",
-          variant: "destructive",
-        });
-      }
+      navigate(-1);
     } catch (error) {
       toast({
         title: "Error",

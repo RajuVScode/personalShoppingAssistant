@@ -74,6 +74,7 @@ import { useToast } from "@/hooks/use-toast";
 import Logo from "@/components/Logo";
 import { Html5Qrcode } from "html5-qrcode";
 import { useBasket } from "@/components/Basket";
+import api from "@/lib/api";
 import "@/styles/chat-widget.css";
 
 /**
@@ -234,11 +235,8 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
 
   const fetchCustomer360 = async (custId: string) => {
     try {
-      const response = await fetch(`/api/customer360/${custId}`);
-      if (response.ok) {
-        const data = await response.json();
-        setCustomer360Data(data);
-      }
+      const data = await api.getCustomer360<Customer360Data>(custId);
+      setCustomer360Data(data);
     } catch (error) {
       console.error("Failed to fetch customer 360 data:", error);
     }
@@ -369,18 +367,13 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
         setScannedProductId(productId);
         
         try {
-          const response = await fetch(`/api/products/${productId}`);
-          if (response.ok) {
-            const productData = await response.json();
-            setShowScanProductModal(false);
-            setScanningState("ready");
-            setScannedProductId(null);
-            setSelectedProduct(productData);
-            setShouldRenderProductDetail(true);
-            setTimeout(() => setIsProductDetailAnimating(true), 50);
-          } else {
-            setScanningState("not_found");
-          }
+          const productData = await api.getProduct<Product>(productId);
+          setShowScanProductModal(false);
+          setScanningState("ready");
+          setScannedProductId(null);
+          setSelectedProduct(productData);
+          setShouldRenderProductDetail(true);
+          setTimeout(() => setIsProductDetailAnimating(true), 50);
         } catch {
           setScanningState("not_found");
         }
@@ -435,18 +428,13 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
               setScannedProductId(productId);
               
               try {
-                const response = await fetch(`/api/products/${productId}`);
-                if (response.ok) {
-                  const productData = await response.json();
-                  setShowScanProductModal(false);
-                  setScanningState("ready");
-                  setScannedProductId(null);
-                  setSelectedProduct(productData);
-                  setShouldRenderProductDetail(true);
-                  setTimeout(() => setIsProductDetailAnimating(true), 50);
-                } else {
-                  setScanningState("not_found");
-                }
+                const productData = await api.getProduct<Product>(productId);
+                setShowScanProductModal(false);
+                setScanningState("ready");
+                setScannedProductId(null);
+                setSelectedProduct(productData);
+                setShouldRenderProductDetail(true);
+                setTimeout(() => setIsProductDetailAnimating(true), 50);
               } catch {
                 setScanningState("not_found");
               }
@@ -521,18 +509,20 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
   const loadConversation = async (storedCustomerId: string) => {
     const userId = parseInt(storedCustomerId.replace("CUST-", "")) || 1;
     
-    const greetingRes = await fetch(`/api/greeting/${storedCustomerId}`);
-    const greetingData = await greetingRes.json();
+    const greetingData = await api.getGreeting(storedCustomerId);
     const greetingMessage: Message = { 
       role: "assistant", 
       content: greetingData.greeting || "How may I assist you?" 
     };
     
-    const convRes = await fetch(`/api/conversation/${userId}`);
-    const convData = await convRes.json();
+    interface ConversationData {
+      messages?: { role: string; content: string; products?: Product[] }[];
+      context?: ContextInfo;
+    }
+    const convData = await api.getConversation<ConversationData>(String(userId));
     
     if (convData.messages && convData.messages.length > 0) {
-      const restoredMessages: Message[] = convData.messages.map((msg: { role: string; content: string; products?: Product[] }) => ({
+      const restoredMessages: Message[] = convData.messages.map((msg) => ({
         role: msg.role as "user" | "assistant",
         content: msg.content,
         products: msg.products || undefined,
@@ -546,20 +536,20 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
     }
   };
 
+  interface ChatApiResponse {
+    response: string;
+    products?: Product[];
+    context?: ContextInfo;
+    agent_thinking?: AgentThinkingStep[];
+    updated_intent?: Record<string, unknown>;
+    clarification_needed?: boolean;
+  }
+  
   const chatMutation = useMutation({
     mutationFn: async (message: string) => {
       const storedId = localStorage.getItem("customer_id");
       const userId = storedId ? parseInt(storedId.replace("CUST-", "")) : 1;
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message,
-          user_id: userId,
-        }),
-      });
-      if (!response.ok) throw new Error("Failed to send message");
-      return response.json();
+      return api.sendChatMessage<ChatApiResponse>(message, String(userId), storedId || undefined);
     },
     onSuccess: (data) => {
       const assistantMessage: Message = {
@@ -606,15 +596,14 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
   const resetConversation = async () => {
     const storedId = localStorage.getItem("customer_id");
     const userId = storedId ? parseInt(storedId.replace("CUST-", "")) : 1;
-    await fetch(`/api/reset?user_id=${userId}`, { method: "POST" });
+    await api.resetConversation(String(userId));
     setCurrentContext(null);
     setCurrentIntent({});
     setCurrentStep(1);
     setAgentThinkingLogs([]);
 
     if (storedId) {
-      const res = await fetch(`/api/greeting/${storedId}`);
-      const data = await res.json();
+      const data = await api.getGreeting(storedId);
       setMessages(
         data.greeting ? [{ role: "assistant", content: data.greeting }] : [],
       );
@@ -643,18 +632,17 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
     setIsLoggingIn(true);
     
     try {
-      const response = await fetch("/api/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          customer_id: loginCustomerId.toUpperCase().trim(), 
-          password: loginPassword 
-        }),
+      interface LoginApiResponse {
+        success: boolean;
+        customer: { customer_id: string; first_name: string; last_name: string };
+        message?: string;
+      }
+      const data = await api.login<LoginApiResponse>({
+        customerId: loginCustomerId.toUpperCase().trim(),
+        password: loginPassword
       });
 
-      const data = await response.json();
-
-      if (response.ok && data.success) {
+      if (data.success) {
         localStorage.setItem("customer_id", data.customer.customer_id);
         localStorage.setItem("customer_name", `${data.customer.first_name} ${data.customer.last_name}`);
         setCustomerId(data.customer.customer_id);

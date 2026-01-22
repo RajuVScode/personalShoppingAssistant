@@ -17,6 +17,7 @@ import { useState, useEffect } from "react";
 import { X, ShoppingCart, Check, Zap, Package } from "lucide-react";
 import { SizeChartModal } from "./SizeChartModal";
 import { ProductImageGallery } from "./ProductImageGallery";
+import api from "@/lib/api";
 import "../styles/product-detail.css";
 
 /**
@@ -108,14 +109,11 @@ export function ProductDetailPanel({
   const fetchProductDetails = async (productId: number) => {
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/products/${productId}`);
-      if (response.ok) {
-        const data = await response.json();
-        setProductDetails(data);
-        if (data.colors && data.colors.length > 0) {
-          setSelectedColor(data.colors[0]);
-          setCurrentImages(data.color_images[data.colors[0]] || []);
-        }
+      const data = await api.getProduct<ProductDetails>(productId);
+      setProductDetails(data);
+      if (data.colors && data.colors.length > 0) {
+        setSelectedColor(data.colors[0]);
+        setCurrentImages(data.color_images[data.colors[0]] || []);
       }
     } catch (error) {
       console.error("Failed to fetch product details:", error);
