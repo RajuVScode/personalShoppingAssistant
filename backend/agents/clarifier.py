@@ -1204,10 +1204,10 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                     else:
                         past_date_message = f"Those dates have already passed. Could you please provide future travel dates for your trip to {dest}?"
                     
-                    # Clear the invalid date and reset flag so we can ask again
+                    # Clear the invalid date but mark that we're awaiting a valid date
                     merged_intent["travel_date"] = None
                     merged_intent["_has_partial_date"] = False
-                    merged_intent["_asked_date"] = False
+                    merged_intent["_awaiting_valid_date"] = True
                     
                     print(f"[DEBUG] Past date detected in info request flow, blocking")
                     return {
@@ -1475,10 +1475,10 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                 else:
                     past_date_message = f"Those dates have already passed. Could you please provide future travel dates for your trip to {dest}?"
                 
-                # Clear the invalid date and reset flag so we can ask again
+                # Clear the invalid date but mark that we're awaiting a valid date
                 merged_intent["travel_date"] = None
                 merged_intent["_has_partial_date"] = False
-                merged_intent["_asked_date"] = False
+                merged_intent["_awaiting_valid_date"] = True
                 
                 return {
                     "needs_clarification": True,
@@ -1494,9 +1494,11 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             is_partial_date = result.get("is_partial_date", False)
             partial_date_value = result.get("partial_date_value")
             
-            # If we already asked for specific dates and got a response, try to construct full date
+            # If we already asked for dates and got a response, try to construct full date
             already_asked_specific = existing_intent.get("_asked_specific_dates", False)
-            if is_partial_date and partial_date_value and already_asked_specific and not has_date:
+            already_asked_date = existing_intent.get("_asked_date", False) or merged_intent.get("_asked_date", False)
+            awaiting_valid_date = existing_intent.get("_awaiting_valid_date", False) or merged_intent.get("_awaiting_valid_date", False)
+            if is_partial_date and partial_date_value and (already_asked_specific or already_asked_date or awaiting_valid_date) and not has_date:
                 # Try to parse partial_date_value as a complete date (e.g., "24th January" or "24th")
                 import re
                 from datetime import datetime
@@ -1538,6 +1540,7 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                             date_str = constructed_date.strftime("%Y-%m-%d")
                             merged_intent["travel_date"] = date_str
                             merged_intent["_has_partial_date"] = False
+                            merged_intent["_awaiting_valid_date"] = False
                             has_date = True
                             has_dates_info = True
                             print(f"[DEBUG] Constructed full date from day response: {date_str}")
