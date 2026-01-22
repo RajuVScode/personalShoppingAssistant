@@ -1282,10 +1282,22 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                 }
             
             # Trust LLM when it says ready_for_recommendations AND has product mention
-            if ready_for_recs and mentions_product:
+            # BUT check if this is a non-informative follow-up using LLM detection
+            assistant_msg = result.get("assistant_message", "")
+            
+            # Use LLM to detect if this is a non-informative follow-up (greeting/acknowledgment after products shown)
+            # Only check if we have prior shopping context
+            is_non_informative_reengagement = False
+            if existing_intent.get("_shopping_flow_complete") and conversation_history:
+                # Use the same LLM-based detection that's used elsewhere in the flow
+                followup_check = detect_intent_with_llm(query, self.llm, conversation_history)
+                is_non_informative_reengagement = followup_check.get("is_non_informative_followup", False)
+                print(f"[DEBUG] Non-informative re-engagement check: {is_non_informative_reengagement}")
+            
+            if ready_for_recs and mentions_product and not is_non_informative_reengagement:
                 # LLM determined we have enough info - trust it and proceed
                 print(f"[DEBUG] Dynamic mode: LLM ready_for_recommendations=True with product mention, proceeding")
-                base_message = result.get("assistant_message", "Let me find the best products for you!")
+                base_message = assistant_msg or "Let me find the best products for you!"
                 return {
                     "needs_clarification": False,
                     "clarification_question": "",
@@ -1293,6 +1305,19 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                     "updated_intent": merged_intent,
                     "clarified_query": query,
                     "ready_for_recommendations": True,
+                    "detected_changes": detected_changes
+                }
+            elif is_non_informative_reengagement and assistant_msg:
+                # User re-engaged with a greeting/acknowledgment after products shown
+                # Return the clarifier's conversational response instead of triggering product search
+                print(f"[DEBUG] Non-informative re-engagement detected after products shown, returning conversational follow-up")
+                return {
+                    "needs_clarification": True,
+                    "clarification_question": assistant_msg,
+                    "assistant_message": assistant_msg,
+                    "updated_intent": merged_intent,
+                    "clarified_query": query,
+                    "ready_for_recommendations": False,
                     "detected_changes": detected_changes
                 }
 
