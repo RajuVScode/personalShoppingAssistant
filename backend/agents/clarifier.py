@@ -1298,11 +1298,22 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             )
             
             is_non_informative_reengagement = False
+            is_affirmative_confirmation = False
             if has_prior_product_context and conversation_history:
                 # Use the same LLM-based detection that's used elsewhere in the flow
                 followup_check = detect_intent_with_llm(query, self.llm, conversation_history)
                 is_non_informative_reengagement = followup_check.get("is_non_informative_followup", False)
-                print(f"[DEBUG] Non-informative re-engagement check: has_prior_product_context={has_prior_product_context}, is_non_informative={is_non_informative_reengagement}")
+                is_affirmative_confirmation = followup_check.get("is_affirmative", False)
+                
+                # KEY DISTINCTION: If user says "ok", "show me", "yes" etc. as a CONFIRMATION to proceed,
+                # that's an affirmative response, not a non-informative greeting.
+                # Only treat as non-informative if it's NOT an affirmative confirmation.
+                if is_affirmative_confirmation and is_non_informative_reengagement:
+                    # User is confirming they want to proceed - this is informative!
+                    is_non_informative_reengagement = False
+                    print(f"[DEBUG] Affirmative confirmation detected ({query}), will proceed with recommendations")
+                
+                print(f"[DEBUG] Non-informative re-engagement check: has_prior_product_context={has_prior_product_context}, is_non_informative={is_non_informative_reengagement}, is_affirmative={is_affirmative_confirmation}")
             
             if ready_for_recs and mentions_product and not is_non_informative_reengagement:
                 # LLM determined we have enough info - trust it and proceed
@@ -1317,8 +1328,8 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                     "ready_for_recommendations": True,
                     "detected_changes": detected_changes
                 }
-            elif is_non_informative_reengagement and assistant_msg:
-                # User re-engaged with a greeting/acknowledgment after products shown
+            elif is_non_informative_reengagement and assistant_msg and not is_affirmative_confirmation:
+                # User re-engaged with a greeting (NOT a confirmation) after products shown
                 # Return the clarifier's conversational response instead of triggering product search
                 print(f"[DEBUG] Non-informative re-engagement detected after products shown, returning conversational follow-up")
                 return {
