@@ -1494,14 +1494,65 @@ Extract travel intent and respond with the JSON structure. If key details are mi
             is_partial_date = result.get("is_partial_date", False)
             partial_date_value = result.get("partial_date_value")
             
+            # If we already asked for specific dates and got a response, try to construct full date
+            already_asked_specific = existing_intent.get("_asked_specific_dates", False)
+            if is_partial_date and partial_date_value and already_asked_specific and not has_date:
+                # Try to parse partial_date_value as a complete date (e.g., "24th January" or "24th")
+                import re
+                from datetime import datetime
+                
+                # Extract day number from the response
+                day_match = re.search(r'\b(\d{1,2})(?:st|nd|rd|th)?\b', partial_date_value)
+                month_match = re.search(r'\b(january|february|march|april|may|june|july|august|september|october|november|december)\b', partial_date_value.lower())
+                
+                if day_match:
+                    day_num = int(day_match.group(1))
+                    
+                    # Get month from context or partial_date_value
+                    pending_month = existing_intent.get("_pending_month") or merged_intent.get("_pending_month")
+                    if month_match:
+                        month_name = month_match.group(1)
+                    elif pending_month:
+                        month_lower = pending_month.lower()
+                        month_names = ["january", "february", "march", "april", "may", "june", 
+                                       "july", "august", "september", "october", "november", "december"]
+                        month_name = next((m for m in month_names if m in month_lower), None)
+                    else:
+                        month_name = None
+                    
+                    if month_name:
+                        # Construct date
+                        month_map = {"january": 1, "february": 2, "march": 3, "april": 4, "may": 5, "june": 6,
+                                     "july": 7, "august": 8, "september": 9, "october": 10, "november": 11, "december": 12}
+                        month_num = month_map[month_name]
+                        today = datetime.now()
+                        year = today.year
+                        
+                        # If the date would be in the past, use next year
+                        try:
+                            constructed_date = datetime(year, month_num, day_num)
+                            if constructed_date.date() < today.date():
+                                year += 1
+                                constructed_date = datetime(year, month_num, day_num)
+                            
+                            date_str = constructed_date.strftime("%Y-%m-%d")
+                            merged_intent["travel_date"] = date_str
+                            merged_intent["_has_partial_date"] = False
+                            has_date = True
+                            has_dates_info = True
+                            print(f"[DEBUG] Constructed full date from day response: {date_str}")
+                        except ValueError:
+                            # Invalid date (e.g., Feb 30)
+                            print(f"[DEBUG] Could not construct valid date from day={day_num}, month={month_name}")
+            
             # Store partial date info for later use
-            if is_partial_date and partial_date_value:
+            if is_partial_date and partial_date_value and not has_date:
                 merged_intent["_pending_month"] = partial_date_value
                 merged_intent["_has_partial_date"] = True
                 print(f"[DEBUG] Partial date detected: {partial_date_value}")
             
             # If destination + partial date (travel context), ask for specific dates
-            if has_destination and is_partial_date and not existing_intent.get("_asked_specific_dates"):
+            if has_destination and is_partial_date and not existing_intent.get("_asked_specific_dates") and not has_date:
                 partial_info = partial_date_value or "your timeframe"
                 
                 # Use LLM's assistant_message if it's asking for dates, otherwise generate dynamically
