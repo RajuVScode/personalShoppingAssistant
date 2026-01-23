@@ -697,6 +697,9 @@ Use only the product data provided. Maintain a helpful, professional tone.
         
         start_date, end_date, duration_days = self._parse_trip_duration(context.intent.occasion)
         
+        # Debug: print what we have
+        print(f"[DEBUG] ProductRecommender: parsed duration={duration_days}, intent.trip_duration_days={getattr(context.intent, 'trip_duration_days', None)}")
+        
         # Override with explicit trip_duration_days if provided
         if hasattr(context.intent, 'trip_duration_days') and context.intent.trip_duration_days:
             duration_days = context.intent.trip_duration_days
