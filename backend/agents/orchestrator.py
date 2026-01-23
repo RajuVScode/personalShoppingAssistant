@@ -210,6 +210,10 @@ class ShoppingOrchestrator:
                 # Also set travel_date for context
                 if clarifier_intent.get("travel_date"):
                     intent_dict["travel_date"] = clarifier_intent["travel_date"]
+                # Pass trip_duration_days for multi-day itineraries
+                if clarifier_intent.get("trip_duration_days"):
+                    intent_dict["trip_duration_days"] = clarifier_intent["trip_duration_days"]
+                    print(f"[DEBUG] Intent: trip_duration_days = {clarifier_intent['trip_duration_days']}")
             
             # Extract product category from notes field (user's answer to "What products?")
             if clarifier_intent.get("notes") and not intent_dict.get("category"):
@@ -398,6 +402,10 @@ class ShoppingOrchestrator:
         
         if clarifier_intent.get("trip_segments") and not normalized_intent.get("trip_segments"):
             normalized_intent["trip_segments"] = clarifier_intent["trip_segments"]
+        
+        # Pass trip_duration_days from clarifier to normalized intent
+        if clarifier_intent.get("trip_duration_days") and not normalized_intent.get("trip_duration_days"):
+            normalized_intent["trip_duration_days"] = clarifier_intent["trip_duration_days"]
         
         detected_changes = final_state.get("detected_changes", {})
         

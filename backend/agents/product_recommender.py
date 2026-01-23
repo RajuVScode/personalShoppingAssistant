@@ -697,6 +697,11 @@ Use only the product data provided. Maintain a helpful, professional tone.
         
         start_date, end_date, duration_days = self._parse_trip_duration(context.intent.occasion)
         
+        # Override with explicit trip_duration_days if provided
+        if hasattr(context.intent, 'trip_duration_days') and context.intent.trip_duration_days:
+            duration_days = context.intent.trip_duration_days
+            print(f"[DEBUG] Using explicit trip_duration_days: {duration_days}")
+        
         if is_multi_destination:
             duration_days = self._calculate_actual_trip_days(segments)
             segments_section = self._format_segments_context(segments)

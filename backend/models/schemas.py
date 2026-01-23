@@ -93,6 +93,7 @@ class NormalizedIntent(BaseModel):
     brand: Optional[str] = None
     requested_content: Optional[List[str]] = []
     travel_date: Optional[str] = None
+    trip_duration_days: Optional[int] = None
 
 class CustomerContext(BaseModel):
     customer_id: Union[int, str]

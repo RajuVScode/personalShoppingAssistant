@@ -178,6 +178,7 @@ OUTPUT AS JSON:
       "destination_country": "string|null",
       "country_only": true|false,
       "travel_date": "string|null",
+      "trip_duration_days": number|null,
       "trip_segments": [...]|null,
       "activities": ["string", ...]|null,
       "preferred_brand": "string|null",
@@ -207,7 +208,8 @@ CRITICAL:
 - NEVER ask for travel TIME (departure time, arrival time, hours). Only DATE matters.
 - For NON-TRAVEL shopping: partial dates are acceptable, proceed to recommendations
 - Size/color are OPTIONAL - do NOT require them to proceed
-- If user says "no", "no preference", "skip", "any", "doesn't matter" to preference questions, set is_skip_response: true and ready_for_recommendations: true"""
+- If user says "no", "no preference", "skip", "any", "doesn't matter" to preference questions, set is_skip_response: true and ready_for_recommendations: true
+- TRIP DURATION: Extract trip_duration_days when user mentions duration (e.g., "3-day trip" -> 3, "week-long vacation" -> 7). PRESERVE this across turns even when asking follow-up questions. When generating itineraries, include all days of the trip."""
 
 # NOTE: Hardcoded activity lists removed - now handled by LLM semantic detection
 
@@ -1547,6 +1549,27 @@ Extract travel intent and respond with the JSON structure. If key details are mi
                         except ValueError:
                             # Invalid date (e.g., Feb 30)
                             print(f"[DEBUG] Could not construct valid date from day={day_num}, month={month_name}")
+            
+            # Extract and preserve trip duration from LLM response or partial_date_value
+            llm_duration = new_intent.get("trip_duration_days")
+            existing_duration = existing_intent.get("trip_duration_days") or merged_intent.get("trip_duration_days")
+            
+            if llm_duration:
+                merged_intent["trip_duration_days"] = llm_duration
+                print(f"[DEBUG] Trip duration from LLM: {llm_duration} days")
+            elif existing_duration:
+                merged_intent["trip_duration_days"] = existing_duration
+                print(f"[DEBUG] Preserving existing trip duration: {existing_duration} days")
+            elif is_partial_date and partial_date_value:
+                # Try to extract duration from partial_date_value (e.g., "3 days", "3-day trip", "week")
+                import re
+                duration_match = re.search(r'(\d+)\s*(?:-?\s*)?(?:day|days)', partial_date_value.lower())
+                if duration_match:
+                    merged_intent["trip_duration_days"] = int(duration_match.group(1))
+                    print(f"[DEBUG] Extracted trip duration from partial date: {merged_intent['trip_duration_days']} days")
+                elif "week" in partial_date_value.lower():
+                    merged_intent["trip_duration_days"] = 7
+                    print(f"[DEBUG] Extracted trip duration (week): 7 days")
             
             # Store partial date info for later use
             if is_partial_date and partial_date_value and not has_date:
