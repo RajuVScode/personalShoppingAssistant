@@ -99,16 +99,6 @@ export function ProductCard({ product, onProductClick, shoppingMode, children }:
           </div>
         )}
 
-        {productSize && (
-          <div 
-            className="product-card-size-badge"
-            id={`product-size-badge-${product.id}`}
-            data-testid={`size-badge-${product.id}`}
-          >
-            <span className="product-card-size-label">Size</span>
-            <span className="product-card-size-value">{productSize}</span>
-          </div>
-        )}
       </div>
       
       <div 
@@ -137,6 +127,16 @@ export function ProductCard({ product, onProductClick, shoppingMode, children }:
             </span>
           )}
         </div>
+        {productSize && (
+          <div 
+            className="product-card-size-row"
+            id={`product-size-${product.id}`}
+            data-testid={`size-badge-${product.id}`}
+          >
+            <span className="product-card-size-label">Size:</span>
+            <span className="product-card-size-value">{productSize}</span>
+          </div>
+        )}
       </div>
       
       {children}
