@@ -49,6 +49,7 @@ import {
   Phone,
   Camera,
   Upload,
+  MapPin,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -1416,6 +1417,45 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                             )}
                           </div>
                         ))}
+                      </div>
+                    </div>
+                  </>
+                ) : isTravelIntent(currentContext) && currentContext?.environmental?.weather ? (
+                  <>
+                    <Separator />
+                    <div>
+                      <h3 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                        <MapPin className="h-4 w-4" /> Destination
+                      </h3>
+                      <div className="bg-gray-50 rounded-lg p-3 mb-3">
+                        <p className="text-sm font-medium">{currentContext.intent?.location || 'Travel destination'}</p>
+                        {currentContext.intent?.travel_date && (
+                          <p className="text-xs text-gray-500">
+                            {currentContext.intent.travel_date}
+                            {currentContext.intent?.trip_duration_days && currentContext.intent.trip_duration_days > 1 
+                              ? ` (${currentContext.intent.trip_duration_days} days)` 
+                              : ''}
+                          </p>
+                        )}
+                      </div>
+                      <h3 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                        <Cloud className="h-4 w-4" /> Weather
+                      </h3>
+                      <div className="bg-gray-50 rounded-lg p-3">
+                        <p className="text-sm font-medium">
+                          {currentContext.environmental.weather.temperature}°C 
+                          {currentContext.environmental.weather.high_temp && (
+                            <span className="text-gray-500"> (High: {currentContext.environmental.weather.high_temp}°C)</span>
+                          )}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {currentContext.environmental.weather.description}
+                        </p>
+                        {currentContext.environmental.weather.precipitation !== undefined && (
+                          <p className="text-xs text-gray-500">
+                            Precipitation: {currentContext.environmental.weather.precipitation}mm
+                          </p>
+                        )}
                       </div>
                     </div>
                   </>
