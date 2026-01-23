@@ -142,12 +142,19 @@ interface ContextInfo {
     style?: string;
     budget_max?: number;
     location?: string;
+    travel_date?: string;
+    trip_duration_days?: number;
     trip_segments?: TripSegment[];
   };
   environmental?: {
     weather?: {
       temperature?: number;
+      high_temp?: number;
+      low_temp?: number;
       description?: string;
+      precipitation?: number;
+      wind?: string;
+      humidity?: string;
     };
     trends?: string[];
     segments?: SegmentContext[];
@@ -190,7 +197,8 @@ interface ChatWidgetProps {
 const isTravelIntent = (context: ContextInfo | null): boolean => {
   if (!context) return false;
   return !!(
-    context.intent?.trip_segments && context.intent.trip_segments.length > 0
+    (context.intent?.trip_segments && context.intent.trip_segments.length > 0) ||
+    context.intent?.location
   );
 };
 

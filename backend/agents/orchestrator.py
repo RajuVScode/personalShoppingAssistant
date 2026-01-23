@@ -407,6 +407,12 @@ class ShoppingOrchestrator:
         if clarifier_intent.get("trip_duration_days") and not normalized_intent.get("trip_duration_days"):
             normalized_intent["trip_duration_days"] = clarifier_intent["trip_duration_days"]
         
+        # Map clarifier fields to normalized intent for context popup
+        if clarifier_intent.get("destination") and not normalized_intent.get("location"):
+            normalized_intent["location"] = clarifier_intent["destination"]
+        if clarifier_intent.get("travel_date") and not normalized_intent.get("travel_date"):
+            normalized_intent["travel_date"] = clarifier_intent["travel_date"]
+        
         detected_changes = final_state.get("detected_changes", {})
         
         return {
