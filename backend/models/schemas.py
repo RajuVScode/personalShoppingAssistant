@@ -69,9 +69,10 @@ class ChatResponse(BaseModel):
     agent_thinking: Optional[List[AgentThinkingStep]] = []
 
 class TripSegment(BaseModel):
-    destination: str
-    start_date: str
-    end_date: str
+    destination: Optional[str] = None
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    activity: Optional[str] = None  # Single activity field that LLM sometimes uses
     activities: Optional[List[str]] = []
     notes: Optional[str] = None
 
