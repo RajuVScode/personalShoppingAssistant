@@ -564,13 +564,16 @@ class ProductRecommenderAgent(BaseAgent):
         events_info = context.environmental.local_events or []
         destination = getattr(context.intent, 'location', None) or 'the requested location'
         travel_date = getattr(context.intent, 'travel_date', None) or 'the requested date'
+        trip_duration = getattr(context.intent, 'trip_duration_days', None) or 1
+        
+        print(f"[DEBUG] _generate_dynamic_content_response: trip_duration={trip_duration}, destination={destination}")
         
         # Build sections to include based on requested_content
         sections_to_include = []
         if "weather" in requested_content:
             sections_to_include.append("Weather Overview - Temperature (high/low in Celsius and Fahrenheit), precipitation, wind, humidity, and conditions")
         if "itinerary" in requested_content:
-            sections_to_include.append("Itinerary - Day-by-day schedule with activities and timing")
+            sections_to_include.append(f"Itinerary - EXACTLY {trip_duration} day(s) itinerary with activities for each day. Number days as Day 1, Day 2, etc.")
         if "local_events" in requested_content:
             sections_to_include.append("Local Events - Events happening at the destination during the dates")
         if "activities" in requested_content:
@@ -591,7 +594,10 @@ Generate a response that includes ONLY the following sections based on what the 
 DO NOT include: {excluded_str}
 
 **Destination:** {destination}
-**Date(s):** {travel_date}
+**Start Date:** {travel_date}
+**Trip Duration:** {trip_duration} day(s)
+
+CRITICAL FOR ITINERARY: You MUST generate an itinerary that covers EXACTLY {trip_duration} day(s). If the trip is 3 days, you MUST include Day 1, Day 2, and Day 3. Do NOT generate only 1 day if the trip is longer.
 
 **Available Weather Data:**
 - Temperature: {weather_info.get('temperature', 'N/A')}°C
