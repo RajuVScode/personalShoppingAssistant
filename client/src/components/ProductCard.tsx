@@ -14,6 +14,7 @@ interface Product {
   image_url?: string;
   rating?: number;
   colors?: string[];
+  sizes_available?: string[];
   [key: string]: unknown;
 }
 
@@ -37,12 +38,19 @@ export function ProductCard({ product, onProductClick, shoppingMode, children }:
     e.stopPropagation();
   };
 
-  const extractSize = (name: string): string | null => {
+  const extractSizeFromName = (name: string): string | null => {
     const sizeMatch = name.match(/\/\s*([XSML]{1,3}|XXL|XXS|\d{1,2})\s*$/i);
     return sizeMatch ? sizeMatch[1].toUpperCase() : null;
   };
 
-  const productSize = extractSize(product.name || '');
+  const getDisplaySizes = (): string | null => {
+    if (product.sizes_available && product.sizes_available.length > 0) {
+      return product.sizes_available.join(', ');
+    }
+    return extractSizeFromName(product.name || '');
+  };
+
+  const productSizes = getDisplaySizes();
 
   return (
     <div
@@ -127,14 +135,14 @@ export function ProductCard({ product, onProductClick, shoppingMode, children }:
             </span>
           )}
         </div>
-        {productSize && (
+        {productSizes && (
           <div 
             className="product-card-size-row"
             id={`product-size-${product.id}`}
             data-testid={`size-badge-${product.id}`}
           >
-            <span className="product-card-size-label">Size:</span>
-            <span className="product-card-size-value">{productSize}</span>
+            <span className="product-card-size-label">Sizes:</span>
+            <span className="product-card-size-value">{productSizes}</span>
           </div>
         )}
       </div>
