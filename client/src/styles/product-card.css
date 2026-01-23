@@ -45,6 +45,16 @@
 .product-card-image-container {
   position: relative;
   cursor: pointer;
+  overflow: hidden;
+  transition: height 0.3s ease;
+}
+
+.product-card-image-container img {
+  transition: transform 0.3s ease;
+}
+
+.product-card--hovered .product-card-image-container img {
+  transform: scale(1.05);
 }
 
 /* --------------------------------------------------------------------------
@@ -142,6 +152,16 @@
   display: flex;
   flex-direction: column;
   flex: 1;
+  background-color: var(--product-bg-white);
+  position: relative;
+  z-index: 2;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.product-card--hovered .product-card-content {
+  transform: translateY(-1.5rem);
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.08);
+  border-radius: var(--product-card-radius) var(--product-card-radius) 0 0;
 }
 
 .product-card-brand {
@@ -177,7 +197,49 @@
 }
 
 /* --------------------------------------------------------------------------
-   7. Utility Classes
+   7. Size Badge (Hover)
+   -------------------------------------------------------------------------- */
+.product-card-size-badge {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.8);
+  background-color: rgba(255, 255, 255, 0.95);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s ease;
+  z-index: 10;
+}
+
+.product-card--hovered .product-card-size-badge {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.product-card-size-label {
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--product-text-muted);
+  font-weight: 500;
+}
+
+.product-card-size-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+/* --------------------------------------------------------------------------
+   8. Utility Classes
    -------------------------------------------------------------------------- */
 .product-card-actions {
   padding: 0 0.75rem 0.75rem;

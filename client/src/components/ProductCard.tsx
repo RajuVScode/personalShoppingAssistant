@@ -26,6 +26,7 @@ interface ProductCardProps {
 
 export function ProductCard({ product, onProductClick, shoppingMode, children }: ProductCardProps) {
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   const handleWishlistClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -36,11 +37,20 @@ export function ProductCard({ product, onProductClick, shoppingMode, children }:
     e.stopPropagation();
   };
 
+  const extractSize = (name: string): string | null => {
+    const sizeMatch = name.match(/\/\s*([XSML]{1,3}|XXL|XXS|\d{1,2})\s*$/i);
+    return sizeMatch ? sizeMatch[1].toUpperCase() : null;
+  };
+
+  const productSize = extractSize(product.name || '');
+
   return (
     <div
-      className="product-card"
+      className={`product-card ${isHovered ? 'product-card--hovered' : ''}`}
       id={`product-card-${product.id}`}
       data-testid={`card-product-${product.id}`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       <div 
         className="product-card-image-container"
@@ -86,6 +96,17 @@ export function ProductCard({ product, onProductClick, shoppingMode, children }:
             <span className="product-card-rating-star">★</span>
             <span className="product-card-rating-divider">|</span>
             <span className="product-card-rating-count">250</span>
+          </div>
+        )}
+
+        {productSize && (
+          <div 
+            className="product-card-size-badge"
+            id={`product-size-badge-${product.id}`}
+            data-testid={`size-badge-${product.id}`}
+          >
+            <span className="product-card-size-label">Size</span>
+            <span className="product-card-size-value">{productSize}</span>
           </div>
         )}
       </div>
