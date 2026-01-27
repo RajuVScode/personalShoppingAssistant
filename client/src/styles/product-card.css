@@ -203,8 +203,8 @@
   display: flex;
   align-items: center;
   gap: 0.375rem;
-  margin-top: 0.5rem;
-  height: 1.5rem;
+  margin-top: 0.25rem;
+  height: 1.125rem;
   opacity: 0;
   visibility: hidden;
   transition: opacity 0.3s ease, visibility 0.3s ease;
