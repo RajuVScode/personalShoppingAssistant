@@ -325,7 +325,8 @@ def chat(request: ChatRequest, db: Session = Depends(get_db)):
         clarification_question=result.get("clarification_question"),
         context=result.get("context", {}),
         updated_intent=result.get("updated_intent", {}),
-        agent_thinking=agent_thinking
+        agent_thinking=agent_thinking,
+        suggestions=result.get("suggestions", [])
     )
 
 @app.post("/api/customers", response_model=CustomerResponse)

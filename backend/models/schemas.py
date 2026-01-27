@@ -67,6 +67,7 @@ class ChatResponse(BaseModel):
     context: Optional[Dict[str, Any]] = {}
     updated_intent: Optional[Dict[str, Any]] = {}
     agent_thinking: Optional[List[AgentThinkingStep]] = []
+    suggestions: Optional[List[str]] = []
 
 class TripSegment(BaseModel):
     destination: Optional[str] = None

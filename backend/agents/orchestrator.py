@@ -381,18 +381,24 @@ Return ONLY a JSON array of 4 strings, no other text:
         try:
             from backend.agents.base import get_llm
             llm = get_llm()
+            print(f"[DEBUG] Generating suggestions for destination={destination}, date={travel_date}")
             response = llm.invoke(prompt)
             content = response.content if hasattr(response, 'content') else str(response)
+            print(f"[DEBUG] LLM suggestions raw response: {content[:200]}")
             
             json_match = re.search(r'\[.*?\]', content, re.DOTALL)
             if json_match:
                 suggestions = json.loads(json_match.group())
                 if isinstance(suggestions, list) and len(suggestions) > 0:
-                    return [str(s).strip('"\'') for s in suggestions[:4]]
+                    result = [str(s).strip('"\'') for s in suggestions[:4]]
+                    print(f"[DEBUG] Generated suggestions: {result}")
+                    return result
         except Exception as e:
             print(f"[DEBUG] LLM suggestion generation failed: {e}")
         
-        return ["Tell me more", "Show options", "Help me decide", "What do you suggest?"]
+        fallback = ["Tell me more", "Show options", "Help me decide", "What do you suggest?"]
+        print(f"[DEBUG] Using fallback suggestions: {fallback}")
+        return fallback
     
     def process_message(self, user_id: int, message: str, conversation_history: list = None, existing_intent: dict = None) -> dict:
         has_conversation_history = conversation_history and len(conversation_history) > 0
@@ -418,7 +424,8 @@ Return ONLY a JSON array of 4 strings, no other text:
                 "clarification_needed": False,
                 "clarification_question": None,
                 "updated_intent": existing_intent or {},
-                "context": {}
+                "context": {},
+                "suggestions": ["Plan a trip", "Need travel clothes", "Going on vacation", "Help me pack"]
             }
         
         initial_state: GraphState = {
