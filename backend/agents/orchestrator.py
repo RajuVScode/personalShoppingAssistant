@@ -348,6 +348,52 @@ class ShoppingOrchestrator:
         
         return state
     
+    def _generate_suggestions(self, is_ambiguous: bool, clarifier_intent: dict, normalized_intent: dict, products: list) -> list:
+        """Generate contextual quick-reply suggestions using LLM based on conversation state."""
+        import json
+        
+        destination = clarifier_intent.get("destination") or normalized_intent.get("location")
+        travel_date = clarifier_intent.get("travel_date") or normalized_intent.get("travel_date")
+        activities = clarifier_intent.get("activities") or normalized_intent.get("activities")
+        
+        product_categories = []
+        if products:
+            for p in products[:5]:
+                cat = p.get("category", "")
+                if cat and cat not in product_categories:
+                    product_categories.append(cat)
+        
+        prompt = f"""You are a travel shopping assistant helping someone plan their trip wardrobe.
+
+Analyze the current conversation state and generate exactly 4 short, natural suggestions that would be most helpful for the user to say next. Use your judgment to determine what information is missing or what the user might want to explore.
+
+Current conversation state:
+- Destination: {destination or 'Not mentioned yet'}
+- Travel dates: {travel_date or 'Not mentioned yet'}  
+- Planned activities: {activities or 'Not mentioned yet'}
+- Products already shown: {len(products)} items in categories: {', '.join(product_categories) if product_categories else 'none yet'}
+
+Generate 4 diverse, natural-sounding suggestions (each under 6 words) that a real shopper might say. Consider what would naturally progress the conversation.
+
+Return ONLY a JSON array of 4 strings, no other text:
+["suggestion1", "suggestion2", "suggestion3", "suggestion4"]"""
+
+        try:
+            from backend.llm_config import get_llm
+            llm = get_llm()
+            response = llm.invoke(prompt)
+            content = response.content if hasattr(response, 'content') else str(response)
+            
+            json_match = re.search(r'\[.*?\]', content, re.DOTALL)
+            if json_match:
+                suggestions = json.loads(json_match.group())
+                if isinstance(suggestions, list) and len(suggestions) > 0:
+                    return [str(s).strip('"\'') for s in suggestions[:4]]
+        except Exception as e:
+            print(f"[DEBUG] LLM suggestion generation failed: {e}")
+        
+        return ["Tell me more", "Show options", "Help me decide", "What do you suggest?"]
+    
     def process_message(self, user_id: int, message: str, conversation_history: list = None, existing_intent: dict = None) -> dict:
         has_conversation_history = conversation_history and len(conversation_history) > 0
         
@@ -415,6 +461,13 @@ class ShoppingOrchestrator:
         
         detected_changes = final_state.get("detected_changes", {})
         
+        suggestions = self._generate_suggestions(
+            final_state.get("is_ambiguous", False),
+            clarifier_intent,
+            normalized_intent,
+            final_state.get("products", [])
+        )
+        
         return {
             "response": final_state["final_response"],
             "products": final_state["products"],
@@ -427,5 +480,6 @@ class ShoppingOrchestrator:
             },
             "detected_changes": detected_changes,
             "context_refresh_needed": final_state.get("context_refresh_needed", False),
-            "agent_thinking": final_state.get("agent_thinking", [])
+            "agent_thinking": final_state.get("agent_thinking", []),
+            "suggestions": suggestions
         }

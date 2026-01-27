@@ -1332,3 +1332,66 @@
 .chat-loading-spinner {
   animation: chat-spin 1s linear infinite;
 }
+
+/* =============================================
+   SUGGESTION BUBBLES
+   ============================================= */
+.chat-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding: 0.5rem 0;
+  animation: chat-suggestions-fade-in 0.3s ease-out;
+}
+
+@keyframes chat-suggestions-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.chat-suggestion-bubble {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  background-color: var(--chat-gray-50);
+  border: 1px solid var(--chat-gray-200);
+  border-radius: 1.25rem;
+  font-size: 0.875rem;
+  color: var(--chat-gray-700);
+  cursor: pointer;
+  transition: all var(--chat-transition-fast);
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chat-suggestion-bubble:hover {
+  background-color: var(--chat-primary);
+  border-color: var(--chat-primary);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.chat-suggestion-bubble:active {
+  transform: translateY(0);
+}
+
+@media (max-width: 640px) {
+  .chat-suggestions {
+    gap: 0.375rem;
+  }
+  
+  .chat-suggestion-bubble {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.8125rem;
+  }
+}

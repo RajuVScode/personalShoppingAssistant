@@ -101,6 +101,7 @@ interface Message {
   context?: ContextInfo;
   agentThinking?: AgentThinkingStep[];
   timestamp?: Date;
+  suggestions?: string[];
 }
 
 /**
@@ -579,7 +580,8 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
         products: data.products,
         context: data.context,
         agentThinking: data.agent_thinking,
-        timestamp: new Date()
+        timestamp: new Date(),
+        suggestions: data.suggestions
       };
       setMessages((prev) => [...prev, assistantMessage]);
       if (data.agent_thinking && data.agent_thinking.length > 0) {
@@ -606,6 +608,14 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
     setMessages((prev) => [...prev, userMessage]);
     chatMutation.mutate(input);
     setInput("");
+  };
+
+  const handleSuggestionClick = (suggestion: string) => {
+    if (chatMutation.isPending) return;
+    
+    const userMessage: Message = { role: "user", content: suggestion, timestamp: new Date() };
+    setMessages((prev) => [...prev, userMessage]);
+    chatMutation.mutate(suggestion);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -1074,6 +1084,21 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                                 </div>
                               </div>
                             </ProductCard>
+                          ))}
+                        </div>
+                      )}
+
+                      {message.role === "assistant" && message.suggestions && message.suggestions.length > 0 && index === messages.length - 1 && (
+                        <div className="chat-suggestions" data-testid="chat-suggestions">
+                          {message.suggestions.map((suggestion, suggestionIndex) => (
+                            <button
+                              key={suggestionIndex}
+                              className="chat-suggestion-bubble"
+                              onClick={() => handleSuggestionClick(suggestion)}
+                              data-testid={`suggestion-${suggestionIndex}`}
+                            >
+                              {suggestion}
+                            </button>
                           ))}
                         </div>
                       )}
