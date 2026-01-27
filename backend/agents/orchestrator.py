@@ -379,7 +379,7 @@ Return ONLY a JSON array of 4 strings, no other text:
 ["suggestion1", "suggestion2", "suggestion3", "suggestion4"]"""
 
         try:
-            from backend.llm_config import get_llm
+            from backend.agents.base import get_llm
             llm = get_llm()
             response = llm.invoke(prompt)
             content = response.content if hasattr(response, 'content') else str(response)
