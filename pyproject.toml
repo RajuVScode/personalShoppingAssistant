@@ -11,6 +11,7 @@ dependencies = [
     "langchain-community>=0.4.1",
     "langchain-openai>=1.1.6",
     "langgraph>=1.0.5",
+    "markdown>=3.10.1",
     "meteostat>=1.7.6",
     "numpy>=2.4.0",
     "openai>=2.14.0",
@@ -21,6 +22,7 @@ dependencies = [
     "python-dotenv>=1.2.1",
     "sqlalchemy>=2.0.45",
     "uvicorn>=0.40.0",
+    "weasyprint>=68.0",
 ]
 
 [[tool.uv.index]]
