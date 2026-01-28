@@ -2,9 +2,56 @@
 
 Welcome to the AI Shopping Assistant! This guide will help you understand how to use the shopping assistant to find the perfect outfits for your travels.
 
+---
+
+## User Journey Flow
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           USER JOURNEY FLOW                                  │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+    ┌──────────┐      ┌──────────────┐      ┌─────────────────┐
+    │  LOGIN   │ ───▶ │  GREET USER  │ ───▶ │  START CHATTING │
+    └──────────┘      └──────────────┘      └─────────────────┘
+         │                                          │
+         │                                          ▼
+         │                              ┌─────────────────────┐
+         │                              │ Share Travel Plans  │
+         │                              │  "Going to Paris"   │
+         │                              └─────────────────────┘
+         │                                          │
+         │                                          ▼
+         │                              ┌─────────────────────┐
+         │                              │ Answer Questions    │
+         │                              │ Dates? Activities?  │
+         │                              └─────────────────────┘
+         │                                          │
+         │                                          ▼
+         │                              ┌─────────────────────┐
+         │                              │ View Recommendations│
+         │                              │   Product Cards     │
+         │                              └─────────────────────┘
+         │                                          │
+         │                                          ▼
+         │                              ┌─────────────────────┐
+         │                              │   Add to Cart or    │
+         │                              │   Explore More      │
+         │                              └─────────────────────┘
+         │                                          │
+         ▼                                          ▼
+    ┌──────────────────────────────────────────────────────────┐
+    │                    CHECKOUT / NEW TRIP                    │
+    └──────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## Getting Started
 
 ### Logging In
+
+![Login Screen](images/01-login-screen.png)
 
 1. Open the application in your browser
 2. Enter your Customer ID (e.g., "CUST-0000001")
@@ -13,13 +60,17 @@ Welcome to the AI Shopping Assistant! This guide will help you understand how to
 
 ### Starting a Conversation
 
+![Chat Interface](images/02-chat-interface.png)
+
 Once logged in, you'll see the chat interface. The AI assistant will greet you and is ready to help you find clothes for your travels.
 
 ---
 
 ## How to Use the Shopping Assistant
 
-### 1. Tell the Assistant About Your Trip
+### Step 1: Tell the Assistant About Your Trip
+
+![Sharing Trip Details](images/03-share-trip.png)
 
 Start by sharing your travel plans. The assistant understands natural language, so you can say things like:
 
@@ -28,7 +79,9 @@ Start by sharing your travel plans. The assistant understands natural language, 
 - "Business trip to London for 5 days"
 - "Going hiking in Colorado this weekend"
 
-### 2. Answer Clarifying Questions
+### Step 2: Answer Clarifying Questions
+
+![Clarifying Questions](images/04-clarifying-questions.png)
 
 The assistant may ask follow-up questions to better understand your needs:
 
@@ -37,18 +90,28 @@ The assistant may ask follow-up questions to better understand your needs:
 - **Activities**: What will you be doing? (sightseeing, business meetings, hiking, etc.)
 - **Preferences**: Any specific style, color, or brand preferences?
 
-### 3. Use Suggestion Bubbles
+### Step 3: Use Suggestion Bubbles
+
+![Suggestion Bubbles](images/05-suggestion-bubbles.png)
 
 After each response, you'll see **suggestion bubbles** - clickable buttons with helpful responses. These suggestions are tailored to your conversation:
 
-- If you haven't mentioned a destination, you'll see destination suggestions
-- If dates are missing, you'll see time frame options
-- If activities aren't specified, you'll see activity suggestions
-- After seeing products, you'll see options to explore more
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Suggestion bubbles appear based on conversation context:   │
+├─────────────────────────────────────────────────────────────┤
+│  No destination? → [ Europe ] [ Beach ] [ Mountains ]       │
+│  No dates?       → [ Next week ] [ This month ] [ Flexible ]│
+│  No activities?  → [ Sightseeing ] [ Business ] [ Hiking ]  │
+│  After products? → [ More options ] [ Different style ]     │
+└─────────────────────────────────────────────────────────────┘
+```
 
 Simply click a suggestion bubble to send it as your next message!
 
-### 4. Browse Product Recommendations
+### Step 4: Browse Product Recommendations
+
+![Product Recommendations](images/06-product-cards.png)
 
 When the assistant has enough information, it will show you product recommendations:
 
@@ -57,7 +120,20 @@ When the assistant has enough information, it will show you product recommendati
 - **Add to Cart**: Click "Cart" to add items to your shopping cart
 - **Quick Buy**: Click "Buy" for instant purchase
 
-### 5. Shopping Modes
+```
+┌──────────────────────────────────────────────────────────────┐
+│  PRODUCT CARD LAYOUT                                         │
+├──────────────────────────────────────────────────────────────┤
+│  ┌─────────────┐                                             │
+│  │             │  Brand Name                                 │
+│  │   Product   │  Product Title                              │
+│  │    Image    │  $99.99                                     │
+│  │             │  Sizes: S M L XL                            │
+│  └─────────────┘  [ Cart ] [ Buy ]                           │
+└──────────────────────────────────────────────────────────────┘
+```
+
+### Step 5: Shopping Modes
 
 The assistant supports two shopping modes:
 
@@ -76,6 +152,8 @@ The assistant supports two shopping modes:
 ## Features
 
 ### Context Popup
+
+![Context Popup](images/07-context-popup.png)
 
 When discussing a travel destination, a **context popup** appears showing:
 - Destination name
@@ -97,6 +175,8 @@ Click on any product card to open the **detailed view**:
 
 ### Shopping Cart
 
+![Shopping Cart](images/08-shopping-cart.png)
+
 Access your cart by clicking the cart icon:
 - View all added items
 - Adjust quantities
@@ -112,6 +192,91 @@ The system tracks how the AI processes your requests internally. This informatio
 - Decision-making process
 
 This data is available in the API response for debugging purposes.
+
+---
+
+## Complete User Flow Diagram
+
+```
+                    ┌───────────────────────────────────────┐
+                    │            USER OPENS APP             │
+                    └───────────────────┬───────────────────┘
+                                        │
+                                        ▼
+                    ┌───────────────────────────────────────┐
+                    │         LOGIN WITH CUSTOMER ID        │
+                    │    Enter ID: CUST-0000001             │
+                    │    Enter Password: ********           │
+                    └───────────────────┬───────────────────┘
+                                        │
+                                        ▼
+                    ┌───────────────────────────────────────┐
+                    │     PERSONALIZED GREETING SHOWN       │
+                    │   "Welcome back, John! How can I      │
+                    │    help you with your travel plans?"  │
+                    └───────────────────┬───────────────────┘
+                                        │
+                    ┌───────────────────┴───────────────────┐
+                    │                                       │
+                    ▼                                       ▼
+    ┌───────────────────────────┐       ┌───────────────────────────┐
+    │     TYPE A MESSAGE        │       │  CLICK SUGGESTION BUBBLE  │
+    │  "Going to Paris in May"  │       │   [ Beach vacation ]      │
+    └─────────────┬─────────────┘       └─────────────┬─────────────┘
+                  │                                   │
+                  └───────────────┬───────────────────┘
+                                  │
+                                  ▼
+                  ┌───────────────────────────────────┐
+                  │      AI PROCESSES YOUR REQUEST    │
+                  │                                   │
+                  │  1. Clarifier extracts intent     │
+                  │  2. Fetches weather data          │
+                  │  3. Gets your preferences         │
+                  │  4. Searches product catalog      │
+                  └───────────────┬───────────────────┘
+                                  │
+                    ┌─────────────┴─────────────┐
+                    │                           │
+                    ▼                           ▼
+    ┌───────────────────────────┐   ┌───────────────────────────┐
+    │   NEEDS MORE INFO?        │   │   READY TO RECOMMEND      │
+    │                           │   │                           │
+    │  "What activities do you  │   │  Shows product cards      │
+    │   have planned?"          │   │  with recommendations     │
+    └─────────────┬─────────────┘   └─────────────┬─────────────┘
+                  │                               │
+                  │     ◀── Answer Questions ──   │
+                  │                               │
+                  └───────────────┬───────────────┘
+                                  │
+                                  ▼
+                  ┌───────────────────────────────────┐
+                  │        VIEW PRODUCT CARDS         │
+                  │                                   │
+                  │  ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐ │
+                  │  │ 🧥  │ │ 👔  │ │ 👗  │ │ 👟  │ │
+                  │  └─────┘ └─────┘ └─────┘ └─────┘ │
+                  └───────────────┬───────────────────┘
+                                  │
+                    ┌─────────────┴─────────────┐
+                    │                           │
+                    ▼                           ▼
+    ┌───────────────────────────┐   ┌───────────────────────────┐
+    │      ADD TO CART          │   │     EXPLORE MORE          │
+    │                           │   │                           │
+    │  Click [Cart] button      │   │  "Show me more coats"     │
+    │  Item added to cart       │   │  "Different colors?"      │
+    └─────────────┬─────────────┘   └───────────────────────────┘
+                  │
+                  ▼
+    ┌───────────────────────────┐
+    │       CHECKOUT            │
+    │                           │
+    │  Review cart              │
+    │  Complete purchase        │
+    └───────────────────────────┘
+```
 
 ---
 
@@ -189,4 +354,4 @@ Yes, your conversation is saved so you can continue where you left off. To start
 
 If you experience any issues or have feedback, please contact our support team through the application's help section.
 
-Happy Shopping! 🛍️
+Happy Shopping!
