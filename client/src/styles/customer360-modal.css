@@ -198,9 +198,11 @@
 /* Divider */
 .customer360-divider {
   height: 1px;
+  min-height: 1px;
   width: 100%;
   background-color: #e5e7eb;
   border: none;
   margin: 0;
   display: block;
+  flex-shrink: 0;
 }
