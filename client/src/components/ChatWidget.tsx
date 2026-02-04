@@ -76,6 +76,7 @@ import Logo from "@/components/Logo";
 import { Html5Qrcode } from "html5-qrcode";
 import { useBasket } from "@/components/Basket";
 import "@/styles/chat-widget.css";
+import "@/styles/customer360-modal.css";
 
 /**
  * Represents a step in the AI agent's thinking process.
@@ -1268,88 +1269,86 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
       )}
       {shouldRenderCustomer360 && customer360Data && (
         <div 
-          className={`fixed inset-0 z-[60] flex items-center justify-end bg-black/50 transition-opacity duration-300 ${isCustomer360Animating ? 'opacity-100' : 'opacity-0'}`}
+          className={`customer360-overlay ${isCustomer360Animating ? 'customer360-overlay--visible' : 'customer360-overlay--hidden'}`}
           onClick={(e) => {
             if (e.target === e.currentTarget) closeCustomer360Modal();
           }}
           data-testid="customer360-modal-overlay"
         >
-          <div className={`bg-white w-full sm:w-[380px] h-full shadow-2xl flex flex-col overflow-hidden transition-transform duration-300 ease-in-out ${isCustomer360Animating ? 'translate-x-0' : 'translate-x-full'}`}>
-            <div className="bg-[#1565C0] text-white px-3 py-2 flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <div className="relative">
-                  <div className="w-5 h-5 rounded-full border-2 border-white flex items-center justify-center">
-                    <User className="w-3 h-3" />
+          <div className={`customer360-panel ${isCustomer360Animating ? 'customer360-panel--visible' : 'customer360-panel--hidden'}`}>
+            <div className="customer360-header">
+              <div className="customer360-header-left">
+                <div className="customer360-avatar-container">
+                  <div className="customer360-avatar">
+                    <User className="customer360-avatar-icon" />
                   </div>
-                  <div className="absolute -bottom-0.5 -right-1.5 bg-white text-[#1565C0] text-[6px] font-bold px-0.5 rounded leading-tight">
-                    360
-                  </div>
+                  <div className="customer360-avatar-badge">360</div>
                 </div>
-                <span className="font-semibold text-sm">Customer 360</span>
+                <span className="customer360-title">Customer 360</span>
               </div>
               <button 
                 onClick={closeCustomer360Modal}
-                className="text-white hover:bg-white/10 p-1 rounded"
+                className="customer360-close-btn"
                 data-testid="btn-close-customer360"
               >
-                <X className="w-5 h-5" />
+                <X className="customer360-close-icon" />
               </button>
             </div>
             
-            <div className="flex-1 overflow-y-auto p-4 space-y-5">
-              <div>
-                <h3 className="font-semibold text-gray-800 mb-2">Profile</h3>
-                <div className="space-y-1 text-sm">
-                  <p><span className="font-medium text-gray-600">Name:</span> {customer360Data.profile.name}</p>
-                  <p><span className="font-medium text-gray-600">Age:</span> {customer360Data.profile.age}</p>
-                  <p><span className="font-medium text-gray-600">Location:</span> {customer360Data.profile.location}</p>
-                  <p><span className="font-medium text-gray-600">Tier:</span> {customer360Data.profile.tier}</p>
+            <div className="customer360-content">
+              <div className="customer360-section">
+                <h3 className="customer360-section-title">Profile</h3>
+                <div className="customer360-field-list">
+                  <p className="customer360-field"><span className="customer360-field-label">Name:</span> {customer360Data.profile.name}</p>
+                  <p className="customer360-field"><span className="customer360-field-label">Age:</span> {customer360Data.profile.age}</p>
+                  <p className="customer360-field"><span className="customer360-field-label">Location:</span> {customer360Data.profile.location}</p>
+                  <p className="customer360-field"><span className="customer360-field-label">Tier:</span> {customer360Data.profile.tier}</p>
                 </div>
               </div>
 
-              <Separator />
+              <hr className="customer360-divider" />
 
-              <div>
-                <h3 className="font-semibold text-gray-800 mb-2">Sizes & Fit</h3>
-                <div className="space-y-1 text-sm">
-                  <p><span className="font-medium text-gray-600">Tops:</span> {customer360Data.sizes_fit.tops}</p>
-                  <p><span className="font-medium text-gray-600">Bottoms:</span> {customer360Data.sizes_fit.bottoms}</p>
-                  <p><span className="font-medium text-gray-600">Shoes:</span> {customer360Data.sizes_fit.shoes}</p>
-                  <p><span className="font-medium text-gray-600">Height:</span> {customer360Data.sizes_fit.height}</p>
-                  <p><span className="font-medium text-gray-600">Build:</span> {customer360Data.sizes_fit.build}</p>
-                  <p><span className="font-medium text-gray-600">Skin:</span> {customer360Data.sizes_fit.skin}</p>
+              <div className="customer360-section">
+                <h3 className="customer360-section-title">Sizes & Fit</h3>
+                <div className="customer360-field-list">
+                  <p className="customer360-field"><span className="customer360-field-label">Tops:</span> {customer360Data.sizes_fit.tops}</p>
+                  <p className="customer360-field"><span className="customer360-field-label">Bottoms:</span> {customer360Data.sizes_fit.bottoms}</p>
+                  <p className="customer360-field"><span className="customer360-field-label">Shoes:</span> {customer360Data.sizes_fit.shoes}</p>
+                  <p className="customer360-field"><span className="customer360-field-label">Height:</span> {customer360Data.sizes_fit.height}</p>
+                  <p className="customer360-field"><span className="customer360-field-label">Build:</span> {customer360Data.sizes_fit.build}</p>
+                  <p className="customer360-field"><span className="customer360-field-label">Skin:</span> {customer360Data.sizes_fit.skin}</p>
                 </div>
               </div>
 
-              <Separator />
+              <hr className="customer360-divider" />
 
-              <div>
-                <h3 className="font-semibold text-gray-800 mb-2">Style Preferences</h3>
-                <div className="space-y-2 text-sm">
+              <div className="customer360-section">
+                <h3 className="customer360-section-title">Style Preferences</h3>
+                <div className="customer360-subsection">
                   <div>
-                    <p className="font-medium text-gray-600 mb-1">Preferred Colors:</p>
-                    <div className="flex flex-wrap gap-1">
+                    <p className="customer360-subsection-label">Preferred Colors:</p>
+                    <div className="customer360-badge-list">
                       {customer360Data.style_preferences.preferred_colors.map((color, i) => (
-                        <Badge key={i} variant="secondary" className="text-xs bg-gray-100">
+                        <span key={i} className="customer360-color-badge">
                           {color}
-                        </Badge>
+                        </span>
                       ))}
                     </div>
                   </div>
-                  <p><span className="font-medium text-gray-600">Style:</span> {customer360Data.style_preferences.style}</p>
-                  <p><span className="font-medium text-gray-600">Budget:</span> {customer360Data.style_preferences.budget}</p>
+                  <p className="customer360-field"><span className="customer360-field-label">Style:</span> {customer360Data.style_preferences.style}</p>
+                  <p className="customer360-field"><span className="customer360-field-label">Budget:</span> {customer360Data.style_preferences.budget}</p>
                 </div>
               </div>
 
-              <Separator />
+              <hr className="customer360-divider" />
 
-              <div>
-                <h3 className="font-semibold text-gray-800 mb-2">Favorite Brands</h3>
-                <div className="flex flex-wrap gap-1">
+              <div className="customer360-section">
+                <h3 className="customer360-section-title">Favorite Brands</h3>
+                <div className="customer360-badge-list">
                   {customer360Data.favorite_brands.map((brand, i) => (
-                    <Badge key={i} variant="outline" className="text-xs">
+                    <span key={i} className="customer360-brand-badge">
                       {brand}
-                    </Badge>
+                    </span>
                   ))}
                 </div>
               </div>
