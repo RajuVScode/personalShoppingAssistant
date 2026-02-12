@@ -534,19 +534,24 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
   const loadConversation = async (storedCustomerId: string) => {
     const userId = parseInt(storedCustomerId.replace("CUST-", "")) || 1;
     
+    setMessages([]);
     setIsGreetingLoading(true);
+    const minDelay = new Promise(resolve => setTimeout(resolve, 800));
     try {
-      const greetingRes = await fetch(`/api/greeting/${storedCustomerId}`);
+      const [greetingRes, convRes] = await Promise.all([
+        fetch(`/api/greeting/${storedCustomerId}`),
+        fetch(`/api/conversation/${userId}`),
+      ]);
       const greetingData = await greetingRes.json();
+      const convData = await convRes.json();
       const greetingMessage: Message = { 
         role: "assistant", 
         content: greetingData.greeting || "How may I assist you?",
         timestamp: new Date()
       };
       
-      const convRes = await fetch(`/api/conversation/${userId}`);
-      const convData = await convRes.json();
-      
+      await minDelay;
+
       if (convData.messages && convData.messages.length > 0) {
         const restoredMessages: Message[] = convData.messages.map((msg: { role: string; content: string; products?: Product[] }) => ({
           role: msg.role as "user" | "assistant",
@@ -635,18 +640,22 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
   const resetConversation = async () => {
     const storedId = localStorage.getItem("customer_id");
     const userId = storedId ? parseInt(storedId.replace("CUST-", "")) : 1;
-    await fetch(`/api/reset?user_id=${userId}`, { method: "POST" });
+    setMessages([]);
     setCurrentContext(null);
     setCurrentIntent({});
     setCurrentStep(1);
     setAgentThinkingLogs([]);
-    setMessages([]);
 
     if (storedId) {
       setIsGreetingLoading(true);
+      const minDelay = new Promise(resolve => setTimeout(resolve, 800));
       try {
-        const res = await fetch(`/api/greeting/${storedId}`);
+        const [, res] = await Promise.all([
+          fetch(`/api/reset?user_id=${userId}`, { method: "POST" }),
+          fetch(`/api/greeting/${storedId}`),
+        ]);
         const data = await res.json();
+        await minDelay;
         setMessages(
           data.greeting ? [{ role: "assistant", content: data.greeting, timestamp: new Date() }] : [],
         );
@@ -654,6 +663,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
         setIsGreetingLoading(false);
       }
     } else {
+      await fetch(`/api/reset?user_id=${userId}`, { method: "POST" });
       setAgentThinkingLogs([]);
     }
   };
@@ -985,7 +995,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
           <div className="chat-messages-container">
             <ScrollArea className="chat-messages-scroll" data-testid="chat-messages">
               <div className="chat-messages-list">
-                {isGreetingLoading && messages.length === 0 && (
+                {isGreetingLoading && (
                   <div className="chat-greeting-loader" data-testid="greeting-loader">
                     <div className="chat-assistant-avatar">
                       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="chat-assistant-avatar-icon">
