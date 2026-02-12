@@ -242,6 +242,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [locationProduct, setLocationProduct] = useState<Product | null>(null);
   const [isStartingNavigation, setIsStartingNavigation] = useState(false);
+  const [isGreetingLoading, setIsGreetingLoading] = useState(false);
   const { toast } = useToast();
 
   const fetchCustomer360 = async (custId: string) => {
@@ -533,29 +534,34 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
   const loadConversation = async (storedCustomerId: string) => {
     const userId = parseInt(storedCustomerId.replace("CUST-", "")) || 1;
     
-    const greetingRes = await fetch(`/api/greeting/${storedCustomerId}`);
-    const greetingData = await greetingRes.json();
-    const greetingMessage: Message = { 
-      role: "assistant", 
-      content: greetingData.greeting || "How may I assist you?",
-      timestamp: new Date()
-    };
-    
-    const convRes = await fetch(`/api/conversation/${userId}`);
-    const convData = await convRes.json();
-    
-    if (convData.messages && convData.messages.length > 0) {
-      const restoredMessages: Message[] = convData.messages.map((msg: { role: string; content: string; products?: Product[] }) => ({
-        role: msg.role as "user" | "assistant",
-        content: msg.content,
-        products: msg.products || undefined,
-      }));
-      setMessages([greetingMessage, ...restoredMessages]);
-      if (convData.context) {
-        setCurrentContext(convData.context);
+    setIsGreetingLoading(true);
+    try {
+      const greetingRes = await fetch(`/api/greeting/${storedCustomerId}`);
+      const greetingData = await greetingRes.json();
+      const greetingMessage: Message = { 
+        role: "assistant", 
+        content: greetingData.greeting || "How may I assist you?",
+        timestamp: new Date()
+      };
+      
+      const convRes = await fetch(`/api/conversation/${userId}`);
+      const convData = await convRes.json();
+      
+      if (convData.messages && convData.messages.length > 0) {
+        const restoredMessages: Message[] = convData.messages.map((msg: { role: string; content: string; products?: Product[] }) => ({
+          role: msg.role as "user" | "assistant",
+          content: msg.content,
+          products: msg.products || undefined,
+        }));
+        setMessages([greetingMessage, ...restoredMessages]);
+        if (convData.context) {
+          setCurrentContext(convData.context);
+        }
+      } else {
+        setMessages([greetingMessage]);
       }
-    } else {
-      setMessages([greetingMessage]);
+    } finally {
+      setIsGreetingLoading(false);
     }
   };
 
@@ -634,15 +640,20 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
     setCurrentIntent({});
     setCurrentStep(1);
     setAgentThinkingLogs([]);
+    setMessages([]);
 
     if (storedId) {
-      const res = await fetch(`/api/greeting/${storedId}`);
-      const data = await res.json();
-      setMessages(
-        data.greeting ? [{ role: "assistant", content: data.greeting, timestamp: new Date() }] : [],
-      );
+      setIsGreetingLoading(true);
+      try {
+        const res = await fetch(`/api/greeting/${storedId}`);
+        const data = await res.json();
+        setMessages(
+          data.greeting ? [{ role: "assistant", content: data.greeting, timestamp: new Date() }] : [],
+        );
+      } finally {
+        setIsGreetingLoading(false);
+      }
     } else {
-      setMessages([]);
       setAgentThinkingLogs([]);
     }
   };
@@ -974,6 +985,25 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
           <div className="chat-messages-container">
             <ScrollArea className="chat-messages-scroll" data-testid="chat-messages">
               <div className="chat-messages-list">
+                {isGreetingLoading && messages.length === 0 && (
+                  <div className="chat-greeting-loader" data-testid="greeting-loader">
+                    <div className="chat-assistant-avatar">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="chat-assistant-avatar-icon">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                      </svg>
+                    </div>
+                    <div className="chat-greeting-loader-bubble">
+                      <div className="chat-greeting-loader-dots">
+                        <span className="chat-greeting-loader-dot"></span>
+                        <span className="chat-greeting-loader-dot"></span>
+                        <span className="chat-greeting-loader-dot"></span>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 {messages.map((message, index) => (
                   <div
                     key={index}
@@ -1178,14 +1208,14 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                     }}
                     placeholder="What are you looking for today?"
                     className="chat-input-field"
-                    disabled={chatMutation.isPending}
+                    disabled={chatMutation.isPending || isGreetingLoading}
                     data-testid="input-message"
                     rows={1}
                   />
                 </div>
                 <Button
                   onClick={handleSend}
-                  disabled={!input.trim() || chatMutation.isPending}
+                  disabled={!input.trim() || chatMutation.isPending || isGreetingLoading}
                   size="icon"
                   className="chat-send-btn"
                   data-testid="button-send"
